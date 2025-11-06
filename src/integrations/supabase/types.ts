@@ -14,16 +14,310 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      draws: {
+        Row: {
+          drawn_at: string
+          id: string
+          jackpot_id: string
+          prize_amount: number
+          total_tickets: number
+          winning_ticket_id: string | null
+        }
+        Insert: {
+          drawn_at?: string
+          id?: string
+          jackpot_id: string
+          prize_amount: number
+          total_tickets?: number
+          winning_ticket_id?: string | null
+        }
+        Update: {
+          drawn_at?: string
+          id?: string
+          jackpot_id?: string
+          prize_amount?: number
+          total_tickets?: number
+          winning_ticket_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draws_jackpot_id_fkey"
+            columns: ["jackpot_id"]
+            isOneToOne: false
+            referencedRelation: "jackpots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draws_winning_ticket_id_fkey"
+            columns: ["winning_ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jackpots: {
+        Row: {
+          created_at: string
+          description: string | null
+          draw_time: string | null
+          frequency: string
+          id: string
+          name: string
+          next_draw: string | null
+          prize_pool: number
+          status: Database["public"]["Enums"]["jackpot_status"]
+          ticket_price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          draw_time?: string | null
+          frequency: string
+          id?: string
+          name: string
+          next_draw?: string | null
+          prize_pool?: number
+          status?: Database["public"]["Enums"]["jackpot_status"]
+          ticket_price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          draw_time?: string | null
+          frequency?: string
+          id?: string
+          name?: string
+          next_draw?: string | null
+          prize_pool?: number
+          status?: Database["public"]["Enums"]["jackpot_status"]
+          ticket_price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tickets: {
+        Row: {
+          id: string
+          jackpot_id: string
+          purchase_price: number
+          purchased_at: string
+          ticket_number: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          jackpot_id: string
+          purchase_price: number
+          purchased_at?: string
+          ticket_number: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          jackpot_id?: string
+          purchase_price?: number
+          purchased_at?: string
+          ticket_number?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_jackpot_id_fkey"
+            columns: ["jackpot_id"]
+            isOneToOne: false
+            referencedRelation: "jackpots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          admin_note: string | null
+          amount: number
+          created_at: string
+          id: string
+          processed_at: string | null
+          processed_by: string | null
+          reference: string | null
+          status: Database["public"]["Enums"]["transaction_status"]
+          type: Database["public"]["Enums"]["transaction_type"]
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          amount: number
+          created_at?: string
+          id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          reference?: string | null
+          status?: Database["public"]["Enums"]["transaction_status"]
+          type: Database["public"]["Enums"]["transaction_type"]
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          reference?: string | null
+          status?: Database["public"]["Enums"]["transaction_status"]
+          type?: Database["public"]["Enums"]["transaction_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      winners: {
+        Row: {
+          claimed_at: string
+          draw_id: string
+          id: string
+          jackpot_id: string
+          prize_amount: number
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          draw_id: string
+          id?: string
+          jackpot_id: string
+          prize_amount: number
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string
+          draw_id?: string
+          id?: string
+          jackpot_id?: string
+          prize_amount?: number
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "winners_draw_id_fkey"
+            columns: ["draw_id"]
+            isOneToOne: false
+            referencedRelation: "draws"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "winners_jackpot_id_fkey"
+            columns: ["jackpot_id"]
+            isOneToOne: false
+            referencedRelation: "jackpots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "winners_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
+      jackpot_status: "active" | "drawing" | "completed" | "paused"
+      transaction_status: "pending" | "approved" | "rejected" | "completed"
+      transaction_type:
+        | "deposit"
+        | "withdrawal"
+        | "ticket_purchase"
+        | "prize_win"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +444,16 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+      jackpot_status: ["active", "drawing", "completed", "paused"],
+      transaction_status: ["pending", "approved", "rejected", "completed"],
+      transaction_type: [
+        "deposit",
+        "withdrawal",
+        "ticket_purchase",
+        "prize_win",
+      ],
+    },
   },
 } as const
