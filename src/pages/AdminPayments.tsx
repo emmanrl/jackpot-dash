@@ -31,14 +31,7 @@ const paystackSchema = z.object({
   secret_key: z.string().min(1, "Secret key is required").startsWith("sk_", "Must start with sk_"),
 });
 
-const remitaSchema = z.object({
-  merchant_id: z.string().min(1, "Merchant ID is required"),
-  api_key: z.string().min(1, "API key is required"),
-  public_key: z.string().min(1, "Public key is required"),
-});
-
 type PaystackFormData = z.infer<typeof paystackSchema>;
-type RemitaFormData = z.infer<typeof remitaSchema>;
 
 function PaystackSettingCard({ setting, onUpdate, onToggle }: { 
   setting: PaymentSetting; 
@@ -146,125 +139,6 @@ function PaystackSettingCard({ setting, onUpdate, onToggle }: {
   );
 }
 
-function RemitaSettingCard({ setting, onUpdate, onToggle }: { 
-  setting: PaymentSetting; 
-  onUpdate: (id: string, updates: any) => Promise<void>;
-  onToggle: (id: string, currentState: boolean) => Promise<void>;
-}) {
-  const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const form = useForm<RemitaFormData>({
-    resolver: zodResolver(remitaSchema),
-    defaultValues: {
-      merchant_id: setting.merchant_id || "",
-      api_key: setting.api_key || "",
-      public_key: setting.public_key || "",
-    },
-  });
-
-  const onSubmit = async (data: RemitaFormData) => {
-    setIsSubmitting(true);
-    try {
-      await onUpdate(setting.id, data);
-      toast.success(`${setting.provider} settings updated successfully`);
-    } catch (error) {
-      toast.error(`Failed to update ${setting.provider} settings`);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const toggleVisibility = (field: string) => {
-    setShowSecrets(prev => ({ ...prev, [field]: !prev[field] }));
-  };
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="capitalize">Remita Payment Gateway</CardTitle>
-            <CardDescription>
-              Configure Remita payment integration for deposits and withdrawals
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            <Label htmlFor="remita-enabled" className="text-sm">
-              {setting.is_enabled ? "Enabled" : "Disabled"}
-            </Label>
-            <Switch
-              id="remita-enabled"
-              checked={setting.is_enabled}
-              onCheckedChange={() => onToggle(setting.id, setting.is_enabled)}
-            />
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="merchant_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Merchant ID</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Enter merchant ID" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="api_key"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>API Key</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input 
-                        {...field} 
-                        type={showSecrets.api_key ? "text" : "password"}
-                        placeholder="Enter API key" 
-                      />
-                      <button
-                        type="button"
-                        onClick={() => toggleVisibility("api_key")}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        {showSecrets.api_key ? <EyeOff size={16} /> : <Eye size={16} />}
-                      </button>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="public_key"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Public Key</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Enter public key" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Remita Settings"}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
-  );
-}
 
 export default function AdminPayments({ paymentSettings, onUpdate }: AdminPaymentsProps) {
   const handleToggle = async (id: string, currentState: boolean) => {
@@ -276,31 +150,23 @@ export default function AdminPayments({ paymentSettings, onUpdate }: AdminPaymen
     }
   };
 
+  const paystackSetting = paymentSettings.find(s => s.provider === "paystack");
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
         <h2 className="text-2xl font-bold">Payment Gateway Configuration</h2>
         <p className="text-muted-foreground">
-          Configure your payment providers for processing deposits and withdrawals
+          Configure Paystack for processing deposits and withdrawals
         </p>
       </div>
-      {paymentSettings.map((setting) => (
-        setting.provider === "paystack" ? (
-          <PaystackSettingCard
-            key={setting.id}
-            setting={setting}
-            onUpdate={onUpdate}
-            onToggle={handleToggle}
-          />
-        ) : (
-          <RemitaSettingCard
-            key={setting.id}
-            setting={setting}
-            onUpdate={onUpdate}
-            onToggle={handleToggle}
-          />
-        )
-      ))}
+      {paystackSetting && (
+        <PaystackSettingCard
+          setting={paystackSetting}
+          onUpdate={onUpdate}
+          onToggle={handleToggle}
+        />
+      )}
     </div>
   );
 }
