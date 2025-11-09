@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import AdminPayments from "./AdminPayments";
 
@@ -220,14 +220,29 @@ export default function Admin() {
   if (!isAdmin) return null;
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold">Admin Dashboard</h1>
-          <Button onClick={() => navigate('/dashboard')} variant="outline">
-            Back to Dashboard
-          </Button>
+    <div className="min-h-screen bg-background">
+      <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Sparkles className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                  Admin Dashboard
+                </h1>
+                <p className="text-sm text-muted-foreground">Manage your jackpot platform</p>
+              </div>
+            </div>
+            <Button onClick={() => navigate('/dashboard')} variant="outline">
+              Back to Dashboard
+            </Button>
+          </div>
         </div>
+      </header>
+
+      <div className="container mx-auto px-6 py-8">
 
         <Tabs defaultValue="jackpots" className="space-y-6">
           <TabsList>

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Wallet, Ticket, Trophy, LogOut, BarChart3 } from "lucide-react";
+import { Sparkles, Wallet, Ticket, Trophy, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import Footer from "@/components/Footer";
 import DepositDialog from "@/components/DepositDialog";
@@ -232,53 +232,56 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
-            <Sparkles className="w-6 h-6 text-primary" />
-            <span className="text-xl font-bold">JackpotWin</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => navigate("/statistics")}>
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Statistics
-            </Button>
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Welcome back</p>
-              <p className="font-medium">{user?.email}</p>
+      <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Sparkles className="w-5 h-5 text-primary" />
+              </div>
+              <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                JackpotWin
+              </span>
             </div>
-            <Button variant="outline" size="icon" onClick={handleSignOut}>
-              <LogOut className="w-4 h-4" />
-            </Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        {/* Wallet Balance */}
-        <Card className="mb-8 border-border bg-gradient-to-br from-card to-card/80">
+      <main className="container mx-auto px-4 py-8 space-y-8">
+        {/* Wallet Balance - Enhanced */}
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card shadow-lg">
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <Wallet className="w-5 h-5 text-primary" />
-              <CardTitle>Wallet Balance</CardTitle>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Wallet className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">Wallet Balance</CardTitle>
+                  <p className="text-sm text-muted-foreground mt-1">Your available funds</p>
+                </div>
+              </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold text-primary gold-glow">
+          <CardContent className="space-y-6">
+            <div className="text-5xl font-bold text-primary gold-glow">
               ₦{wallet?.balance?.toFixed(2) || "0.00"}
             </div>
-            <div className="flex gap-4 mt-4">
+            <div className="flex gap-3">
               <Button 
-                variant="hero" 
-                size="sm"
+                variant="default" 
+                size="lg"
+                className="flex-1"
                 onClick={() => setDepositDialogOpen(true)}
               >
+                <Wallet className="w-4 h-4 mr-2" />
                 Deposit Funds
               </Button>
               
               <Dialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="lg" className="flex-1">
+                    <LogOut className="w-4 h-4 mr-2" />
                     Withdraw
                   </Button>
                 </DialogTrigger>
@@ -314,46 +317,62 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Stats Grid */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="text-lg">Total Tickets</CardTitle>
+        {/* Stats Grid - Enhanced */}
+        <div className="grid md:grid-cols-3 gap-6">
+          <Card className="border-border hover:border-primary/50 transition-colors">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Ticket className="w-5 h-5 text-primary" />
+                <CardTitle className="text-base">Total Tickets</CardTitle>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-primary">{tickets.length}</div>
+              <div className="text-4xl font-bold text-primary">{tickets.length}</div>
+              <p className="text-sm text-muted-foreground mt-2">Tickets purchased</p>
             </CardContent>
           </Card>
           
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="text-lg">Total Wins</CardTitle>
+          <Card className="border-border hover:border-primary/50 transition-colors">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-primary" />
+                <CardTitle className="text-base">Total Wins</CardTitle>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-primary">{wins.length}</div>
+              <div className="text-4xl font-bold text-primary">{wins.length}</div>
+              <p className="text-sm text-muted-foreground mt-2">Jackpots won</p>
             </CardContent>
           </Card>
           
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="text-lg">Total Won</CardTitle>
+          <Card className="border-border hover:border-primary/50 transition-colors">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <CardTitle className="text-base">Total Won</CardTitle>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-primary">
+              <div className="text-4xl font-bold text-primary">
                 ₦{wins.reduce((sum, win) => sum + Number(win.prize_amount), 0).toFixed(2)}
               </div>
+              <p className="text-sm text-muted-foreground mt-2">Prize money earned</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Tickets Section */}
-        <Card className="mb-8 border-border">
+        {/* Tickets Section - Enhanced */}
+        <Card className="border-border shadow-sm">
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <Ticket className="w-5 h-5 text-primary" />
-              <CardTitle>My Tickets</CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Ticket className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle>My Tickets</CardTitle>
+                <CardDescription>Your recent ticket purchases</CardDescription>
+              </div>
             </div>
-            <CardDescription>Your recent ticket purchases</CardDescription>
           </CardHeader>
           <CardContent>
             {tickets.length === 0 ? (
@@ -382,15 +401,19 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Active Jackpots */}
+        {/* Active Jackpots - Enhanced */}
         {activeJackpots.length > 0 && (
-          <Card className="mb-8 border-border">
+          <Card className="border-border shadow-sm">
             <CardHeader>
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                <CardTitle>Active Jackpots</CardTitle>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle>Active Jackpots</CardTitle>
+                  <CardDescription>Buy tickets and win big prizes!</CardDescription>
+                </div>
               </div>
-              <CardDescription>Buy tickets and win big!</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 gap-4">
@@ -432,14 +455,18 @@ const Dashboard = () => {
           </Card>
         )}
 
-        {/* Win History */}
-        <Card className="border-border">
+        {/* Win History - Enhanced */}
+        <Card className="border-border shadow-sm">
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-primary" />
-              <CardTitle>Win History</CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Trophy className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle>Win History</CardTitle>
+                <CardDescription>Your winning tickets and prizes</CardDescription>
+              </div>
             </div>
-            <CardDescription>Your winning tickets</CardDescription>
           </CardHeader>
           <CardContent>
             {wins.length === 0 ? (
