@@ -1,36 +1,50 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import JackpotCard from "./JackpotCard";
 
+interface Jackpot {
+  id: string;
+  name: string;
+  prize_pool: number;
+  ticket_price: number;
+  next_draw: string | null;
+  frequency: string;
+}
+
 const ActiveJackpots = () => {
-  const jackpots = [
-    {
-      title: "Hourly Mega Draw",
-      prize: "$5,000",
-      ticketPrice: "$2.00",
-      endTime: new Date(Date.now() + 45 * 60 * 1000), // 45 minutes
-      category: "hourly" as const,
-    },
-    {
-      title: "Daily Fortune",
-      prize: "$50,000",
-      ticketPrice: "$10.00",
-      endTime: new Date(Date.now() + 8 * 60 * 60 * 1000), // 8 hours
-      category: "daily" as const,
-    },
-    {
-      title: "Weekly Millionaire",
-      prize: "$500,000",
-      ticketPrice: "$25.00",
-      endTime: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), // 4 days
-      category: "weekly" as const,
-    },
-    {
-      title: "Monthly Grand Prize",
-      prize: "$1,000,000",
-      ticketPrice: "$50.00",
-      endTime: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 days
-      category: "monthly" as const,
-    },
-  ];
+  const [jackpots, setJackpots] = useState<Jackpot[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchActiveJackpots();
+  }, []);
+
+  const fetchActiveJackpots = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("jackpots")
+        .select("*")
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setJackpots(data || []);
+    } catch (error) {
+      console.error("Error fetching jackpots:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatPrize = (amount: number) => `₦${amount.toLocaleString()}`;
+  const formatTicketPrice = (price: number) => `₦${price.toFixed(2)}`;
+
+  const getCategoryFromFrequency = (frequency: string): "hourly" | "daily" | "weekly" | "monthly" => {
+    if (frequency.toLowerCase().includes("hour")) return "hourly";
+    if (frequency.toLowerCase().includes("day")) return "daily";
+    if (frequency.toLowerCase().includes("week")) return "weekly";
+    return "monthly";
+  };
 
   return (
     <section className="py-20 px-4">
@@ -46,11 +60,28 @@ const ActiveJackpots = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {jackpots.map((jackpot, index) => (
-            <JackpotCard key={index} {...jackpot} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Loading jackpots...</p>
+          </div>
+        ) : jackpots.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No active jackpots at the moment. Check back soon!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {jackpots.map((jackpot) => (
+              <JackpotCard
+                key={jackpot.id}
+                title={jackpot.name}
+                prize={formatPrize(jackpot.prize_pool)}
+                ticketPrice={formatTicketPrice(jackpot.ticket_price)}
+                endTime={jackpot.next_draw ? new Date(jackpot.next_draw) : new Date(Date.now() + 24 * 60 * 60 * 1000)}
+                category={getCategoryFromFrequency(jackpot.frequency)}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

@@ -12,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import AdminPayments from "./AdminPayments";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -21,6 +23,7 @@ export default function Admin() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [processing, setProcessing] = useState<string | null>(null);
+  const [paymentSettings, setPaymentSettings] = useState<any[]>([]);
 
   // Jackpot form state
   const [jackpotForm, setJackpotForm] = useState({
@@ -59,7 +62,7 @@ export default function Admin() {
       }
 
       setIsAdmin(true);
-      await Promise.all([fetchJackpots(), fetchTransactions(), fetchUsers()]);
+      await Promise.all([fetchJackpots(), fetchTransactions(), fetchUsers(), fetchPaymentSettings()]);
     } catch (error) {
       console.error('Error checking admin status:', error);
       toast.error('Failed to verify admin status');
@@ -106,6 +109,35 @@ export default function Admin() {
       return;
     }
     setUsers(data || []);
+  };
+
+  const fetchPaymentSettings = async () => {
+    const { data, error } = await supabase
+      .from('payment_settings')
+      .select('*')
+      .order('provider', { ascending: true });
+
+    if (error) {
+      toast.error('Failed to fetch payment settings');
+      return;
+    }
+    setPaymentSettings(data || []);
+  };
+
+  const updatePaymentSetting = async (id: string, updates: any) => {
+    try {
+      const { error } = await supabase
+        .from('payment_settings')
+        .update(updates)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast.success('Payment settings updated successfully');
+      await fetchPaymentSettings();
+    } catch (error: any) {
+      toast.error(`Failed to update payment settings: ${error.message}`);
+    }
   };
 
   const createJackpot = async () => {
@@ -202,6 +234,7 @@ export default function Admin() {
             <TabsTrigger value="jackpots">Jackpots</TabsTrigger>
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="payments">Payment Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="jackpots" className="space-y-6">
@@ -297,8 +330,8 @@ export default function Admin() {
                             {jackpot.status}
                           </Badge>
                         </TableCell>
-                        <TableCell>${jackpot.ticket_price}</TableCell>
-                        <TableCell>${jackpot.prize_pool}</TableCell>
+                        <TableCell>₦{jackpot.ticket_price}</TableCell>
+                        <TableCell>₦{jackpot.prize_pool}</TableCell>
                         <TableCell>{jackpot.next_draw ? new Date(jackpot.next_draw).toLocaleString() : 'N/A'}</TableCell>
                         <TableCell>
                           <Button
@@ -340,7 +373,7 @@ export default function Admin() {
                       <TableRow key={tx.id}>
                         <TableCell>{tx.profiles?.email}</TableCell>
                         <TableCell className="capitalize">{tx.type}</TableCell>
-                        <TableCell>${tx.amount}</TableCell>
+                        <TableCell>₦{tx.amount}</TableCell>
                         <TableCell>
                           <Badge>{tx.status}</Badge>
                         </TableCell>
@@ -391,7 +424,7 @@ export default function Admin() {
                       <TableRow key={user.id}>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>{user.full_name || 'N/A'}</TableCell>
-                        <TableCell>${user.wallets?.[0]?.balance || 0}</TableCell>
+                        <TableCell>₦{user.wallets?.[0]?.balance || 0}</TableCell>
                         <TableCell>
                           <Badge variant={user.user_roles?.[0]?.role === 'admin' ? 'default' : 'secondary'}>
                             {user.user_roles?.[0]?.role || 'user'}
@@ -404,6 +437,13 @@ export default function Admin() {
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="payments">
+            <AdminPayments 
+              paymentSettings={paymentSettings}
+              onUpdate={updatePaymentSetting}
+            />
           </TabsContent>
         </Tabs>
       </div>

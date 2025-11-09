@@ -230,7 +230,7 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold text-primary gold-glow">
-              ${wallet?.balance?.toFixed(2) || "0.00"}
+              ₦{wallet?.balance?.toFixed(2) || "0.00"}
             </div>
             <div className="flex gap-4 mt-4">
               <Dialog open={depositDialogOpen} onOpenChange={setDepositDialogOpen}>
@@ -291,7 +291,7 @@ const Dashboard = () => {
                       />
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Available balance: ${wallet?.balance?.toFixed(2) || '0.00'}
+                      Available balance: ₦{wallet?.balance?.toFixed(2) || '0.00'}
                     </p>
                   </div>
                   <DialogFooter>
@@ -329,7 +329,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-primary">
-                ${wins.reduce((sum, win) => sum + Number(win.prize_amount), 0).toFixed(2)}
+                ₦{wins.reduce((sum, win) => sum + Number(win.prize_amount), 0).toFixed(2)}
               </div>
             </CardContent>
           </Card>
@@ -359,7 +359,7 @@ const Dashboard = () => {
                       <p className="text-sm text-muted-foreground">{ticket.jackpots.name}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium">${Number(ticket.purchase_price).toFixed(2)}</p>
+                      <p className="font-medium">₦{Number(ticket.purchase_price).toFixed(2)}</p>
                       <p className="text-sm text-muted-foreground">
                         {new Date(ticket.purchased_at).toLocaleDateString()}
                       </p>
@@ -398,7 +398,7 @@ const Dashboard = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-bold text-primary">
-                        ${Number(win.prize_amount).toFixed(2)}
+                        ₦{Number(win.prize_amount).toFixed(2)}
                       </p>
                     </div>
                   </div>

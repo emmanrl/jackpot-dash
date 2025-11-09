@@ -51,7 +51,7 @@ const Hero = () => {
 
         <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
           Join thousands of winners in our transparent, fair lottery system.
-          Hourly, daily, weekly draws with prizes up to <span className="text-primary font-bold">$1,000,000</span>
+          Hourly, daily, weekly draws with prizes up to <span className="text-primary font-bold">₦1,000,000</span>
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -77,7 +77,7 @@ const Hero = () => {
         <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
           {[
             { label: "Active Players", value: "100K+" },
-            { label: "Total Prizes", value: "$50M+" },
+            { label: "Total Prizes", value: "₦50M+" },
             { label: "Winners Today", value: "1,250" },
             { label: "Success Rate", value: "99.9%" },
           ].map((stat, i) => (
