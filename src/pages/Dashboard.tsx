@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Wallet, Ticket, Trophy, LogOut } from "lucide-react";
+import { Sparkles, Wallet, Ticket, Trophy, LogOut, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import Footer from "@/components/Footer";
+import DepositDialog from "@/components/DepositDialog";
+import TicketPurchaseDialog from "@/components/TicketPurchaseDialog";
 
 interface WalletData {
   balance: number;
@@ -45,6 +47,9 @@ const Dashboard = () => {
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [depositDialogOpen, setDepositDialogOpen] = useState(false);
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
+  const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
+  const [selectedJackpot, setSelectedJackpot] = useState<any>(null);
+  const [activeJackpots, setActiveJackpots] = useState<any[]>([]);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -57,6 +62,7 @@ const Dashboard = () => {
 
       setUser(session.user);
       await fetchUserData(session.user.id);
+      await fetchActiveJackpots();
       setLoading(false);
     };
 
@@ -119,6 +125,31 @@ const Dashboard = () => {
     } catch (error: any) {
       toast.error(error.message || "Failed to fetch user data");
     }
+  };
+
+  const fetchActiveJackpots = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('jackpots')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setActiveJackpots(data || []);
+    } catch (error: any) {
+      console.error('Error fetching jackpots:', error);
+    }
+  };
+
+  const handleBuyTicket = (jackpot: any) => {
+    setSelectedJackpot(jackpot);
+    setTicketDialogOpen(true);
+  };
+
+  const handleTicketPurchaseSuccess = async () => {
+    await fetchUserData(user!.id);
+    await fetchActiveJackpots();
   };
 
   const handleDeposit = async () => {
@@ -208,6 +239,10 @@ const Dashboard = () => {
             <span className="text-xl font-bold">JackpotWin</span>
           </div>
           <div className="flex items-center gap-4">
+            <Button variant="outline" onClick={() => navigate("/statistics")}>
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Statistics
+            </Button>
             <div className="text-right">
               <p className="text-sm text-muted-foreground">Welcome back</p>
               <p className="font-medium">{user?.email}</p>
@@ -233,37 +268,13 @@ const Dashboard = () => {
               ₦{wallet?.balance?.toFixed(2) || "0.00"}
             </div>
             <div className="flex gap-4 mt-4">
-              <Dialog open={depositDialogOpen} onOpenChange={setDepositDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="hero" size="sm">
-                    Deposit Funds
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Deposit Funds</DialogTitle>
-                    <DialogDescription>
-                      Submit a deposit request. Admin approval required.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="deposit-amount">Amount</Label>
-                      <Input
-                        id="deposit-amount"
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        value={depositAmount}
-                        onChange={(e) => setDepositAmount(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={handleDeposit}>Submit Request</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <Button 
+                variant="hero" 
+                size="sm"
+                onClick={() => setDepositDialogOpen(true)}
+              >
+                Deposit Funds
+              </Button>
               
               <Dialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
                 <DialogTrigger asChild>
@@ -371,6 +382,56 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
+        {/* Active Jackpots */}
+        {activeJackpots.length > 0 && (
+          <Card className="mb-8 border-border">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <CardTitle>Active Jackpots</CardTitle>
+              </div>
+              <CardDescription>Buy tickets and win big!</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 gap-4">
+                {activeJackpots.map((jackpot) => (
+                  <div
+                    key={jackpot.id}
+                    className="p-4 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20"
+                  >
+                    <h3 className="font-bold text-lg text-primary">{jackpot.name}</h3>
+                    <p className="text-sm text-muted-foreground mb-3">{jackpot.description}</p>
+                    <div className="space-y-2 mb-4">
+                      <div className="flex justify-between text-sm">
+                        <span>Prize Pool:</span>
+                        <span className="font-bold text-primary">₦{Number(jackpot.prize_pool).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Ticket Price:</span>
+                        <span className="font-medium">₦{Number(jackpot.ticket_price).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span>Next Draw:</span>
+                        <span className="font-medium">
+                          {new Date(jackpot.next_draw).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="hero" 
+                      size="sm" 
+                      className="w-full"
+                      onClick={() => handleBuyTicket(jackpot)}
+                    >
+                      Buy Tickets
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Win History */}
         <Card className="border-border">
           <CardHeader>
@@ -410,6 +471,23 @@ const Dashboard = () => {
       </main>
 
       <Footer />
+
+      {/* Dialogs */}
+      <DepositDialog
+        open={depositDialogOpen}
+        onOpenChange={setDepositDialogOpen}
+        userEmail={user?.email || ''}
+      />
+
+      {selectedJackpot && (
+        <TicketPurchaseDialog
+          open={ticketDialogOpen}
+          onOpenChange={setTicketDialogOpen}
+          jackpot={selectedJackpot}
+          walletBalance={wallet?.balance || 0}
+          onSuccess={handleTicketPurchaseSuccess}
+        />
+      )}
     </div>
   );
 };
