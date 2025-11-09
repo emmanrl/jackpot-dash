@@ -19,9 +19,7 @@ serve(async (req) => {
       throw new Error("Missing backend configuration");
     }
 
-    const supabase = createClient(supabaseUrl, serviceKey, {
-      global: { headers: { Authorization: req.headers.get("Authorization") || "" } },
-    });
+    const supabase = createClient(supabaseUrl, serviceKey);
 
     const { data, error } = await supabase
       .from("payment_settings")
