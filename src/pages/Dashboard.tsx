@@ -4,8 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Sparkles, Wallet, Ticket, Trophy, LogOut } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import Footer from "@/components/Footer";
 
 interface WalletData {
@@ -38,6 +41,10 @@ const Dashboard = () => {
   const [wallet, setWallet] = useState<WalletData | null>(null);
   const [tickets, setTickets] = useState<TicketData[]>([]);
   const [wins, setWins] = useState<WinnerData[]>([]);
+  const [depositAmount, setDepositAmount] = useState("");
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [depositDialogOpen, setDepositDialogOpen] = useState(false);
+  const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -110,11 +117,68 @@ const Dashboard = () => {
       if (winsError) throw winsError;
       setWins(winsData || []);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to fetch user data",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to fetch user data");
+    }
+  };
+
+  const handleDeposit = async () => {
+    try {
+      const amount = parseFloat(depositAmount);
+      if (isNaN(amount) || amount <= 0) {
+        toast.error("Please enter a valid amount");
+        return;
+      }
+
+      const { error } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user?.id,
+          type: 'deposit',
+          amount: amount,
+          status: 'pending',
+          reference: `Deposit request - ${new Date().toISOString()}`
+        });
+
+      if (error) throw error;
+
+      toast.success("Deposit request submitted. Awaiting admin approval.");
+      setDepositAmount("");
+      setDepositDialogOpen(false);
+    } catch (error: any) {
+      toast.error(`Failed to submit deposit: ${error.message}`);
+    }
+  };
+
+  const handleWithdraw = async () => {
+    try {
+      const amount = parseFloat(withdrawAmount);
+      if (isNaN(amount) || amount <= 0) {
+        toast.error("Please enter a valid amount");
+        return;
+      }
+
+      if (amount > (wallet?.balance || 0)) {
+        toast.error("Insufficient balance");
+        return;
+      }
+
+      const { error } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user?.id,
+          type: 'withdrawal',
+          amount: amount,
+          status: 'pending',
+          reference: `Withdrawal request - ${new Date().toISOString()}`
+        });
+
+      if (error) throw error;
+
+      toast.success("Withdrawal request submitted. Awaiting admin approval.");
+      setWithdrawAmount("");
+      setWithdrawDialogOpen(false);
+    } catch (error: any) {
+      toast.error(`Failed to submit withdrawal: ${error.message}`);
     }
   };
 
@@ -169,12 +233,72 @@ const Dashboard = () => {
               ${wallet?.balance?.toFixed(2) || "0.00"}
             </div>
             <div className="flex gap-4 mt-4">
-              <Button variant="hero" size="sm">
-                Deposit Funds
-              </Button>
-              <Button variant="outline" size="sm">
-                Withdraw
-              </Button>
+              <Dialog open={depositDialogOpen} onOpenChange={setDepositDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="hero" size="sm">
+                    Deposit Funds
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Deposit Funds</DialogTitle>
+                    <DialogDescription>
+                      Submit a deposit request. Admin approval required.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="deposit-amount">Amount</Label>
+                      <Input
+                        id="deposit-amount"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={depositAmount}
+                        onChange={(e) => setDepositAmount(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleDeposit}>Submit Request</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              
+              <Dialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    Withdraw
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Withdraw Funds</DialogTitle>
+                    <DialogDescription>
+                      Submit a withdrawal request. Admin approval required.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="withdraw-amount">Amount</Label>
+                      <Input
+                        id="withdraw-amount"
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={withdrawAmount}
+                        onChange={(e) => setWithdrawAmount(e.target.value)}
+                      />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Available balance: ${wallet?.balance?.toFixed(2) || '0.00'}
+                    </p>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleWithdraw}>Submit Request</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </CardContent>
         </Card>
