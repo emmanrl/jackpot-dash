@@ -8,11 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
-interface PaymentProvider {
-  id: string;
-  provider: string;
-  is_enabled: boolean;
-}
 
 interface DepositDialogProps {
   open: boolean;
@@ -23,7 +18,7 @@ interface DepositDialogProps {
 export default function DepositDialog({ open, onOpenChange, userEmail }: DepositDialogProps) {
   const [amount, setAmount] = useState("");
   const [selectedProvider, setSelectedProvider] = useState<string>("");
-  const [providers, setProviders] = useState<PaymentProvider[]>([]);
+  const [providers, setProviders] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingProviders, setLoadingProviders] = useState(true);
 
@@ -35,18 +30,13 @@ export default function DepositDialog({ open, onOpenChange, userEmail }: Deposit
 
   const fetchProviders = async () => {
     try {
-      const { data, error } = await supabase
-        .from('payment_settings')
-        .select('id, provider, is_enabled')
-        .eq('is_enabled', true);
-
+      const { data, error } = await supabase.functions.invoke('get-payment-providers');
       if (error) throw error;
-
-      setProviders(data || []);
-      if (data && data.length > 0) {
-        setSelectedProvider(data[0].provider);
-      }
+      const list: string[] = (data?.providers || []).map((p: string) => p);
+      setProviders(list);
+      if (list.length > 0) setSelectedProvider(list[0]);
     } catch (error: any) {
+      console.error('Providers error:', error);
       toast.error("Failed to load payment providers");
     } finally {
       setLoadingProviders(false);
@@ -141,13 +131,13 @@ export default function DepositDialog({ open, onOpenChange, userEmail }: Deposit
                 disabled={loading}
               >
                 {providers.map((provider) => (
-                  <div key={provider.id} className="flex items-center space-x-2">
-                    <RadioGroupItem value={provider.provider} id={provider.provider} />
+                  <div key={provider} className="flex items-center space-x-2">
+                    <RadioGroupItem value={provider} id={provider} />
                     <Label 
-                      htmlFor={provider.provider} 
+                      htmlFor={provider} 
                       className="capitalize cursor-pointer"
                     >
-                      {provider.provider}
+                      {provider}
                     </Label>
                   </div>
                 ))}
