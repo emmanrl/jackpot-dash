@@ -73,18 +73,52 @@ export default function DepositDialog({ open, onOpenChange, userEmail }: Deposit
         }
       });
 
-      if (error) throw error;
-
-      if (data.paymentUrl) {
-        // Redirect to payment gateway
-        window.location.href = data.paymentUrl;
-      } else {
-        throw new Error("Failed to get payment URL");
+      if (error) {
+        // Extract error message from edge function response
+        const errorMsg = error.message || "Failed to initiate payment";
+        console.error('Deposit error:', error);
+        
+        // Display user-friendly error with retry guidance
+        if (errorMsg.includes("Invalid key") || errorMsg.includes("authentication")) {
+          toast.error("Payment gateway configuration error. Please contact support or try again later.");
+        } else if (errorMsg.includes("not configured") || errorMsg.includes("disabled")) {
+          toast.error("Payment provider is currently unavailable. Please try another provider or contact support.");
+        } else {
+          toast.error(errorMsg + ". Please try again or contact support if the issue persists.");
+        }
+        setLoading(false);
+        return;
       }
+
+      if (!data?.success || !data?.paymentUrl) {
+        const errorMsg = data?.error || "Failed to get payment URL";
+        console.error('Payment URL error:', errorMsg);
+        
+        // Display user-friendly error with retry guidance
+        if (errorMsg.includes("Invalid key") || errorMsg.includes("authentication")) {
+          toast.error("Payment gateway configuration error. Please contact support or try again later.");
+        } else {
+          toast.error(errorMsg + ". Please try again or contact support if the issue persists.");
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Redirect to payment gateway
+      window.location.href = data.paymentUrl;
 
     } catch (error: any) {
       console.error('Deposit error:', error);
-      toast.error(error.message || "Failed to initiate payment");
+      const errorMsg = error.message || "Failed to initiate payment";
+      
+      // Display user-friendly error with retry guidance
+      if (errorMsg.includes("Invalid key") || errorMsg.includes("authentication")) {
+        toast.error("Payment gateway configuration error. Please contact support or try again later.");
+      } else if (errorMsg.includes("not configured") || errorMsg.includes("disabled")) {
+        toast.error("Payment provider is currently unavailable. Please try another provider or contact support.");
+      } else {
+        toast.error(errorMsg + ". Please try again or contact support if the issue persists.");
+      }
       setLoading(false);
     }
   };

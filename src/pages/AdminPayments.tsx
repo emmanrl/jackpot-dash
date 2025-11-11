@@ -27,8 +27,12 @@ interface AdminPaymentsProps {
 }
 
 const paystackSchema = z.object({
-  public_key: z.string().min(1, "Public key is required").startsWith("pk_", "Must start with pk_"),
-  secret_key: z.string().min(1, "Secret key is required").startsWith("sk_", "Must start with sk_"),
+  public_key: z.string()
+    .min(1, "Public key is required")
+    .regex(/^pk_(test|live)_[a-zA-Z0-9]+$/, "Invalid Paystack public key format. Must be pk_test_* or pk_live_*"),
+  secret_key: z.string()
+    .min(1, "Secret key is required")
+    .regex(/^sk_(test|live)_[a-zA-Z0-9]+$/, "Invalid Paystack secret key format. Must be sk_test_* or sk_live_*"),
 });
 
 type PaystackFormData = z.infer<typeof paystackSchema>;

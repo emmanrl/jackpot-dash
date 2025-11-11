@@ -92,8 +92,13 @@ serve(async (req) => {
 
       const paystackData = await paystackResponse.json();
       
+      console.log('Paystack response:', paystackData);
+      
       if (!paystackData.status) {
-        throw new Error(paystackData.message || 'Failed to initialize Paystack payment');
+        // Extract detailed error message from Paystack
+        const errorMessage = paystackData.message || 'Failed to initialize Paystack payment';
+        console.error('Paystack error:', errorMessage);
+        throw new Error(errorMessage);
       }
 
       paymentUrl = paystackData.data.authorization_url;
