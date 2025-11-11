@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
+import Leaderboard from "./pages/Leaderboard";
 import Statistics from "./pages/Statistics";
 import TransactionHistory from "./pages/TransactionHistory";
 import NotFound from "./pages/NotFound";
@@ -64,6 +65,7 @@ const App = () => (
           <Route path="/payment/callback" element={<PaymentCallback />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/statistics" element={<ProtectedStatistics />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/transactions" element={<TransactionHistory />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/profile" element={<Profile />} />

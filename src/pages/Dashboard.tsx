@@ -14,6 +14,7 @@ import DepositDialog from "@/components/DepositDialog";
 import TicketPurchaseDialog from "@/components/TicketPurchaseDialog";
 import DrawDetailsModal from "@/components/DrawDetailsModal";
 import TicketCard from "@/components/TicketCard";
+import WinCelebrationModal from "@/components/WinCelebrationModal";
 
 interface WalletData {
   balance: number;
@@ -24,6 +25,7 @@ interface TicketData {
   ticket_number: string;
   purchase_price: number;
   purchased_at: string;
+  jackpot_id: string;
   jackpots: {
     name: string;
   };
@@ -36,6 +38,7 @@ interface WinnerData {
   total_participants: number;
   total_pool_amount: number;
   ticket_id?: string;
+  jackpot_id: string;
   jackpots: {
     name: string;
   };
@@ -57,6 +60,11 @@ const Dashboard = () => {
   const [activeJackpots, setActiveJackpots] = useState<any[]>([]);
   const [selectedWin, setSelectedWin] = useState<WinnerData | null>(null);
   const [drawDetailsOpen, setDrawDetailsOpen] = useState(false);
+  const [expandedJackpots, setExpandedJackpots] = useState<Set<string>>(new Set());
+  const [celebrationWin, setCelebrationWin] = useState<{
+    prizeAmount: number;
+    jackpotName: string;
+  } | null>(null);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -106,11 +114,11 @@ const Dashboard = () => {
           ticket_number,
           purchase_price,
           purchased_at,
+          jackpot_id,
           jackpots (name)
         `)
         .eq("user_id", userId)
-        .order("purchased_at", { ascending: false })
-        .limit(10);
+        .order("purchased_at", { ascending: false });
 
       if (ticketsError) throw ticketsError;
       setTickets(ticketsData || []);
@@ -125,6 +133,7 @@ const Dashboard = () => {
           total_participants,
           total_pool_amount,
           ticket_id,
+          jackpot_id,
           jackpots (name)
         `)
         .eq("user_id", userId)
@@ -132,6 +141,20 @@ const Dashboard = () => {
 
       if (winsError) throw winsError;
       setWins(winsData || []);
+
+      // Check for new wins to celebrate
+      if (winsData && winsData.length > 0) {
+        const latestWin = winsData[0];
+        const winTime = new Date(latestWin.claimed_at).getTime();
+        const now = Date.now();
+        // If win is within last 5 seconds, show celebration
+        if (now - winTime < 5000) {
+          setCelebrationWin({
+            prizeAmount: Number(latestWin.prize_amount),
+            jackpotName: latestWin.jackpots.name,
+          });
+        }
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to fetch user data");
     }
@@ -214,6 +237,15 @@ const Dashboard = () => {
         });
 
       if (error) throw error;
+
+      // Create notification for withdrawal placement
+      await supabase.from('notifications').insert({
+        user_id: user?.id,
+        type: 'withdrawal_placed',
+        title: '📤 Withdrawal Request Submitted',
+        message: `Your withdrawal request of ₦${amount.toFixed(2)} is being processed. You'll be notified once approved.`,
+        is_read: false
+      });
 
       toast.success("Withdrawal request submitted. Awaiting admin approval.");
       setWithdrawAmount("");
@@ -410,7 +442,12 @@ const Dashboard = () => {
                     acc[jackpotName].push(ticket);
                     return acc;
                   }, {} as Record<string, TicketData[]>)
-                ).map(([jackpotName, jackpotTickets]) => (
+                ).map(([jackpotName, jackpotTickets]) => {
+                  const jackpotId = jackpotTickets[0].jackpot_id;
+                  const isExpanded = expandedJackpots.has(jackpotId);
+                  const displayedTickets = isExpanded ? jackpotTickets : jackpotTickets.slice(0, 2);
+                  
+                  return (
                   <div key={jackpotName} className="space-y-3">
                     <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
                       <Trophy className="w-5 h-5" />
@@ -420,7 +457,7 @@ const Dashboard = () => {
                       </span>
                     </h3>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      {jackpotTickets.map((ticket) => (
+                      {displayedTickets.map((ticket) => (
                         <TicketCard
                           key={ticket.id}
                           ticketId={ticket.id}
@@ -431,8 +468,27 @@ const Dashboard = () => {
                         />
                       ))}
                     </div>
+                    {jackpotTickets.length > 2 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          const newExpanded = new Set(expandedJackpots);
+                          if (isExpanded) {
+                            newExpanded.delete(jackpotId);
+                          } else {
+                            newExpanded.add(jackpotId);
+                          }
+                          setExpandedJackpots(newExpanded);
+                        }}
+                      >
+                        {isExpanded ? 'Show Less' : `Show ${jackpotTickets.length - 2} More`}
+                      </Button>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
@@ -572,6 +628,16 @@ const Dashboard = () => {
           open={drawDetailsOpen}
           onOpenChange={setDrawDetailsOpen}
           win={selectedWin}
+          userTickets={tickets.filter(t => t.jackpot_id === selectedWin.jackpot_id)}
+        />
+      )}
+
+      {celebrationWin && (
+        <WinCelebrationModal
+          open={!!celebrationWin}
+          onOpenChange={(open) => !open && setCelebrationWin(null)}
+          prizeAmount={celebrationWin.prizeAmount}
+          jackpotName={celebrationWin.jackpotName}
         />
       )}
     </div>

@@ -31,7 +31,7 @@ serve(async (req) => {
 
     let nextJackpotNumber = (maxJackpot?.jackpot_number || 0) + 1;
 
-    // 5-minute jackpot (runs every 30 minutes)
+    // 5-minute jackpot (20 times per day - every 72 minutes)
     const { data: existing5min } = await supabase
       .from('jackpots')
       .select('id')
@@ -41,16 +41,64 @@ serve(async (req) => {
 
     if (!existing5min) {
       const nextDraw5min = new Date(now);
-      nextDraw5min.setMinutes(Math.ceil(now.getMinutes() / 30) * 30, 0, 0);
-      if (nextDraw5min <= now) nextDraw5min.setMinutes(nextDraw5min.getMinutes() + 30);
+      nextDraw5min.setMinutes(nextDraw5min.getMinutes() + 72, 0, 0);
 
       jackpotsToCreate.push({
         name: '⚡ Quick Win - 5 Minutes',
-        description: 'Fast jackpot every 30 minutes!',
+        description: 'Fast jackpot 20 times daily!',
         frequency: '5mins',
         ticket_price: 50.00,
         prize_pool: 0,
         next_draw: nextDraw5min.toISOString(),
+        status: 'active',
+        jackpot_number: nextJackpotNumber++
+      });
+    }
+
+    // 30-minute jackpot (10 times per day - every 2.4 hours)
+    const { data: existing30min } = await supabase
+      .from('jackpots')
+      .select('id')
+      .eq('frequency', '30mins')
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (!existing30min) {
+      const nextDraw30min = new Date(now);
+      nextDraw30min.setHours(nextDraw30min.getHours() + 2);
+      nextDraw30min.setMinutes(nextDraw30min.getMinutes() + 24, 0, 0);
+
+      jackpotsToCreate.push({
+        name: '💨 Speed Draw - 30 Minutes',
+        description: '10 daily draws with bigger prizes!',
+        frequency: '30mins',
+        ticket_price: 100.00,
+        prize_pool: 0,
+        next_draw: nextDraw30min.toISOString(),
+        status: 'active',
+        jackpot_number: nextJackpotNumber++
+      });
+    }
+
+    // 1-hour jackpot (6 times per day - every 4 hours)
+    const { data: existing1h } = await supabase
+      .from('jackpots')
+      .select('id')
+      .eq('frequency', '1hour')
+      .eq('status', 'active')
+      .maybeSingle();
+
+    if (!existing1h) {
+      const nextDraw1h = new Date(now);
+      nextDraw1h.setHours(nextDraw1h.getHours() + 4, 0, 0, 0);
+
+      jackpotsToCreate.push({
+        name: '⏰ Hourly Jackpot',
+        description: '6 draws daily, premium prizes!',
+        frequency: '1hour',
+        ticket_price: 150.00,
+        prize_pool: 0,
+        next_draw: nextDraw1h.toISOString(),
         status: 'active',
         jackpot_number: nextJackpotNumber++
       });

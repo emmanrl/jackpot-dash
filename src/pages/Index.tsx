@@ -33,6 +33,28 @@ const Index = () => {
           .single();
         
         if (wallet) setWalletBalance(Number(wallet.balance));
+
+        // Set up real-time subscription for jackpots
+        const channel = supabase
+          .channel('jackpot-updates')
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'jackpots',
+            },
+            (payload) => {
+              console.log('Jackpot updated:', payload);
+              // Refresh the active jackpots display
+              window.location.reload();
+            }
+          )
+          .subscribe();
+
+        return () => {
+          supabase.removeChannel(channel);
+        };
       }
     };
     
@@ -79,8 +101,8 @@ const Index = () => {
       <TopNav />
       {isLoggedIn ? (
         <>
-          <Hero />
           <ActiveJackpots onBuyTicket={handleBuyTicket} />
+          <Hero />
           <HowItWorks />
           <RecentWinners />
         </>

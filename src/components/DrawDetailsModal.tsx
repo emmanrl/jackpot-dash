@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Trophy, Users, DollarSign, Share2 } from "lucide-react";
+import { Trophy, Users, DollarSign, Share2, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import WinShareCard from "./WinShareCard";
 import { useState } from "react";
@@ -17,11 +17,13 @@ interface DrawDetailsModalProps {
     ticket_id?: string;
     jackpots: {
       name: string;
+      id?: string;
     };
   };
+  userTickets?: Array<{ purchase_price: number }>;
 }
 
-export default function DrawDetailsModal({ open, onOpenChange, win }: DrawDetailsModalProps) {
+export default function DrawDetailsModal({ open, onOpenChange, win, userTickets = [] }: DrawDetailsModalProps) {
   const [showShareCard, setShowShareCard] = useState(false);
 
   const handleShare = () => {
@@ -29,6 +31,7 @@ export default function DrawDetailsModal({ open, onOpenChange, win }: DrawDetail
   };
 
   const winnerShare = (win.prize_amount / win.total_pool_amount) * 100;
+  const userSpent = userTickets.reduce((sum, ticket) => sum + Number(ticket.purchase_price), 0);
 
   return (
     <>
@@ -80,6 +83,28 @@ export default function DrawDetailsModal({ open, onOpenChange, win }: DrawDetail
                   ₦{Number(win.total_pool_amount).toFixed(0)}
                 </p>
               </div>
+
+              {userTickets.length > 0 && (
+                <>
+                  <div className="bg-card border border-border rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Ticket className="w-4 h-4 text-primary" />
+                      <p className="text-sm font-medium">Your Tickets</p>
+                    </div>
+                    <p className="text-2xl font-bold text-primary">{userTickets.length}</p>
+                  </div>
+
+                  <div className="bg-card border border-border rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <DollarSign className="w-4 h-4 text-primary" />
+                      <p className="text-sm font-medium">You Spent</p>
+                    </div>
+                    <p className="text-2xl font-bold text-primary">
+                      ₦{userSpent.toFixed(2)}
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Distribution Info */}

@@ -454,6 +454,7 @@ export type Database = {
         Args: { p_amount: number; p_user_id: string }
         Returns: undefined
       }
+      notify_upcoming_draws: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"
