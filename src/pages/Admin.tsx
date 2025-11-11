@@ -24,6 +24,7 @@ export default function Admin() {
   const [users, setUsers] = useState<any[]>([]);
   const [processing, setProcessing] = useState<string | null>(null);
   const [paymentSettings, setPaymentSettings] = useState<any[]>([]);
+  const [userEmailMap, setUserEmailMap] = useState<Record<string, string>>({});
 
   // Jackpot form state
   const [jackpotForm, setJackpotForm] = useState({
@@ -88,27 +89,62 @@ export default function Admin() {
   const fetchTransactions = async () => {
     const { data, error } = await supabase
       .from('transactions')
-      .select('*, profiles(email)')
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (error) {
       toast.error('Failed to fetch transactions');
       return;
     }
+
     setTransactions(data || []);
+
+    // Build email map for user ids
+    const userIds = Array.from(new Set((data || []).map((t: any) => t.user_id)));
+    if (userIds.length) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .in('id', userIds);
+      const map: Record<string, string> = {};
+      (profiles || []).forEach((p: any) => { map[p.id] = p.email; });
+      setUserEmailMap(map);
+    } else {
+      setUserEmailMap({});
+    }
   };
 
   const fetchUsers = async () => {
-    const { data, error } = await supabase
+    const { data: profiles, error } = await supabase
       .from('profiles')
-      .select('*, wallets(balance), user_roles(role)')
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (error) {
       toast.error('Failed to fetch users');
       return;
     }
-    setUsers(data || []);
+
+    const ids = (profiles || []).map((p: any) => p.id);
+    let walletMap: Record<string, number> = {};
+    let roleMap: Record<string, string> = {};
+
+    if (ids.length) {
+      const [{ data: wallets }, { data: roles }] = await Promise.all([
+        supabase.from('wallets').select('user_id, balance').in('user_id', ids),
+        supabase.from('user_roles').select('user_id, role').in('user_id', ids),
+      ]);
+      (wallets || []).forEach((w: any) => { walletMap[w.user_id] = Number(w.balance) || 0; });
+      (roles || []).forEach((r: any) => { roleMap[r.user_id] = r.role; });
+    }
+
+    const combined = (profiles || []).map((p: any) => ({
+      ...p,
+      balance: walletMap[p.id] ?? 0,
+      role: roleMap[p.id] ?? 'user',
+    }));
+
+    setUsers(combined);
   };
 
   const fetchPaymentSettings = async () => {
@@ -386,7 +422,7 @@ export default function Admin() {
                   <TableBody>
                     {transactions.filter(t => t.status === 'pending').map((tx) => (
                       <TableRow key={tx.id}>
-                        <TableCell>{tx.profiles?.email}</TableCell>
+                        <TableCell>{userEmailMap[tx.user_id] || '—'}</TableCell>
                         <TableCell className="capitalize">{tx.type}</TableCell>
                         <TableCell>₦{tx.amount}</TableCell>
                         <TableCell>
@@ -439,10 +475,10 @@ export default function Admin() {
                       <TableRow key={user.id}>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>{user.full_name || 'N/A'}</TableCell>
-                        <TableCell>₦{user.wallets?.[0]?.balance || 0}</TableCell>
+                        <TableCell>₦{user.balance}</TableCell>
                         <TableCell>
-                          <Badge variant={user.user_roles?.[0]?.role === 'admin' ? 'default' : 'secondary'}>
-                            {user.user_roles?.[0]?.role || 'user'}
+                          <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                            {user.role || 'user'}
                           </Badge>
                         </TableCell>
                         <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>

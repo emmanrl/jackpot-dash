@@ -12,6 +12,7 @@ import Admin from "./pages/Admin";
 import Statistics from "./pages/Statistics";
 import TransactionHistory from "./pages/TransactionHistory";
 import NotFound from "./pages/NotFound";
+import PaymentCallback from "./pages/PaymentCallback";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/payment/callback" element={<PaymentCallback />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/statistics" element={<ProtectedStatistics />} />
           <Route path="/transactions" element={<TransactionHistory />} />
