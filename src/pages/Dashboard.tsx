@@ -244,6 +244,18 @@ const Dashboard = () => {
                 JackpotWin
               </span>
             </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="rounded-full"
+              onClick={() => navigate("/settings")}
+            >
+              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-sm font-bold text-primary">
+                  {user?.email?.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            </Button>
           </div>
         </div>
       </header>

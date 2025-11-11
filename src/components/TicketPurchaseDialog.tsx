@@ -107,25 +107,30 @@ export default function TicketPurchaseDialog({
             </p>
           </div>
 
-          <div className="rounded-lg bg-muted/50 p-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Ticket Price:</span>
-              <span className="font-medium">₦{ticketPrice.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>Quantity:</span>
-              <span className="font-medium">{quantityNum}</span>
-            </div>
-            <div className="flex justify-between text-sm border-t border-border pt-2">
-              <span className="font-semibold">Total Cost:</span>
-              <span className="font-bold text-primary">₦{totalCost.toFixed(2)}</span>
-            </div>
+          {/* Total Amount - Prominent Display */}
+          <div className="rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 border-2 border-primary/40 p-6 text-center">
+            <p className="text-sm text-muted-foreground mb-2">Total Amount</p>
+            <p className="text-5xl font-bold text-primary gold-glow">
+              ₦{totalCost.toFixed(2)}
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              {quantityNum} ticket{quantityNum > 1 ? 's' : ''} × ₦{ticketPrice.toFixed(2)}
+            </p>
+          </div>
+
+          <div className="rounded-lg bg-muted/30 p-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span>Your Balance:</span>
-              <span className={walletBalance < totalCost ? "text-destructive" : "text-primary"}>
+              <span className={walletBalance < totalCost ? "text-destructive font-bold" : "text-primary font-medium"}>
                 ₦{walletBalance.toFixed(2)}
               </span>
             </div>
+            {walletBalance >= totalCost && (
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>Balance After:</span>
+                <span>₦{(walletBalance - totalCost).toFixed(2)}</span>
+              </div>
+            )}
           </div>
 
           {!canAfford && (

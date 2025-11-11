@@ -64,6 +64,7 @@ export type Database = {
           expires_at: string | null
           frequency: string
           id: string
+          jackpot_number: number | null
           name: string
           next_draw: string | null
           prize_pool: number
@@ -78,6 +79,7 @@ export type Database = {
           expires_at?: string | null
           frequency: string
           id?: string
+          jackpot_number?: number | null
           name: string
           next_draw?: string | null
           prize_pool?: number
@@ -92,6 +94,7 @@ export type Database = {
           expires_at?: string | null
           frequency?: string
           id?: string
+          jackpot_number?: number | null
           name?: string
           next_draw?: string | null
           prize_pool?: number
@@ -204,6 +207,7 @@ export type Database = {
           purchase_price: number
           purchased_at: string
           ticket_number: string
+          ticket_sequence: number | null
           user_id: string
         }
         Insert: {
@@ -212,6 +216,7 @@ export type Database = {
           purchase_price: number
           purchased_at?: string
           ticket_number: string
+          ticket_sequence?: number | null
           user_id: string
         }
         Update: {
@@ -220,6 +225,7 @@ export type Database = {
           purchase_price?: number
           purchased_at?: string
           ticket_number?: string
+          ticket_sequence?: number | null
           user_id?: string
         }
         Relationships: [
@@ -406,6 +412,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_next_ticket_sequence: {
+        Args: { p_jackpot_id: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

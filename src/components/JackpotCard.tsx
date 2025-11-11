@@ -9,9 +9,10 @@ interface JackpotCardProps {
   ticketPrice: string;
   endTime: Date;
   category: "hourly" | "daily" | "weekly" | "monthly";
+  onBuyClick?: () => void;
 }
 
-const JackpotCard = ({ title, prize, ticketPrice, endTime, category }: JackpotCardProps) => {
+const JackpotCard = ({ title, prize, ticketPrice, endTime, category, onBuyClick }: JackpotCardProps) => {
   const [timeLeft, setTimeLeft] = useState("");
 
   useEffect(() => {
@@ -84,7 +85,7 @@ const JackpotCard = ({ title, prize, ticketPrice, endTime, category }: JackpotCa
       </CardContent>
 
       <CardFooter className="relative">
-        <Button variant="prize" className="w-full" size="lg">
+        <Button variant="prize" className="w-full" size="lg" onClick={onBuyClick}>
           <Ticket className="w-4 h-4" />
           Buy Tickets
         </Button>

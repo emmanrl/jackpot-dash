@@ -63,16 +63,27 @@ serve(async (req) => {
       throw new Error('Insufficient balance');
     }
 
-    // Generate ticket numbers
+    // Get the jackpot number
+    const jackpotNumber = jackpot.jackpot_number || 1;
+    
+    // Generate ticket numbers with sequential format
     const tickets = [];
     for (let i = 0; i < quantity; i++) {
-      const ticketNumber = `${jackpot.frequency.substring(0, 1).toUpperCase()}${Date.now()}${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+      // Get next sequence number
+      const { data: seqData, error: seqError } = await supabase
+        .rpc('get_next_ticket_sequence', { p_jackpot_id: jackpotId });
+      
+      if (seqError) throw seqError;
+      
+      const ticketSequence = seqData;
+      const ticketNumber = `${String(ticketSequence).padStart(3, '0')}-${String(jackpotNumber).padStart(3, '0')}`;
       
       tickets.push({
         user_id: user.id,
         jackpot_id: jackpotId,
         ticket_number: ticketNumber,
-        purchase_price: jackpot.ticket_price
+        purchase_price: jackpot.ticket_price,
+        ticket_sequence: ticketSequence
       });
     }
 

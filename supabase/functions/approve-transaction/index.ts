@@ -113,6 +113,37 @@ serve(async (req) => {
       }
 
       console.log(`Updated wallet balance for user ${transaction.user_id}: ${newBalance}`);
+      
+      // Create notification
+      const notificationType = transaction.type === 'deposit' ? 'deposit_approved' : 'withdrawal_approved';
+      const notificationTitle = transaction.type === 'deposit' 
+        ? '💰 Deposit Approved' 
+        : '✅ Withdrawal Approved';
+      const notificationMessage = transaction.type === 'deposit'
+        ? `Your deposit of ₦${amount.toFixed(2)} has been approved and added to your wallet.`
+        : `Your withdrawal of ₦${amount.toFixed(2)} has been approved and processed.`;
+      
+      await supabase.from('notifications').insert({
+        user_id: transaction.user_id,
+        type: notificationType,
+        title: notificationTitle,
+        message: notificationMessage,
+        is_read: false
+      });
+    } else if (action === 'reject') {
+      // Create rejection notification
+      const notificationTitle = transaction.type === 'deposit' 
+        ? '❌ Deposit Rejected' 
+        : '❌ Withdrawal Rejected';
+      const notificationMessage = `Your ${transaction.type} request of ₦${parseFloat(transaction.amount).toFixed(2)} has been rejected.${admin_note ? ` Reason: ${admin_note}` : ''}`;
+      
+      await supabase.from('notifications').insert({
+        user_id: transaction.user_id,
+        type: `${transaction.type}_rejected`,
+        title: notificationTitle,
+        message: notificationMessage,
+        is_read: false
+      });
     }
 
     return new Response(

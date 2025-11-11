@@ -11,7 +11,11 @@ interface Jackpot {
   frequency: string;
 }
 
-const ActiveJackpots = () => {
+interface ActiveJackpotsProps {
+  onBuyTicket?: (jackpot: Jackpot) => void;
+}
+
+const ActiveJackpots = ({ onBuyTicket }: ActiveJackpotsProps = {}) => {
   const [jackpots, setJackpots] = useState<Jackpot[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -78,6 +82,7 @@ const ActiveJackpots = () => {
                 ticketPrice={formatTicketPrice(jackpot.ticket_price)}
                 endTime={jackpot.next_draw ? new Date(jackpot.next_draw) : new Date(Date.now() + 24 * 60 * 60 * 1000)}
                 category={getCategoryFromFrequency(jackpot.frequency)}
+                onBuyClick={onBuyTicket ? () => onBuyTicket(jackpot) : undefined}
               />
             ))}
           </div>

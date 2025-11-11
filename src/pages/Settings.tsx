@@ -5,15 +5,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Sparkles, Moon, Sun } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Sparkles, Moon, Sun, Plus, Trash2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import TopNav from "@/components/TopNav";
 import Footer from "@/components/Footer";
+
+interface WithdrawalAccount {
+  id: string;
+  bank_name: string;
+  account_number: string;
+  account_name: string;
+  is_default: boolean;
+}
 
 const Settings = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [accounts, setAccounts] = useState<WithdrawalAccount[]>([]);
+  const [addAccountOpen, setAddAccountOpen] = useState(false);
+  const [bankName, setBankName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountName, setAccountName] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -22,6 +38,8 @@ const Settings = () => {
         navigate("/auth");
         return;
       }
+      setUserId(session.user.id);
+      await fetchWithdrawalAccounts(session.user.id);
       setLoading(false);
     };
     checkUser();
@@ -30,6 +48,96 @@ const Settings = () => {
     const currentTheme = document.documentElement.classList.contains("dark") ? "dark" : "light";
     setTheme(currentTheme);
   }, [navigate]);
+
+  const fetchWithdrawalAccounts = async (uid: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("withdrawal_accounts")
+        .select("*")
+        .eq("user_id", uid)
+        .order("is_default", { ascending: false });
+
+      if (error) throw error;
+      setAccounts(data || []);
+    } catch (error: any) {
+      console.error("Failed to fetch accounts:", error);
+    }
+  };
+
+  const handleAddAccount = async () => {
+    if (!userId) return;
+    
+    try {
+      if (!bankName || !accountNumber || !accountName) {
+        toast.error("Please fill all fields");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("withdrawal_accounts")
+        .insert({
+          user_id: userId,
+          bank_name: bankName,
+          account_number: accountNumber,
+          account_name: accountName,
+          is_default: accounts.length === 0
+        });
+
+      if (error) throw error;
+
+      toast.success("Withdrawal account added");
+      setBankName("");
+      setAccountNumber("");
+      setAccountName("");
+      setAddAccountOpen(false);
+      await fetchWithdrawalAccounts(userId);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add account");
+    }
+  };
+
+  const handleDeleteAccount = async (accountId: string) => {
+    if (!userId) return;
+    
+    try {
+      const { error } = await supabase
+        .from("withdrawal_accounts")
+        .delete()
+        .eq("id", accountId);
+
+      if (error) throw error;
+
+      toast.success("Account deleted");
+      await fetchWithdrawalAccounts(userId);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete account");
+    }
+  };
+
+  const handleSetDefault = async (accountId: string) => {
+    if (!userId) return;
+    
+    try {
+      // Unset all defaults
+      await supabase
+        .from("withdrawal_accounts")
+        .update({ is_default: false })
+        .eq("user_id", userId);
+
+      // Set new default
+      const { error } = await supabase
+        .from("withdrawal_accounts")
+        .update({ is_default: true })
+        .eq("id", accountId);
+
+      if (error) throw error;
+
+      toast.success("Default account updated");
+      await fetchWithdrawalAccounts(userId);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update default");
+    }
+  };
 
   const handleThemeToggle = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
@@ -84,7 +192,101 @@ const Settings = () => {
               </div>
             </div>
 
-            <div className="pt-6 space-y-3">
+            <div className="border-t pt-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-base">Withdrawal Accounts</Label>
+                <Dialog open={addAccountOpen} onOpenChange={setAddAccountOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Account
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Add Withdrawal Account</DialogTitle>
+                      <DialogDescription>
+                        Add a bank account for withdrawals
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label>Bank Name</Label>
+                        <Input
+                          value={bankName}
+                          onChange={(e) => setBankName(e.target.value)}
+                          placeholder="Enter bank name"
+                        />
+                      </div>
+                      <div>
+                        <Label>Account Number</Label>
+                        <Input
+                          value={accountNumber}
+                          onChange={(e) => setAccountNumber(e.target.value)}
+                          placeholder="Enter account number"
+                        />
+                      </div>
+                      <div>
+                        <Label>Account Name</Label>
+                        <Input
+                          value={accountName}
+                          onChange={(e) => setAccountName(e.target.value)}
+                          placeholder="Enter account name"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={handleAddAccount}>Add Account</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              {accounts.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No withdrawal accounts added yet</p>
+              ) : (
+                <div className="space-y-2">
+                  {accounts.map((account) => (
+                    <div
+                      key={account.id}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-muted/30"
+                    >
+                      <div className="flex-1">
+                        <p className="font-medium">{account.bank_name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {account.account_number} - {account.account_name}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {account.is_default ? (
+                          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Default
+                          </span>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleSetDefault(account.id)}
+                          >
+                            Set Default
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteAccount(account.id)}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="border-t pt-6 space-y-3">
               <Button
                 variant="outline"
                 className="w-full justify-start"

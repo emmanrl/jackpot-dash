@@ -159,6 +159,20 @@ serve(async (req) => {
       console.error('Failed to create transaction record:', txError);
     }
 
+    // Create winner notification
+    await supabase.from('notifications').insert({
+      user_id: winningTicket.user_id,
+      type: 'jackpot_win',
+      title: '🎉 Congratulations! You Won!',
+      message: `You won ₦${prizeAmount.toFixed(2)} in ${jackpot.name}! The prize has been added to your wallet.`,
+      is_read: false,
+      data: {
+        jackpot_id: jackpot_id,
+        draw_id: draw.id,
+        prize_amount: prizeAmount
+      }
+    });
+
     // Update jackpot status
     const { error: updateJackpotError } = await supabase
       .from('jackpots')
