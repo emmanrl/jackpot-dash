@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Sparkles } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import AdminPayments from "./AdminPayments";
+import TransactionDetailDrawer from "@/components/TransactionDetailDrawer";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -25,6 +26,11 @@ export default function Admin() {
   const [processing, setProcessing] = useState<string | null>(null);
   const [paymentSettings, setPaymentSettings] = useState<any[]>([]);
   const [userEmailMap, setUserEmailMap] = useState<Record<string, string>>({});
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [userFilter, setUserFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [activeUserCount, setActiveUserCount] = useState(0);
+  const [inactiveUserCount, setInactiveUserCount] = useState(0);
 
   // Jackpot form state
   const [jackpotForm, setJackpotForm] = useState({
@@ -128,6 +134,7 @@ export default function Admin() {
     const ids = (profiles || []).map((p: any) => p.id);
     let walletMap: Record<string, number> = {};
     let roleMap: Record<string, string> = {};
+    let authDataMap: Record<string, any> = {};
 
     if (ids.length) {
       const [{ data: wallets }, { data: roles }] = await Promise.all([
@@ -136,15 +143,53 @@ export default function Admin() {
       ]);
       (wallets || []).forEach((w: any) => { walletMap[w.user_id] = Number(w.balance) || 0; });
       (roles || []).forEach((r: any) => { roleMap[r.user_id] = r.role; });
+
+      // Fetch auth data for last_sign_in
+      const { data: authUsers } = await supabase.auth.admin.listUsers();
+      (authUsers?.users || []).forEach((u: any) => {
+        authDataMap[u.id] = {
+          last_sign_in_at: u.last_sign_in_at
+        };
+      });
     }
 
-    const combined = (profiles || []).map((p: any) => ({
-      ...p,
-      balance: walletMap[p.id] ?? 0,
-      role: roleMap[p.id] ?? 'user',
-    }));
+    // Fetch transactions for activity check
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const { data: recentTransactions } = await supabase
+      .from('transactions')
+      .select('user_id')
+      .gte('created_at', thirtyDaysAgo.toISOString());
+
+    const recentTxUserIds = new Set((recentTransactions || []).map((t: any) => t.user_id));
+
+    // Determine active status
+    let activeCount = 0;
+    let inactiveCount = 0;
+
+    const combined = (profiles || []).map((p: any) => {
+      const lastSignIn = authDataMap[p.id]?.last_sign_in_at;
+      const hasRecentTransaction = recentTxUserIds.has(p.id);
+      
+      const isActive = lastSignIn 
+        ? (new Date().getTime() - new Date(lastSignIn).getTime()) < (30 * 24 * 60 * 60 * 1000)
+        : hasRecentTransaction;
+
+      if (isActive) activeCount++;
+      else inactiveCount++;
+
+      return {
+        ...p,
+        balance: walletMap[p.id] ?? 0,
+        role: roleMap[p.id] ?? 'user',
+        isActive,
+        last_sign_in_at: lastSignIn
+      };
+    });
 
     setUsers(combined);
+    setActiveUserCount(activeCount);
+    setInactiveUserCount(inactiveCount);
   };
 
   const fetchPaymentSettings = async () => {
@@ -216,6 +261,7 @@ export default function Admin() {
       if (response.error) throw response.error;
 
       toast.success(`Transaction ${action}d successfully`);
+      setDrawerOpen(false);
       await fetchTransactions();
     } catch (error: any) {
       toast.error(`Failed to ${action} transaction: ${error.message}`);
@@ -223,6 +269,12 @@ export default function Admin() {
       setProcessing(null);
     }
   };
+
+  const filteredUsers = users.filter(user => {
+    if (userFilter === 'active') return user.isActive;
+    if (userFilter === 'inactive') return !user.isActive;
+    return true;
+  });
 
   const processDraw = async (jackpotId: string) => {
     try {
@@ -421,7 +473,14 @@ export default function Admin() {
                   </TableHeader>
                   <TableBody>
                     {transactions.filter(t => t.status === 'pending').map((tx) => (
-                      <TableRow key={tx.id}>
+                      <TableRow 
+                        key={tx.id} 
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => {
+                          setSelectedTransaction(tx);
+                          setDrawerOpen(true);
+                        }}
+                      >
                         <TableCell>{userEmailMap[tx.user_id] || '—'}</TableCell>
                         <TableCell className="capitalize">{tx.type}</TableCell>
                         <TableCell>₦{tx.amount}</TableCell>
@@ -432,18 +491,13 @@ export default function Admin() {
                         <TableCell className="space-x-2">
                           <Button
                             size="sm"
-                            onClick={() => approveTransaction(tx.id, 'approve')}
-                            disabled={processing === tx.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedTransaction(tx);
+                              setDrawerOpen(true);
+                            }}
                           >
-                            {processing === tx.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Approve'}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => approveTransaction(tx.id, 'reject')}
-                            disabled={processing === tx.id}
-                          >
-                            Reject
+                            View Details
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -457,7 +511,37 @@ export default function Admin() {
           <TabsContent value="users">
             <Card>
               <CardHeader>
-                <CardTitle>All Users</CardTitle>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>All Users</CardTitle>
+                    <CardDescription className="mt-2">
+                      Active: {activeUserCount} | Inactive: {inactiveUserCount}
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant={userFilter === 'all' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setUserFilter('all')}
+                    >
+                      All ({users.length})
+                    </Button>
+                    <Button
+                      variant={userFilter === 'active' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setUserFilter('active')}
+                    >
+                      Active ({activeUserCount})
+                    </Button>
+                    <Button
+                      variant={userFilter === 'inactive' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setUserFilter('inactive')}
+                    >
+                      Inactive ({inactiveUserCount})
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -467,11 +551,12 @@ export default function Admin() {
                       <TableHead>Name</TableHead>
                       <TableHead>Balance</TableHead>
                       <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead>Joined</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((user) => (
+                    {filteredUsers.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>{user.full_name || 'N/A'}</TableCell>
@@ -479,6 +564,11 @@ export default function Admin() {
                         <TableCell>
                           <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
                             {user.role || 'user'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={user.isActive ? 'default' : 'secondary'}>
+                            {user.isActive ? 'Active' : 'Inactive'}
                           </Badge>
                         </TableCell>
                         <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
@@ -498,6 +588,15 @@ export default function Admin() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <TransactionDetailDrawer
+        transaction={selectedTransaction}
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        onApprove={approveTransaction}
+        userEmail={selectedTransaction ? userEmailMap[selectedTransaction.user_id] : undefined}
+        processing={processing === selectedTransaction?.id}
+      />
     </div>
   );
 }
