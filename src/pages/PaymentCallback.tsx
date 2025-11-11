@@ -20,7 +20,7 @@ export default function PaymentCallback() {
         setStatus("error");
         setMessage("Missing payment reference.");
         toast.error("Missing payment reference.");
-        setTimeout(() => navigate("/dashboard"), 2000);
+        setTimeout(() => navigate("/"), 2000);
         return;
       }
 
@@ -36,14 +36,18 @@ export default function PaymentCallback() {
         setStatus("success");
         setMessage("Payment verified successfully. Funds added to your wallet.");
         toast.success("Deposit successful! Your wallet has been updated.");
+        
+        // Redirect to homepage with receipt modal
+        setTimeout(() => {
+          navigate(`/?receipt=true&reference=${reference}&amount=${data.amount || 0}`);
+        }, 1500);
       } catch (err: any) {
         console.error("Verification error:", err);
         const msg = err?.message || "Payment verification failed.";
         setStatus("error");
         setMessage(msg);
         toast.error(msg);
-      } finally {
-        setTimeout(() => navigate("/dashboard"), 2000);
+        setTimeout(() => navigate("/"), 2000);
       }
     };
 

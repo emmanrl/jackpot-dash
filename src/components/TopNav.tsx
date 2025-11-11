@@ -5,6 +5,7 @@ import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sparkles, LogOut, LayoutDashboard, Shield, User as UserIcon, Settings, Key } from "lucide-react";
+import NotificationBell from "@/components/NotificationBell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -98,7 +99,9 @@ const TopNav = () => {
           </div>
 
           {user ? (
-            <DropdownMenu>
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+              <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="gap-2 h-auto p-2">
                   <Avatar className="h-10 w-10 border-2 border-primary/20">
@@ -163,6 +166,7 @@ const TopNav = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           ) : (
             <div className="flex gap-2">
               <Button variant="ghost" onClick={() => navigate("/auth")}>

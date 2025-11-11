@@ -398,10 +398,11 @@ const Dashboard = () => {
                         ({jackpotTickets.length} ticket{jackpotTickets.length !== 1 ? 's' : ''})
                       </span>
                     </h3>
-                    <div className="grid gap-4">
+                    <div className="grid gap-3 sm:grid-cols-2">
                       {jackpotTickets.map((ticket) => (
                         <TicketCard
                           key={ticket.id}
+                          ticketId={ticket.id}
                           ticketNumber={ticket.ticket_number}
                           purchasePrice={Number(ticket.purchase_price)}
                           purchasedAt={ticket.purchased_at}
