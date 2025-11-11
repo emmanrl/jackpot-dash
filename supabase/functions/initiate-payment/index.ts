@@ -52,6 +52,29 @@ serve(async (req) => {
       throw new Error(`${provider} payment gateway is not configured or disabled`);
     }
 
+    // Sanitize and validate keys
+    const publicKey = String(settings.public_key || '').trim();
+    const secretKey = String(settings.secret_key || '').trim();
+    
+    // Server-side validation of key format
+    const pkOk = /^pk_(test|live)_[a-zA-Z0-9]+$/.test(publicKey);
+    const skOk = /^sk_(test|live)_[a-zA-Z0-9]+$/.test(secretKey);
+    
+    if (!pkOk || !skOk) {
+      console.error('Invalid key format:', { 
+        pkPrefix: publicKey.slice(0, 10) + '...', 
+        skPrefix: secretKey.slice(0, 10) + '...',
+        pkValid: pkOk,
+        skValid: skOk
+      });
+      throw new Error('Payment gateway key format is invalid. Please update keys in the admin panel.');
+    }
+    
+    console.log('Using Paystack keys:', { 
+      pkPrefix: publicKey.slice(0, 10) + '...', 
+      skPrefix: secretKey.slice(0, 10) + '...' 
+    });
+
     // Create transaction record
     const { data: transaction, error: txError } = await supabase
       .from('transactions')
@@ -75,7 +98,7 @@ serve(async (req) => {
       const paystackResponse = await fetch('https://api.paystack.co/transaction/initialize', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${settings.secret_key}`,
+          'Authorization': `Bearer ${secretKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

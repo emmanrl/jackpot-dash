@@ -56,7 +56,12 @@ function PaystackSettingCard({ setting, onUpdate, onToggle }: {
   const onSubmit = async (data: PaystackFormData) => {
     setIsSubmitting(true);
     try {
-      await onUpdate(setting.id, data);
+      // Trim whitespace from keys before saving
+      const normalized = {
+        public_key: data.public_key.trim(),
+        secret_key: data.secret_key.trim(),
+      };
+      await onUpdate(setting.id, normalized);
       toast.success(`${setting.provider} settings updated successfully`);
     } catch (error) {
       toast.error(`Failed to update ${setting.provider} settings`);

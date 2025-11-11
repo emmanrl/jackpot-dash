@@ -64,12 +64,15 @@ export default function DepositDialog({ open, onOpenChange, userEmail }: Deposit
         return;
       }
 
-      // Call edge function to initiate payment
+      // Call edge function to initiate payment with explicit JWT
       const { data, error } = await supabase.functions.invoke('initiate-payment', {
         body: {
           amount: depositAmount,
           email: userEmail,
           provider: selectedProvider
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
         }
       });
 
