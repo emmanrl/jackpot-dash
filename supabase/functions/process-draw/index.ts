@@ -168,7 +168,7 @@ serve(async (req) => {
       .from('transactions')
       .insert({
         user_id: winningTicket.user_id,
-        type: 'win',
+        type: 'prize_win',
         amount: winnerPrize,
         status: 'completed',
         reference: `Draw ${draw.id}`,

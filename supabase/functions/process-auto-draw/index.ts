@@ -121,8 +121,19 @@ serve(async (req) => {
           await supabase
             .from('admin_wallet')
             .update({ balance: parseFloat(adminWallet.balance) + adminShare })
-            .limit(1);
+            .eq('id', adminWallet.id);
         }
+
+        // Create win transaction record
+        await supabase
+          .from('transactions')
+          .insert({
+            user_id: winningTicket.user_id,
+            type: 'prize_win',
+            amount: winnerPrize,
+            status: 'completed',
+            reference: `Auto Draw ${jackpot.name}`,
+          });
 
         // Create winner notification
         await supabase.from('notifications').insert({

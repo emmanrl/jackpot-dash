@@ -66,16 +66,18 @@ serve(async (req) => {
     // Get the jackpot number
     const jackpotNumber = jackpot.jackpot_number || 1;
     
+    // Get the starting sequence number
+    const { data: startSeqData, error: startSeqError } = await supabase
+      .rpc('get_next_ticket_sequence', { p_jackpot_id: jackpotId });
+    
+    if (startSeqError) throw startSeqError;
+    
+    const startSequence = startSeqData;
+    
     // Generate ticket numbers with sequential format
     const tickets = [];
     for (let i = 0; i < quantity; i++) {
-      // Get next sequence number
-      const { data: seqData, error: seqError } = await supabase
-        .rpc('get_next_ticket_sequence', { p_jackpot_id: jackpotId });
-      
-      if (seqError) throw seqError;
-      
-      const ticketSequence = seqData;
+      const ticketSequence = startSequence + i;
       const ticketNumber = `${String(ticketSequence).padStart(3, '0')}-${String(jackpotNumber).padStart(3, '0')}`;
       
       tickets.push({
