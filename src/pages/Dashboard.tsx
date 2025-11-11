@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import Footer from "@/components/Footer";
 import DepositDialog from "@/components/DepositDialog";
 import TicketPurchaseDialog from "@/components/TicketPurchaseDialog";
+import DrawDetailsModal from "@/components/DrawDetailsModal";
 import TicketCard from "@/components/TicketCard";
 
 interface WalletData {
@@ -32,6 +33,9 @@ interface WinnerData {
   id: string;
   prize_amount: number;
   claimed_at: string;
+  total_participants: number;
+  total_pool_amount: number;
+  ticket_id?: string;
   jackpots: {
     name: string;
   };
@@ -51,6 +55,8 @@ const Dashboard = () => {
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
   const [selectedJackpot, setSelectedJackpot] = useState<any>(null);
   const [activeJackpots, setActiveJackpots] = useState<any[]>([]);
+  const [selectedWin, setSelectedWin] = useState<WinnerData | null>(null);
+  const [drawDetailsOpen, setDrawDetailsOpen] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -116,6 +122,9 @@ const Dashboard = () => {
           id,
           prize_amount,
           claimed_at,
+          total_participants,
+          total_pool_amount,
+          ticket_id,
           jackpots (name)
         `)
         .eq("user_id", userId)
@@ -506,16 +515,30 @@ const Dashboard = () => {
                     key={win.id}
                     className="flex justify-between items-center p-4 rounded-lg bg-primary/10 border border-primary/20"
                   >
-                    <div>
+                    <div className="flex-1">
                       <p className="font-medium text-primary">{win.jackpots.name}</p>
                       <p className="text-sm text-muted-foreground">
                         Won on {new Date(win.claimed_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-primary">
-                        ₦{Number(win.prize_amount).toFixed(2)}
-                      </p>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-primary">
+                          ₦{Number(win.prize_amount).toFixed(2)}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedWin(win);
+                            setDrawDetailsOpen(true);
+                          }}
+                        >
+                          View
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -541,6 +564,14 @@ const Dashboard = () => {
           jackpot={selectedJackpot}
           walletBalance={wallet?.balance || 0}
           onSuccess={handleTicketPurchaseSuccess}
+        />
+      )}
+
+      {selectedWin && (
+        <DrawDetailsModal
+          open={drawDetailsOpen}
+          onOpenChange={setDrawDetailsOpen}
+          win={selectedWin}
         />
       )}
     </div>

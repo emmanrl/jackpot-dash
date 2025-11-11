@@ -137,14 +137,21 @@ export default function Admin() {
     let walletMap: Record<string, number> = {};
     let roleMap: Record<string, string> = {};
     let authDataMap: Record<string, any> = {};
+    let ticketCountMap: Record<string, number> = {};
 
     if (ids.length) {
-      const [{ data: wallets }, { data: roles }] = await Promise.all([
+      const [{ data: wallets }, { data: roles }, { data: tickets }] = await Promise.all([
         supabase.from('wallets').select('user_id, balance').in('user_id', ids),
         supabase.from('user_roles').select('user_id, role').in('user_id', ids),
+        supabase.from('tickets').select('user_id').in('user_id', ids),
       ]);
       (wallets || []).forEach((w: any) => { walletMap[w.user_id] = Number(w.balance) || 0; });
       (roles || []).forEach((r: any) => { roleMap[r.user_id] = r.role; });
+      
+      // Count tickets per user
+      (tickets || []).forEach((t: any) => {
+        ticketCountMap[t.user_id] = (ticketCountMap[t.user_id] || 0) + 1;
+      });
 
       // Fetch auth data for last_sign_in
       const { data: authUsers } = await supabase.auth.admin.listUsers();
@@ -184,6 +191,7 @@ export default function Admin() {
         ...p,
         balance: walletMap[p.id] ?? 0,
         role: roleMap[p.id] ?? 'user',
+        ticketCount: ticketCountMap[p.id] ?? 0,
         isActive,
         last_sign_in_at: lastSignIn
       };
@@ -576,6 +584,7 @@ export default function Admin() {
                       <TableHead>Email</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Balance</TableHead>
+                      <TableHead>Tickets</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Joined</TableHead>
@@ -587,6 +596,9 @@ export default function Admin() {
                         <TableCell>{user.email}</TableCell>
                         <TableCell>{user.full_name || 'N/A'}</TableCell>
                         <TableCell>₦{user.balance}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{user.ticketCount || 0}</Badge>
+                        </TableCell>
                         <TableCell>
                           <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
                             {user.role || 'user'}

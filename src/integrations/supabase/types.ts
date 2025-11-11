@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_wallet: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       draws: {
         Row: {
           drawn_at: string
@@ -330,6 +351,8 @@ export type Database = {
           jackpot_id: string
           prize_amount: number
           ticket_id: string
+          total_participants: number | null
+          total_pool_amount: number | null
           user_id: string
         }
         Insert: {
@@ -339,6 +362,8 @@ export type Database = {
           jackpot_id: string
           prize_amount: number
           ticket_id: string
+          total_participants?: number | null
+          total_pool_amount?: number | null
           user_id: string
         }
         Update: {
@@ -348,6 +373,8 @@ export type Database = {
           jackpot_id?: string
           prize_amount?: number
           ticket_id?: string
+          total_participants?: number | null
+          total_pool_amount?: number | null
           user_id?: string
         }
         Relationships: [

@@ -84,9 +84,13 @@ serve(async (req) => {
     // Select random winner
     const randomIndex = Math.floor(Math.random() * tickets.length);
     const winningTicket = tickets[randomIndex];
-    const prizeAmount = parseFloat(jackpot.prize_pool);
+    const totalPool = parseFloat(jackpot.prize_pool);
+    
+    // Calculate 80% for winner, 20% for admin
+    const winnerPrize = totalPool * 0.8;
+    const adminShare = totalPool * 0.2;
 
-    console.log(`Winner selected: ticket ${winningTicket.id}, user ${winningTicket.user_id}, prize ${prizeAmount}`);
+    console.log(`Winner selected: ticket ${winningTicket.id}, user ${winningTicket.user_id}, winner prize ${winnerPrize}, admin share ${adminShare}`);
 
     // Create draw record
     const { data: draw, error: drawError } = await supabase
@@ -94,7 +98,7 @@ serve(async (req) => {
       .insert({
         jackpot_id: jackpot_id,
         winning_ticket_id: winningTicket.id,
-        prize_amount: prizeAmount,
+        prize_amount: winnerPrize,
         total_tickets: tickets.length,
         drawn_at: new Date().toISOString()
       })
@@ -105,7 +109,7 @@ serve(async (req) => {
       throw new Error(`Failed to create draw record: ${drawError?.message}`);
     }
 
-    // Create winner record
+    // Create winner record with additional details
     const { error: winnerError } = await supabase
       .from('winners')
       .insert({
@@ -113,7 +117,9 @@ serve(async (req) => {
         jackpot_id: jackpot_id,
         draw_id: draw.id,
         ticket_id: winningTicket.id,
-        prize_amount: prizeAmount,
+        prize_amount: winnerPrize,
+        total_participants: tickets.length,
+        total_pool_amount: totalPool,
         claimed_at: new Date().toISOString()
       });
 
@@ -121,7 +127,7 @@ serve(async (req) => {
       throw new Error(`Failed to create winner record: ${winnerError.message}`);
     }
 
-    // Update winner's wallet balance
+    // Update winner's wallet balance (80% of pool)
     const { data: wallet, error: walletError } = await supabase
       .from('wallets')
       .select('balance')
@@ -132,7 +138,7 @@ serve(async (req) => {
       throw new Error('Winner wallet not found');
     }
 
-    const newBalance = parseFloat(wallet.balance) + prizeAmount;
+    const newBalance = parseFloat(wallet.balance) + winnerPrize;
     const { error: balanceError } = await supabase
       .from('wallets')
       .update({ balance: newBalance })
@@ -142,13 +148,28 @@ serve(async (req) => {
       throw new Error(`Failed to update wallet balance: ${balanceError.message}`);
     }
 
+    // Update admin wallet balance (20% of pool)
+    const { data: adminWallet, error: adminWalletError } = await supabase
+      .from('admin_wallet')
+      .select('balance')
+      .limit(1)
+      .single();
+
+    if (!adminWalletError && adminWallet) {
+      const newAdminBalance = parseFloat(adminWallet.balance) + adminShare;
+      await supabase
+        .from('admin_wallet')
+        .update({ balance: newAdminBalance })
+        .eq('id', adminWallet.id);
+    }
+
     // Create win transaction record
     const { error: txError } = await supabase
       .from('transactions')
       .insert({
         user_id: winningTicket.user_id,
         type: 'win',
-        amount: prizeAmount,
+        amount: winnerPrize,
         status: 'completed',
         reference: `Draw ${draw.id}`,
         processed_by: user.id,
@@ -164,12 +185,14 @@ serve(async (req) => {
       user_id: winningTicket.user_id,
       type: 'jackpot_win',
       title: '🎉 Congratulations! You Won!',
-      message: `You won ₦${prizeAmount.toFixed(2)} in ${jackpot.name}! The prize has been added to your wallet.`,
+      message: `You won ₦${winnerPrize.toFixed(2)} in ${jackpot.name}! The prize has been added to your wallet.`,
       is_read: false,
       data: {
         jackpot_id: jackpot_id,
         draw_id: draw.id,
-        prize_amount: prizeAmount
+        prize_amount: winnerPrize,
+        total_participants: tickets.length,
+        total_pool: totalPool
       }
     });
 
@@ -186,7 +209,7 @@ serve(async (req) => {
       console.error('Failed to update jackpot status:', updateJackpotError);
     }
 
-    console.log(`Draw completed successfully. Winner: ${winningTicket.user_id}, Prize: ${prizeAmount}`);
+    console.log(`Draw completed successfully. Winner: ${winningTicket.user_id}, Prize: ${winnerPrize}, Admin share: ${adminShare}`);
 
     return new Response(
       JSON.stringify({ 
@@ -195,7 +218,8 @@ serve(async (req) => {
         winner: {
           user_id: winningTicket.user_id,
           ticket_id: winningTicket.id,
-          prize_amount: prizeAmount
+          prize_amount: winnerPrize,
+          admin_share: adminShare
         }
       }),
       { 
