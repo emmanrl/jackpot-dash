@@ -15,6 +15,7 @@ import TicketPurchaseDialog from "@/components/TicketPurchaseDialog";
 import DrawDetailsModal from "@/components/DrawDetailsModal";
 import TicketCard from "@/components/TicketCard";
 import WinCelebrationModal from "@/components/WinCelebrationModal";
+import { useDrawNotifications } from "@/hooks/useDrawNotifications";
 
 interface WalletData {
   balance: number;
@@ -29,6 +30,7 @@ interface TicketData {
   jackpots: {
     name: string;
   };
+  isWinner?: boolean;
 }
 
 interface WinnerData {
@@ -51,6 +53,9 @@ const Dashboard = () => {
   const [wallet, setWallet] = useState<WalletData | null>(null);
   const [tickets, setTickets] = useState<TicketData[]>([]);
   const [wins, setWins] = useState<WinnerData[]>([]);
+  
+  // Enable draw notifications
+  useDrawNotifications();
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [depositDialogOpen, setDepositDialogOpen] = useState(false);
@@ -121,7 +126,32 @@ const Dashboard = () => {
         .order("purchased_at", { ascending: false });
 
       if (ticketsError) throw ticketsError;
-      setTickets(ticketsData || []);
+      
+      // Fetch winning tickets
+      const { data: winningTickets } = await supabase
+        .from("winners")
+        .select("ticket_id")
+        .eq("user_id", userId);
+      
+      const winningTicketIds = new Set(winningTickets?.map(w => w.ticket_id) || []);
+      
+      // Get completed jackpot IDs
+      const { data: completedJackpots } = await supabase
+        .from("jackpots")
+        .select("id")
+        .eq("status", "completed");
+      
+      const completedJackpotIds = new Set(completedJackpots?.map(j => j.id) || []);
+      
+      // Mark tickets as winner/loser
+      const ticketsWithStatus = (ticketsData || []).map(ticket => ({
+        ...ticket,
+        isWinner: completedJackpotIds.has(ticket.jackpot_id)
+          ? winningTicketIds.has(ticket.id)
+          : undefined
+      }));
+      
+      setTickets(ticketsWithStatus);
 
       // Fetch win history
       const { data: winsData, error: winsError } = await supabase
@@ -465,6 +495,7 @@ const Dashboard = () => {
                           purchasePrice={Number(ticket.purchase_price)}
                           purchasedAt={ticket.purchased_at}
                           jackpotName={ticket.jackpots.name}
+                          isWinner={ticket.isWinner}
                         />
                       ))}
                     </div>

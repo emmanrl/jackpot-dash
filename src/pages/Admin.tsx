@@ -32,6 +32,9 @@ export default function Admin() {
   const [userFilter, setUserFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [activeUserCount, setActiveUserCount] = useState(0);
   const [inactiveUserCount, setInactiveUserCount] = useState(0);
+  const [adminBalance, setAdminBalance] = useState(0);
+  const [withdrawalAmount, setWithdrawalAmount] = useState("");
+  const [withdrawalLoading, setWithdrawalLoading] = useState(false);
 
   // Jackpot form state
   const [jackpotForm, setJackpotForm] = useState({
@@ -71,7 +74,7 @@ export default function Admin() {
       }
 
       setIsAdmin(true);
-      await Promise.all([fetchJackpots(), fetchTransactions(), fetchUsers(), fetchPaymentSettings()]);
+      await Promise.all([fetchJackpots(), fetchTransactions(), fetchUsers(), fetchPaymentSettings(), fetchAdminBalance()]);
     } catch (error) {
       console.error('Error checking admin status:', error);
       toast.error('Failed to verify admin status');
@@ -287,6 +290,21 @@ export default function Admin() {
     return true;
   });
 
+  const fetchAdminBalance = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('admin_wallet')
+        .select('balance')
+        .limit(1)
+        .single();
+
+      if (error) throw error;
+      setAdminBalance(Number(data?.balance || 0));
+    } catch (error: any) {
+      console.error('Failed to fetch admin balance:', error);
+    }
+  };
+
   const processDraw = async (jackpotId: string) => {
     try {
       setProcessing(jackpotId);
@@ -300,11 +318,128 @@ export default function Admin() {
       if (response.error) throw response.error;
 
       toast.success('Draw processed successfully!');
-      await fetchJackpots();
+      await Promise.all([fetchJackpots(), fetchAdminBalance()]);
     } catch (error: any) {
       toast.error(`Failed to process draw: ${error.message}`);
     } finally {
       setProcessing(null);
+    }
+  };
+
+  const rerunJackpot = async (jackpot: any) => {
+    try {
+      setProcessing(`rerun-${jackpot.id}`);
+      
+      // Get the max jackpot number
+      const { data: maxJackpot } = await supabase
+        .from('jackpots')
+        .select('jackpot_number')
+        .order('jackpot_number', { ascending: false })
+        .limit(1)
+        .single();
+
+      const nextJackpotNumber = (maxJackpot?.jackpot_number || 0) + 1;
+
+      // Calculate next draw time based on frequency
+      const nextDraw = new Date();
+      if (jackpot.frequency === '5mins') {
+        nextDraw.setMinutes(nextDraw.getMinutes() + 72);
+      } else if (jackpot.frequency === '30mins') {
+        nextDraw.setHours(nextDraw.getHours() + 2);
+        nextDraw.setMinutes(nextDraw.getMinutes() + 24);
+      } else if (jackpot.frequency === '1hour') {
+        nextDraw.setHours(nextDraw.getHours() + 4);
+      } else if (jackpot.frequency === '12hours') {
+        nextDraw.setHours(18, 0, 0, 0);
+        if (nextDraw.getTime() <= Date.now()) {
+          nextDraw.setDate(nextDraw.getDate() + 1);
+        }
+      } else if (jackpot.frequency === '24hours') {
+        nextDraw.setHours(0, 0, 0, 0);
+        nextDraw.setDate(nextDraw.getDate() + 1);
+      }
+
+      const { error } = await supabase
+        .from('jackpots')
+        .insert({
+          name: jackpot.name,
+          description: jackpot.description,
+          ticket_price: jackpot.ticket_price,
+          frequency: jackpot.frequency,
+          next_draw: nextDraw.toISOString(),
+          status: 'active',
+          prize_pool: 0,
+          jackpot_number: nextJackpotNumber
+        });
+
+      if (error) throw error;
+
+      toast.success('Jackpot recreated successfully!');
+      await fetchJackpots();
+    } catch (error: any) {
+      toast.error(`Failed to rerun jackpot: ${error.message}`);
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleAdminWithdrawal = async () => {
+    try {
+      const amount = parseFloat(withdrawalAmount);
+      if (isNaN(amount) || amount <= 0) {
+        toast.error('Please enter a valid amount');
+        return;
+      }
+
+      if (amount > adminBalance) {
+        toast.error('Insufficient balance');
+        return;
+      }
+
+      setWithdrawalLoading(true);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Get admin wallet
+      const { data: adminWallet, error: walletError } = await supabase
+        .from('admin_wallet')
+        .select('*')
+        .limit(1)
+        .single();
+
+      if (walletError) throw walletError;
+
+      // Update admin wallet balance
+      const newBalance = Number(adminWallet.balance) - amount;
+      const { error: updateError } = await supabase
+        .from('admin_wallet')
+        .update({ balance: newBalance })
+        .eq('id', adminWallet.id);
+
+      if (updateError) throw updateError;
+
+      // Create transaction record
+      const { error: txError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          type: 'withdrawal',
+          amount: amount,
+          status: 'approved',
+          reference: `ADMIN-WD-${Date.now()}`,
+          admin_note: 'Admin withdrawal'
+        });
+
+      if (txError) throw txError;
+
+      toast.success('Withdrawal processed successfully!');
+      setWithdrawalAmount('');
+      await fetchAdminBalance();
+    } catch (error: any) {
+      toast.error(`Failed to process withdrawal: ${error.message}`);
+    } finally {
+      setWithdrawalLoading(false);
     }
   };
 
@@ -342,13 +477,48 @@ export default function Admin() {
       </header>
 
       <div className="container mx-auto px-6 py-8">
+        {/* Admin Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Earnings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-primary">₦{adminBalance.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground mt-2">From all completed draws</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Active Users</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-600">{activeUserCount}</div>
+              <p className="text-xs text-muted-foreground mt-2">Users active in last 30 days</p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Active Jackpots</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-blue-600">
+                {jackpots.filter(j => j.status === 'active').length}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">Currently running draws</p>
+            </CardContent>
+          </Card>
+        </div>
 
         <Tabs defaultValue="jackpots" className="space-y-6">
-          <TabsList>
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="jackpots">Jackpots</TabsTrigger>
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="payments">Payment Settings</TabsTrigger>
+            <TabsTrigger value="withdrawal">Withdraw</TabsTrigger>
           </TabsList>
 
           <TabsContent value="jackpots" className="space-y-6">
@@ -455,7 +625,7 @@ export default function Admin() {
                       <TableHead>Ticket Price</TableHead>
                       <TableHead>Prize Pool</TableHead>
                       <TableHead>Next Draw</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -470,13 +640,21 @@ export default function Admin() {
                         <TableCell>₦{jackpot.ticket_price}</TableCell>
                         <TableCell>₦{jackpot.prize_pool}</TableCell>
                         <TableCell>{jackpot.next_draw ? new Date(jackpot.next_draw).toLocaleString() : 'N/A'}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-right space-x-2">
                           <Button
                             size="sm"
                             onClick={() => processDraw(jackpot.id)}
                             disabled={processing === jackpot.id || jackpot.status !== 'active'}
                           >
                             {processing === jackpot.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Process Draw'}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => rerunJackpot(jackpot)}
+                            disabled={processing === `rerun-${jackpot.id}`}
+                          >
+                            {processing === `rerun-${jackpot.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Rerun'}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -623,6 +801,58 @@ export default function Admin() {
               paymentSettings={paymentSettings}
               onUpdate={updatePaymentSetting}
             />
+          </TabsContent>
+
+          <TabsContent value="withdrawal">
+            <Card>
+              <CardHeader>
+                <CardTitle>Admin Withdrawal</CardTitle>
+                <CardDescription>Withdraw your earnings from the admin wallet</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="bg-gradient-to-r from-primary/20 to-accent/20 rounded-lg p-6">
+                  <p className="text-sm text-muted-foreground mb-2">Available Balance</p>
+                  <p className="text-4xl font-bold text-foreground">₦{adminBalance.toFixed(2)}</p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="withdrawal-amount">Withdrawal Amount (₦)</Label>
+                    <Input
+                      id="withdrawal-amount"
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={withdrawalAmount}
+                      onChange={(e) => setWithdrawalAmount(e.target.value)}
+                      disabled={withdrawalLoading}
+                    />
+                  </div>
+
+                  <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground space-y-1">
+                    <p>• Withdrawals are processed instantly</p>
+                    <p>• 20% from each draw is added to admin wallet</p>
+                    <p>• Transaction records are created automatically</p>
+                  </div>
+
+                  <Button
+                    onClick={handleAdminWithdrawal}
+                    disabled={withdrawalLoading || !withdrawalAmount || parseFloat(withdrawalAmount) <= 0}
+                    className="w-full"
+                    size="lg"
+                  >
+                    {withdrawalLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      'Withdraw Funds'
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

@@ -121,6 +121,12 @@ export default function Withdrawal() {
         return;
       }
 
+      if (accounts.length === 0) {
+        toast.error("Please add a withdrawal account first");
+        navigate("/settings");
+        return;
+      }
+
       if (!selectedAccount) {
         toast.error("Please select a withdrawal account");
         return;
