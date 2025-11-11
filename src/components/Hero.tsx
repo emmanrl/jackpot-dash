@@ -1,10 +1,26 @@
 import { Button } from "@/components/ui/button";
-import { Sparkles, Trophy } from "lucide-react";
+import { Sparkles, Trophy, LayoutDashboard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
 import heroImage from "@/assets/hero-jackpot.jpg";
 
 const Hero = () => {
   const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
   
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
@@ -55,23 +71,37 @@ const Hero = () => {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Button 
-            variant="hero" 
-            size="lg" 
-            className="text-lg px-8 py-6 h-auto"
-            onClick={() => navigate("/auth")}
-          >
-            <Trophy className="w-5 h-5" />
-            Get Started
-          </Button>
-          <Button 
-            variant="outline" 
-            size="lg" 
-            className="text-lg px-8 py-6 h-auto border-primary/30 hover:border-primary"
-            onClick={() => navigate("/auth")}
-          >
-            Sign In
-          </Button>
+          {user ? (
+            <Button 
+              variant="hero" 
+              size="lg" 
+              className="text-lg px-8 py-6 h-auto"
+              onClick={() => navigate("/dashboard")}
+            >
+              <LayoutDashboard className="w-5 h-5" />
+              Go to Dashboard
+            </Button>
+          ) : (
+            <>
+              <Button 
+                variant="hero" 
+                size="lg" 
+                className="text-lg px-8 py-6 h-auto"
+                onClick={() => navigate("/auth")}
+              >
+                <Trophy className="w-5 h-5" />
+                Get Started
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="text-lg px-8 py-6 h-auto border-primary/30 hover:border-primary"
+                onClick={() => navigate("/auth")}
+              >
+                Sign In
+              </Button>
+            </>
+          )}
         </div>
 
         <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">

@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -37,8 +38,9 @@ export default function Admin() {
     name: "",
     description: "",
     ticket_price: "",
-    frequency: "weekly",
-    next_draw: ""
+    frequency: "1hour",
+    next_draw: "",
+    expires_at: ""
   });
 
   useEffect(() => {
@@ -232,6 +234,7 @@ export default function Admin() {
           ticket_price: parseFloat(jackpotForm.ticket_price),
           frequency: jackpotForm.frequency,
           next_draw: jackpotForm.next_draw,
+          expires_at: jackpotForm.expires_at || null,
           status: 'active',
           prize_pool: 0
         });
@@ -239,7 +242,7 @@ export default function Admin() {
       if (error) throw error;
 
       toast.success('Jackpot created successfully');
-      setJackpotForm({ name: "", description: "", ticket_price: "", frequency: "weekly", next_draw: "" });
+      setJackpotForm({ name: "", description: "", ticket_price: "", frequency: "1hour", next_draw: "", expires_at: "" });
       await fetchJackpots();
     } catch (error: any) {
       toast.error(`Failed to create jackpot: ${error.message}`);
@@ -380,13 +383,26 @@ export default function Admin() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="frequency">Frequency</Label>
-                    <Input
-                      id="frequency"
+                    <Label htmlFor="frequency">Draw Frequency</Label>
+                    <Select
                       value={jackpotForm.frequency}
-                      onChange={(e) => setJackpotForm({ ...jackpotForm, frequency: e.target.value })}
-                      placeholder="daily, weekly, monthly"
-                    />
+                      onValueChange={(value) => setJackpotForm({ ...jackpotForm, frequency: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select frequency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="30mins">30 Minutes</SelectItem>
+                        <SelectItem value="1hour">1 Hour</SelectItem>
+                        <SelectItem value="2hours">2 Hours</SelectItem>
+                        <SelectItem value="4hours">4 Hours</SelectItem>
+                        <SelectItem value="12hours">12 Hours</SelectItem>
+                        <SelectItem value="1day">1 Day</SelectItem>
+                        <SelectItem value="3days">3 Days</SelectItem>
+                        <SelectItem value="1week">1 Week</SelectItem>
+                        <SelectItem value="1month">1 Month</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="next_draw">Next Draw Date/Time</Label>
@@ -397,6 +413,16 @@ export default function Admin() {
                       onChange={(e) => setJackpotForm({ ...jackpotForm, next_draw: e.target.value })}
                     />
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="expires_at">Expiration Date/Time (Optional)</Label>
+                  <Input
+                    id="expires_at"
+                    type="datetime-local"
+                    value={jackpotForm.expires_at}
+                    onChange={(e) => setJackpotForm({ ...jackpotForm, expires_at: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">If set, jackpot will automatically expire and close at this time</p>
                 </div>
                 <Button
                   onClick={createJackpot}

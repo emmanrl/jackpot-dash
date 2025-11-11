@@ -61,6 +61,7 @@ export type Database = {
           created_at: string
           description: string | null
           draw_time: string | null
+          expires_at: string | null
           frequency: string
           id: string
           name: string
@@ -74,6 +75,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           draw_time?: string | null
+          expires_at?: string | null
           frequency: string
           id?: string
           name: string
@@ -87,6 +89,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           draw_time?: string | null
+          expires_at?: string | null
           frequency?: string
           id?: string
           name?: string

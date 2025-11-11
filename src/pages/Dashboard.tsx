@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import Footer from "@/components/Footer";
 import DepositDialog from "@/components/DepositDialog";
 import TicketPurchaseDialog from "@/components/TicketPurchaseDialog";
+import TicketCard from "@/components/TicketCard";
 
 interface WalletData {
   balance: number;
@@ -361,7 +362,7 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Tickets Section - Enhanced */}
+        {/* Tickets Section - Enhanced with Grouping */}
         <Card className="border-border shadow-sm">
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -370,7 +371,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <CardTitle>My Tickets</CardTitle>
-                <CardDescription>Your recent ticket purchases</CardDescription>
+                <CardDescription>Your tickets grouped by jackpot</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -378,21 +379,35 @@ const Dashboard = () => {
             {tickets.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">No tickets purchased yet</p>
             ) : (
-              <div className="space-y-4">
-                {tickets.map((ticket) => (
-                  <div
-                    key={ticket.id}
-                    className="flex justify-between items-center p-4 rounded-lg bg-muted/50 border border-border"
-                  >
-                    <div>
-                      <p className="font-medium text-primary">#{ticket.ticket_number}</p>
-                      <p className="text-sm text-muted-foreground">{ticket.jackpots.name}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-medium">₦{Number(ticket.purchase_price).toFixed(2)}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(ticket.purchased_at).toLocaleDateString()}
-                      </p>
+              <div className="space-y-8">
+                {Object.entries(
+                  tickets.reduce((acc, ticket) => {
+                    const jackpotName = ticket.jackpots.name;
+                    if (!acc[jackpotName]) {
+                      acc[jackpotName] = [];
+                    }
+                    acc[jackpotName].push(ticket);
+                    return acc;
+                  }, {} as Record<string, TicketData[]>)
+                ).map(([jackpotName, jackpotTickets]) => (
+                  <div key={jackpotName} className="space-y-3">
+                    <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
+                      <Trophy className="w-5 h-5" />
+                      {jackpotName}
+                      <span className="text-sm text-muted-foreground font-normal">
+                        ({jackpotTickets.length} ticket{jackpotTickets.length !== 1 ? 's' : ''})
+                      </span>
+                    </h3>
+                    <div className="grid gap-4">
+                      {jackpotTickets.map((ticket) => (
+                        <TicketCard
+                          key={ticket.id}
+                          ticketNumber={ticket.ticket_number}
+                          purchasePrice={Number(ticket.purchase_price)}
+                          purchasedAt={ticket.purchased_at}
+                          jackpotName={ticket.jackpots.name}
+                        />
+                      ))}
                     </div>
                   </div>
                 ))}

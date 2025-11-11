@@ -13,6 +13,10 @@ import Statistics from "./pages/Statistics";
 import TransactionHistory from "./pages/TransactionHistory";
 import NotFound from "./pages/NotFound";
 import PaymentCallback from "./pages/PaymentCallback";
+import Settings from "./pages/Settings";
+import Profile from "./pages/Profile";
+import EditProfile from "./pages/EditProfile";
+import ChangePassword from "./pages/ChangePassword";
 
 const queryClient = new QueryClient();
 
@@ -60,6 +64,10 @@ const App = () => (
           <Route path="/admin" element={<Admin />} />
           <Route path="/statistics" element={<ProtectedStatistics />} />
           <Route path="/transactions" element={<TransactionHistory />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/edit-profile" element={<EditProfile />} />
+          <Route path="/change-password" element={<ChangePassword />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
