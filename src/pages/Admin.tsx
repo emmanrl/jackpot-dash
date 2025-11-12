@@ -46,7 +46,8 @@ export default function Admin() {
     ticket_price: "",
     frequency: "1hour",
     next_draw: "",
-    expires_at: ""
+    expires_at: "",
+    category: "hourly"
   });
 
   useEffect(() => {
@@ -250,13 +251,14 @@ export default function Admin() {
           next_draw: jackpotForm.next_draw,
           expires_at: jackpotForm.expires_at || null,
           status: 'active',
-          prize_pool: 0
+          prize_pool: 0,
+          category: jackpotForm.category
         });
 
       if (error) throw error;
 
       toast.success('Jackpot created successfully');
-      setJackpotForm({ name: "", description: "", ticket_price: "", frequency: "1hour", next_draw: "", expires_at: "" });
+      setJackpotForm({ name: "", description: "", ticket_price: "", frequency: "1hour", next_draw: "", expires_at: "", category: "hourly" });
       await fetchJackpots();
     } catch (error: any) {
       toast.error(`Failed to create jackpot: ${error.message}`);
@@ -372,7 +374,8 @@ export default function Admin() {
           next_draw: nextDraw.toISOString(),
           status: 'active',
           prize_pool: 0,
-          jackpot_number: nextJackpotNumber
+          jackpot_number: nextJackpotNumber,
+          category: jackpot.category || 'hourly'
         });
 
       if (error) throw error;
@@ -586,6 +589,27 @@ export default function Admin() {
                       onChange={(e) => setJackpotForm({ ...jackpotForm, next_draw: e.target.value })}
                     />
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Select
+                    value={jackpotForm.category}
+                    onValueChange={(value) => setJackpotForm({ ...jackpotForm, category: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hourly">Hourly</SelectItem>
+                      <SelectItem value="daily">Daily</SelectItem>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="3hours">3 Hours</SelectItem>
+                      <SelectItem value="1hour">1 Hour</SelectItem>
+                      <SelectItem value="quick">Quick</SelectItem>
+                      <SelectItem value="long">Long</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="expires_at">Expiration Date/Time (Optional)</Label>

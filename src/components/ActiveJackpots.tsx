@@ -9,6 +9,7 @@ interface Jackpot {
   ticket_price: number;
   next_draw: string | null;
   frequency: string;
+  category: string;
 }
 
 interface ActiveJackpotsProps {
@@ -43,13 +44,6 @@ const ActiveJackpots = ({ onBuyTicket }: ActiveJackpotsProps = {}) => {
   const formatPrize = (amount: number) => `₦${amount.toLocaleString()}`;
   const formatTicketPrice = (price: number) => `₦${price.toFixed(2)}`;
 
-  const getCategoryFromFrequency = (frequency: string): "hourly" | "daily" | "weekly" | "monthly" => {
-    if (frequency.toLowerCase().includes("hour")) return "hourly";
-    if (frequency.toLowerCase().includes("day")) return "daily";
-    if (frequency.toLowerCase().includes("week")) return "weekly";
-    return "monthly";
-  };
-
   return (
     <section className="py-20 px-4">
       <div className="container mx-auto">
@@ -77,11 +71,12 @@ const ActiveJackpots = ({ onBuyTicket }: ActiveJackpotsProps = {}) => {
             {jackpots.map((jackpot) => (
               <JackpotCard
                 key={jackpot.id}
+                jackpotId={jackpot.id}
                 title={jackpot.name}
                 prize={formatPrize(jackpot.prize_pool)}
                 ticketPrice={formatTicketPrice(jackpot.ticket_price)}
                 endTime={jackpot.next_draw ? new Date(jackpot.next_draw) : new Date(Date.now() + 24 * 60 * 60 * 1000)}
-                category={getCategoryFromFrequency(jackpot.frequency)}
+                category={(jackpot.category || 'hourly') as "hourly" | "daily" | "weekly" | "monthly"}
                 onBuyClick={onBuyTicket ? () => onBuyTicket(jackpot) : undefined}
               />
             ))}

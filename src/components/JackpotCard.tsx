@@ -2,8 +2,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Clock, TrendingUp, Ticket } from "lucide-react";
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface JackpotCardProps {
+  jackpotId: string;
   title: string;
   prize: string;
   ticketPrice: string;
@@ -12,8 +14,9 @@ interface JackpotCardProps {
   onBuyClick?: () => void;
 }
 
-const JackpotCard = ({ title, prize, ticketPrice, endTime, category, onBuyClick }: JackpotCardProps) => {
+const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, onBuyClick }: JackpotCardProps) => {
   const [timeLeft, setTimeLeft] = useState("");
+  const [poolGrowth, setPoolGrowth] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -34,6 +37,31 @@ const JackpotCard = ({ title, prize, ticketPrice, endTime, category, onBuyClick 
 
     return () => clearInterval(timer);
   }, [endTime]);
+
+  useEffect(() => {
+    const fetchPoolGrowth = async () => {
+      try {
+        const { count } = await supabase
+          .from('tickets')
+          .select('*', { count: 'exact', head: true })
+          .eq('jackpot_id', jackpotId);
+
+        if (count && count > 0) {
+          // Calculate pool growth based on tickets sold
+          // More tickets = higher growth percentage
+          const growthPercentage = Math.min(Math.floor(count * 2.5), 50);
+          setPoolGrowth(growthPercentage);
+        } else {
+          setPoolGrowth(0);
+        }
+      } catch (error) {
+        console.error('Error fetching pool growth:', error);
+        setPoolGrowth(0);
+      }
+    };
+
+    fetchPoolGrowth();
+  }, [jackpotId]);
 
   const categoryColors = {
     hourly: "from-amber-500/20 to-orange-500/20",
@@ -57,7 +85,7 @@ const JackpotCard = ({ title, prize, ticketPrice, endTime, category, onBuyClick 
           </span>
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <TrendingUp className="w-3 h-3" />
-            <span>+12% pool</span>
+            <span>{poolGrowth > 0 ? `+${poolGrowth}% pool` : 'New pool'}</span>
           </div>
         </div>
         <CardTitle className="text-2xl font-bold">{title}</CardTitle>

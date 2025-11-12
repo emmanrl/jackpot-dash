@@ -27,6 +27,7 @@ export default function JackpotAutomationDialog({
     frequency: "5mins",
     ticketPrice: "",
     expiryHours: "",
+    category: "hourly",
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
 
@@ -106,6 +107,7 @@ export default function JackpotAutomationDialog({
         status: 'active',
         jackpot_number: nextJackpotNumber,
         background_image_url: backgroundImageUrl,
+        category: formData.category,
       });
 
       if (error) throw error;
@@ -121,6 +123,7 @@ export default function JackpotAutomationDialog({
         frequency: "5mins",
         ticketPrice: "",
         expiryHours: "",
+        category: "hourly",
       });
       setImageFile(null);
       onSuccess();
@@ -200,6 +203,28 @@ export default function JackpotAutomationDialog({
                 required
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="category">Category</Label>
+            <Select
+              value={formData.category}
+              onValueChange={(value) => setFormData({ ...formData, category: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hourly">Hourly</SelectItem>
+                <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="3hours">3 Hours</SelectItem>
+                <SelectItem value="1hour">1 Hour</SelectItem>
+                <SelectItem value="quick">Quick</SelectItem>
+                <SelectItem value="long">Long</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
