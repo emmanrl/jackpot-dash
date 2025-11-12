@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Sparkles, User } from "lucide-react";
 import { toast } from "sonner";
 import TopNav from "@/components/TopNav";
 import Footer from "@/components/Footer";
@@ -14,6 +15,7 @@ const EditProfile = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [userId, setUserId] = useState("");
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -70,6 +72,41 @@ const EditProfile = () => {
     }
   };
 
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (!userId) {
+        toast.error("You must be logged in to upload an avatar.");
+        return;
+      }
+      setUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${userId}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true, cacheControl: '3600' });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      if (publicData?.publicUrl) {
+        setAvatarUrl(publicData.publicUrl);
+        toast.success('Avatar uploaded');
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || 'Failed to upload avatar');
+    } finally {
+      setUploading(false);
+      // reset input value so same file can be selected again
+      if (e.target) e.target.value = '';
+    }
+  };
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -98,6 +135,31 @@ const EditProfile = () => {
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Enter your full name"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Current Avatar</Label>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage src={avatarUrl} alt="Profile avatar" />
+                    <AvatarFallback>
+                      <User className="h-6 w-6" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <Label htmlFor="avatarFile">Upload new avatar</Label>
+                    <Input
+                      id="avatarFile"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarFileChange}
+                      disabled={uploading}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {uploading ? 'Uploading...' : 'PNG, JPG up to ~2MB'}
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2">

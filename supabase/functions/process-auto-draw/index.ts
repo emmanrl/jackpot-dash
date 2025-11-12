@@ -110,10 +110,10 @@ serve(async (req) => {
             .eq('user_id', winningTicket.user_id);
         }
 
-        // Update admin wallet
+        // Update or create admin wallet
         const { data: adminWallet } = await supabase
           .from('admin_wallet')
-          .select('*')
+          .select('id, balance')
           .limit(1)
           .single();
 
@@ -122,6 +122,10 @@ serve(async (req) => {
             .from('admin_wallet')
             .update({ balance: parseFloat(adminWallet.balance) + adminShare })
             .eq('id', adminWallet.id);
+        } else {
+          await supabase
+            .from('admin_wallet')
+            .insert({ balance: adminShare });
         }
 
         // Create win transaction record

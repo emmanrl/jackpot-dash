@@ -148,10 +148,10 @@ serve(async (req) => {
       throw new Error(`Failed to update wallet balance: ${balanceError.message}`);
     }
 
-    // Update admin wallet balance (20% of pool)
+    // Update or create admin wallet balance (20% of pool)
     const { data: adminWallet, error: adminWalletError } = await supabase
       .from('admin_wallet')
-      .select('balance')
+      .select('id, balance')
       .limit(1)
       .single();
 
@@ -161,6 +161,11 @@ serve(async (req) => {
         .from('admin_wallet')
         .update({ balance: newAdminBalance })
         .eq('id', adminWallet.id);
+    } else if (adminWalletError) {
+      // If table exists but no row found, insert a new one
+      await supabase
+        .from('admin_wallet')
+        .insert({ balance: adminShare });
     }
 
     // Create win transaction record

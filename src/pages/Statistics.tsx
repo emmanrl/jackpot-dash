@@ -21,6 +21,22 @@ interface StatsData {
     date: string;
     amount: number;
   }>;
+  revenueTotals: {
+    sales: number;
+    payout: number;
+    admin: number;
+  };
+  revenuePerDraw: Array<{
+    name: string;
+    sales: number;
+    payout: number;
+    admin: number;
+  }>;
+  winRates: Array<{
+    name: string;
+    rate: number;
+    participants: number;
+  }>;
 }
 
 const Statistics = () => {
@@ -32,7 +48,10 @@ const Statistics = () => {
     totalParticipants: 0,
     totalWinners: 0,
     jackpotStats: [],
-    recentWins: []
+    recentWins: [],
+    revenueTotals: { sales: 0, payout: 0, admin: 0 },
+    revenuePerDraw: [],
+    winRates: []
   });
 
   useEffect(() => {
@@ -80,6 +99,13 @@ const Statistics = () => {
         .order('claimed_at', { ascending: false })
         .limit(10);
 
+      // Fetch recent draws for revenue analytics
+      const { data: winnersAll } = await supabase
+        .from('winners')
+        .select('jackpot_id, prize_amount, total_participants, total_pool_amount, draw_id, claimed_at')
+        .order('claimed_at', { ascending: false })
+        .limit(20);
+
       // Calculate jackpot statistics
       const jackpotStats = await Promise.all(
         (jackpots || []).map(async (jackpot) => {
@@ -108,6 +134,30 @@ const Statistics = () => {
         return acc;
       }, [] as Array<{ date: string; amount: number }>);
 
+      // Build lookups
+      const jackpotNameById = new Map((jackpots || []).map(j => [j.id, j.name]));
+
+      const revenuePerDraw = (winnersAll || []).map(w => {
+        const sales = Number(w.total_pool_amount || 0);
+        const payout = Number(w.prize_amount || 0);
+        const admin = Math.max(sales - payout, 0);
+        const name = `${jackpotNameById.get(w.jackpot_id) || 'Draw'} • ${new Date(w.claimed_at).toLocaleDateString()}`;
+        return { name, sales, payout, admin };
+      }).reverse();
+
+      const revenueTotals = revenuePerDraw.reduce((acc, r) => ({
+        sales: acc.sales + r.sales,
+        payout: acc.payout + r.payout,
+        admin: acc.admin + r.admin,
+      }), { sales: 0, payout: 0, admin: 0 });
+
+      const winRates = (winnersAll || []).map(w => {
+        const participants = Number(w.total_participants || 0);
+        const rate = participants > 0 ? (1 / participants) * 100 : 0;
+        const name = `${jackpotNameById.get(w.jackpot_id) || 'Draw'} • #${String(w.draw_id).slice(0, 4)}`;
+        return { name, rate: Number(rate.toFixed(2)), participants };
+      }).reverse();
+
       const uniqueParticipants = new Set(uniqueUsers?.map(u => u.user_id)).size;
       const totalPrizePool = (jackpots || []).reduce((sum, j) => sum + Number(j.prize_pool), 0);
 
@@ -117,7 +167,10 @@ const Statistics = () => {
         totalParticipants: uniqueParticipants,
         totalWinners: totalWinners || 0,
         jackpotStats,
-        recentWins: winsGrouped.reverse()
+        recentWins: winsGrouped.reverse(),
+        revenueTotals,
+        revenuePerDraw,
+        winRates,
       });
 
     } catch (error) {
