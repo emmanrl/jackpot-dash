@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sparkles, LogOut, LayoutDashboard, Shield, User as UserIcon, Settings, Key } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
+import { useRealtimeAvatar } from "@/hooks/useRealtimeAvatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +21,7 @@ const TopNav = () => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const realtimeAvatarUrl = useRealtimeAvatar(user?.id);
 
   useEffect(() => {
     // Check current session
@@ -105,8 +107,8 @@ const TopNav = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="gap-2 h-auto p-2">
                   <Avatar className="h-10 w-10 border-2 border-primary/20">
-                    {profile?.avatar_url ? (
-                      <AvatarImage src={profile.avatar_url} alt={profile.full_name || user.email || "User"} />
+                    {(realtimeAvatarUrl || profile?.avatar_url) ? (
+                      <AvatarImage src={realtimeAvatarUrl || profile.avatar_url} alt={profile.full_name || user.email || "User"} />
                     ) : null}
                     <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                       {getInitials()}

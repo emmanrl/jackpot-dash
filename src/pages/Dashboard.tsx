@@ -16,6 +16,7 @@ import DrawDetailsModal from "@/components/DrawDetailsModal";
 import TicketCard from "@/components/TicketCard";
 import WinCelebrationModal from "@/components/WinCelebrationModal";
 import { useDrawNotifications } from "@/hooks/useDrawNotifications";
+import { useWinNotification } from "@/hooks/useWinNotification";
 
 interface WalletData {
   balance: number;
@@ -56,6 +57,20 @@ const Dashboard = () => {
   
   // Enable draw notifications
   useDrawNotifications();
+  
+  // Enable win notifications
+  const { winData, showWinModal, setShowWinModal } = useWinNotification();
+  
+  // Sync realtime wins with celebration modal
+  useEffect(() => {
+    if (winData && showWinModal) {
+      setCelebrationWin({
+        prizeAmount: winData.prizeAmount,
+        jackpotName: winData.jackpotName,
+      });
+      setShowWinModal(false); // Reset
+    }
+  }, [winData, showWinModal, setShowWinModal]);
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [depositDialogOpen, setDepositDialogOpen] = useState(false);

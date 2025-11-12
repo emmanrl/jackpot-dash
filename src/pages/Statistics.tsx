@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { TrendingUp, Users, DollarSign, Trophy, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import TopNav from "@/components/TopNav";
 import Footer from "@/components/Footer";
 
 interface StatsData {
@@ -190,16 +191,7 @@ const Statistics = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Button variant="ghost" onClick={() => navigate("/dashboard")}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <h1 className="text-2xl font-bold">Jackpot Statistics</h1>
-          <div className="w-24" />
-        </div>
-      </header>
+      <TopNav />
 
       <main className="container mx-auto px-4 py-8">
         {/* Key Metrics */}

@@ -9,6 +9,8 @@ import RecentWinners from "@/components/RecentWinners";
 import Footer from "@/components/Footer";
 import ReceiptModal from "@/components/ReceiptModal";
 import TicketPurchaseDialog from "@/components/TicketPurchaseDialog";
+import WinCelebrationModal from "@/components/WinCelebrationModal";
+import { useWinNotification } from "@/hooks/useWinNotification";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -18,6 +20,7 @@ const Index = () => {
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
   const [selectedJackpot, setSelectedJackpot] = useState<any>(null);
   const [walletBalance, setWalletBalance] = useState(0);
+  const { winData, showWinModal, setShowWinModal } = useWinNotification();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -129,6 +132,15 @@ const Index = () => {
           jackpot={selectedJackpot}
           walletBalance={walletBalance}
           onSuccess={handleTicketPurchaseSuccess}
+        />
+      )}
+      
+      {winData && (
+        <WinCelebrationModal
+          open={showWinModal}
+          onOpenChange={setShowWinModal}
+          prizeAmount={winData.prizeAmount}
+          jackpotName={winData.jackpotName}
         />
       )}
     </div>

@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import TopNav from "@/components/TopNav";
+import Footer from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Trophy, Ticket, DollarSign, ArrowLeft, Medal } from "lucide-react";
 import { Sparkles } from "lucide-react";
-import Footer from "@/components/Footer";
 
 interface LeaderboardEntry {
   user_id: string;
@@ -234,26 +235,7 @@ const Leaderboard = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                  JackpotWin
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <TopNav />
 
       <main className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">

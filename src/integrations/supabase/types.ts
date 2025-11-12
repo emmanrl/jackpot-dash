@@ -79,6 +79,7 @@ export type Database = {
       }
       jackpots: {
         Row: {
+          background_image_url: string | null
           created_at: string
           description: string | null
           draw_time: string | null
@@ -94,6 +95,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          background_image_url?: string | null
           created_at?: string
           description?: string | null
           draw_time?: string | null
@@ -109,6 +111,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          background_image_url?: string | null
           created_at?: string
           description?: string | null
           draw_time?: string | null

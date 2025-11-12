@@ -7,12 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, Mail, User as UserIcon } from "lucide-react";
 import TopNav from "@/components/TopNav";
 import Footer from "@/components/Footer";
+import { useRealtimeAvatar } from "@/hooks/useRealtimeAvatar";
 
 const Profile = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [email, setEmail] = useState("");
+  const [userId, setUserId] = useState<string | undefined>();
+  const realtimeAvatarUrl = useRealtimeAvatar(userId);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -23,6 +26,7 @@ const Profile = () => {
       }
 
       setEmail(session.user.email || "");
+      setUserId(session.user.id);
 
       const { data } = await supabase
         .from("profiles")
@@ -57,8 +61,8 @@ const Profile = () => {
           <CardContent className="space-y-6">
             <div className="flex items-center gap-4">
               <Avatar className="h-24 w-24 border-4 border-primary/20">
-                {profile?.avatar_url ? (
-                  <AvatarImage src={profile.avatar_url} alt={profile.full_name || "User"} />
+                {(realtimeAvatarUrl || profile?.avatar_url) ? (
+                  <AvatarImage src={realtimeAvatarUrl || profile.avatar_url} alt={profile.full_name || "User"} />
                 ) : null}
                 <AvatarFallback className="bg-primary/10 text-primary text-2xl font-semibold">
                   {profile?.full_name?.charAt(0).toUpperCase() || email.charAt(0).toUpperCase()}

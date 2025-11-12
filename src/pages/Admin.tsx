@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import TopNav from "@/components/TopNav";
+import JackpotAutomationDialog from "@/components/JackpotAutomationDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -35,6 +37,7 @@ export default function Admin() {
   const [adminBalance, setAdminBalance] = useState(0);
   const [withdrawalAmount, setWithdrawalAmount] = useState("");
   const [withdrawalLoading, setWithdrawalLoading] = useState(false);
+  const [automationDialogOpen, setAutomationDialogOpen] = useState(false);
 
   // Jackpot form state
   const [jackpotForm, setJackpotForm] = useState({
@@ -455,28 +458,20 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Sparkles className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                  Admin Dashboard
-                </h1>
-                <p className="text-sm text-muted-foreground">Manage your jackpot platform</p>
-              </div>
-            </div>
-            <Button onClick={() => navigate('/dashboard')} variant="outline">
-              Back to Dashboard
+      <TopNav />
+
+      <div className="container mx-auto px-6 py-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <div className="flex gap-2">
+            <Button onClick={() => navigate('/statistics')} variant="outline">
+              View Statistics
+            </Button>
+            <Button onClick={() => setAutomationDialogOpen(true)}>
+              Create Automated Jackpot
             </Button>
           </div>
         </div>
-      </header>
-
-      <div className="container mx-auto px-6 py-8">
         {/* Admin Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
@@ -864,6 +859,12 @@ export default function Admin() {
         onApprove={approveTransaction}
         userEmail={selectedTransaction ? userEmailMap[selectedTransaction.user_id] : undefined}
         processing={processing === selectedTransaction?.id}
+      />
+      
+      <JackpotAutomationDialog
+        open={automationDialogOpen}
+        onOpenChange={setAutomationDialogOpen}
+        onSuccess={fetchJackpots}
       />
     </div>
   );
