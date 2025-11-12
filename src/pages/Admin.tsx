@@ -47,7 +47,8 @@ export default function Admin() {
     frequency: "1hour",
     next_draw: "",
     expires_at: "",
-    category: "hourly"
+    category: "hourly",
+    background_image: null as File | null
   });
 
   useEffect(() => {
@@ -242,6 +243,30 @@ export default function Admin() {
     try {
       setProcessing('create-jackpot');
       
+      let backgroundImageUrl = null;
+
+      // Upload background image if provided
+      if (jackpotForm.background_image) {
+        const fileExt = jackpotForm.background_image.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('jackpot-images')
+          .upload(filePath, jackpotForm.background_image, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('jackpot-images')
+          .getPublicUrl(filePath);
+
+        backgroundImageUrl = publicUrl;
+      }
+
       // Calculate next draw time from frequency if not provided
       let nextDrawTime = jackpotForm.next_draw;
       if (!nextDrawTime && jackpotForm.frequency) {
@@ -279,13 +304,14 @@ export default function Admin() {
           expires_at: jackpotForm.expires_at || null,
           status: 'active',
           prize_pool: 0,
-          category: jackpotForm.category
+          category: jackpotForm.category,
+          background_image_url: backgroundImageUrl
         });
 
       if (error) throw error;
 
       toast.success('Jackpot created successfully');
-      setJackpotForm({ name: "", description: "", ticket_price: "", frequency: "1hour", next_draw: "", expires_at: "", category: "hourly" });
+      setJackpotForm({ name: "", description: "", ticket_price: "", frequency: "1hour", next_draw: "", expires_at: "", category: "hourly", background_image: null });
       await fetchJackpots();
     } catch (error: any) {
       toast.error(`Failed to create jackpot: ${error.message}`);
@@ -640,6 +666,19 @@ export default function Admin() {
                   </Select>
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="background_image">Background Image (Optional)</Label>
+                  <Input
+                    id="background_image"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] || null;
+                      setJackpotForm({ ...jackpotForm, background_image: file });
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">Upload an image to display as the jackpot card background</p>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="expires_at">Expiration Date/Time (Optional)</Label>
                   <Input
                     id="expires_at"
@@ -706,7 +745,8 @@ export default function Admin() {
                                 frequency: jackpot.frequency,
                                 next_draw: jackpot.next_draw ? new Date(jackpot.next_draw).toISOString().slice(0, 16) : "",
                                 expires_at: jackpot.expires_at ? new Date(jackpot.expires_at).toISOString().slice(0, 16) : "",
-                                category: jackpot.category || "hourly"
+                                category: jackpot.category || "hourly",
+                                background_image: null
                               });
                               window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}

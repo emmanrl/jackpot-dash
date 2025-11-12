@@ -116,11 +116,15 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
     fetchPoolGrowthAndBadge();
   }, [jackpotId]);
 
-  const categoryColors = {
-    hourly: "from-amber-500/30 to-orange-500/30",
-    daily: "from-blue-500/30 to-cyan-500/30",
-    weekly: "from-purple-500/30 to-pink-500/30",
-    monthly: "from-emerald-500/30 to-green-500/30",
+  const categoryColors: Record<string, string> = {
+    hourly: "from-amber-500/50 to-orange-500/50",
+    daily: "from-blue-500/50 to-cyan-500/50",
+    weekly: "from-purple-500/50 to-pink-500/50",
+    monthly: "from-emerald-500/50 to-green-500/50",
+    "3hours": "from-rose-500/50 to-red-500/50",
+    "1hour": "from-yellow-500/50 to-amber-500/50",
+    quick: "from-fuchsia-500/50 to-purple-500/50",
+    long: "from-teal-500/50 to-cyan-500/50",
   };
 
   // Calculate if 75% of duration has passed
@@ -146,7 +150,7 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
       )}
       
       {/* Gradient overlay */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${categoryColors[category]} opacity-60 group-hover:opacity-80 transition-opacity`} />
+      <div className={`absolute inset-0 bg-gradient-to-br ${categoryColors[category] || categoryColors.hourly} opacity-70 group-hover:opacity-90 transition-opacity`} />
       
       {/* Shimmer effect */}
       <div className="absolute inset-0 shimmer opacity-0 group-hover:opacity-100 transition-opacity" />
