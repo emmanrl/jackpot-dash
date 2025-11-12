@@ -50,6 +50,7 @@ export default function Admin() {
     category: "hourly",
     background_image: null as File | null
   });
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     checkAdminAndFetchData();
@@ -312,9 +313,33 @@ export default function Admin() {
 
       toast.success('Jackpot created successfully');
       setJackpotForm({ name: "", description: "", ticket_price: "", frequency: "1hour", next_draw: "", expires_at: "", category: "hourly", background_image: null });
+      setImagePreview(null);
       await fetchJackpots();
     } catch (error: any) {
       toast.error(`Failed to create jackpot: ${error.message}`);
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const deleteJackpot = async (jackpotId: string) => {
+    try {
+      setProcessing(`delete-${jackpotId}`);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await supabase.functions.invoke('delete-jackpot', {
+        body: { jackpotId },
+        headers: { Authorization: `Bearer ${session?.access_token}` }
+      });
+
+      if (response.error) throw response.error;
+
+      const result = response.data;
+      toast.success(`Jackpot deleted. Refunded ${result.refundedUsers} users with total ₦${result.totalRefunded.toFixed(2)}`);
+      await fetchJackpots();
+    } catch (error: any) {
+      toast.error(`Failed to delete jackpot: ${error.message}`);
     } finally {
       setProcessing(null);
     }
@@ -674,9 +699,41 @@ export default function Admin() {
                     onChange={(e) => {
                       const file = e.target.files?.[0] || null;
                       setJackpotForm({ ...jackpotForm, background_image: file });
+                      
+                      // Create preview
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setImagePreview(reader.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      } else {
+                        setImagePreview(null);
+                      }
                     }}
                   />
                   <p className="text-xs text-muted-foreground">Upload an image to display as the jackpot card background</p>
+                  
+                  {imagePreview && (
+                    <div className="mt-4 relative">
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="w-full h-48 object-cover rounded-lg border-2 border-border"
+                      />
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="absolute top-2 right-2"
+                        onClick={() => {
+                          setImagePreview(null);
+                          setJackpotForm({ ...jackpotForm, background_image: null });
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="expires_at">Expiration Date/Time (Optional)</Label>
@@ -748,6 +805,7 @@ export default function Admin() {
                                 category: jackpot.category || "hourly",
                                 background_image: null
                               });
+                              setImagePreview(null);
                               window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}
                           >
@@ -761,6 +819,40 @@ export default function Admin() {
                           >
                             {processing === `rerun-${jackpot.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Rerun'}
                           </Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                              >
+                                Delete
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Delete Jackpot</DialogTitle>
+                                <DialogDescription>
+                                  Are you sure you want to delete this jackpot? All users who purchased tickets will be refunded and notified.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <DialogFooter>
+                                <Button variant="outline" onClick={(e) => {
+                                  e.stopPropagation();
+                                  const dialog = (e.target as HTMLElement).closest('[role="dialog"]');
+                                  dialog?.querySelector('[data-state="open"]')?.dispatchEvent(new Event('click'));
+                                }}>
+                                  Cancel
+                                </Button>
+                                <Button 
+                                  variant="destructive"
+                                  onClick={() => deleteJackpot(jackpot.id)}
+                                  disabled={processing === `delete-${jackpot.id}`}
+                                >
+                                  {processing === `delete-${jackpot.id}` ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete & Refund'}
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
                         </TableCell>
                       </TableRow>
                     ))}

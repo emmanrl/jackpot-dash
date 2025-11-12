@@ -6,6 +6,7 @@ import Hero from "@/components/Hero";
 import ActiveJackpots from "@/components/ActiveJackpots";
 import HowItWorks from "@/components/HowItWorks";
 import RecentWinners from "@/components/RecentWinners";
+import Leaderboard from "@/components/Leaderboard";
 import Footer from "@/components/Footer";
 import ReceiptModal from "@/components/ReceiptModal";
 import TicketPurchaseDialog from "@/components/TicketPurchaseDialog";
@@ -107,6 +108,7 @@ const Index = () => {
           <ActiveJackpots onBuyTicket={handleBuyTicket} />
           <Hero />
           <HowItWorks />
+          <Leaderboard />
           <RecentWinners />
         </>
       ) : (
@@ -114,6 +116,7 @@ const Index = () => {
           <Hero />
           <HowItWorks />
           <ActiveJackpots />
+          <Leaderboard />
           <RecentWinners />
         </>
       )}
