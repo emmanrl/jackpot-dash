@@ -85,9 +85,9 @@ const RecentWinners = () => {
     if (winner.profiles?.full_name) {
       return winner.profiles.full_name;
     }
-    // Anonymize email for privacy
+    // Show email if no full name
     const email = winner.profiles?.email || "";
-    return email.split("@")[0].charAt(0).toUpperCase() + "***";
+    return email.split("@")[0];
   };
 
   return (

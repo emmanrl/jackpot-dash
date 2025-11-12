@@ -166,15 +166,36 @@ export default function DepositDialog({ open, onOpenChange, userEmail }: Deposit
                 value={selectedProvider} 
                 onValueChange={setSelectedProvider}
                 disabled={loading}
+                className="grid grid-cols-2 gap-4"
               >
                 {providers.map((provider) => (
-                  <div key={provider} className="flex items-center space-x-2">
-                    <RadioGroupItem value={provider} id={provider} />
+                  <div key={provider} className="relative">
+                    <RadioGroupItem value={provider} id={provider} className="peer sr-only" />
                     <Label 
                       htmlFor={provider} 
-                      className="capitalize cursor-pointer"
+                      className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
                     >
-                      {provider}
+                      {provider === 'paystack' && (
+                        <div className="mb-2">
+                          <svg className="w-16 h-8" viewBox="0 0 200 60" fill="currentColor">
+                            <path d="M40 10h10v40H40z"/>
+                            <path d="M20 25h10v25H20z"/>
+                            <path d="M0 35h10v15H0z"/>
+                            <text x="65" y="40" fontSize="24" fontWeight="bold">Paystack</text>
+                          </svg>
+                        </div>
+                      )}
+                      {provider === 'remita' && (
+                        <div className="mb-2">
+                          <svg className="w-16 h-8" viewBox="0 0 200 60" fill="currentColor">
+                            <rect x="0" y="15" width="15" height="30" rx="2"/>
+                            <rect x="20" y="20" width="15" height="20" rx="2"/>
+                            <rect x="40" y="10" width="15" height="40" rx="2"/>
+                            <text x="65" y="40" fontSize="24" fontWeight="bold">Remita</text>
+                          </svg>
+                        </div>
+                      )}
+                      <span className="text-sm font-medium capitalize">{provider}</span>
                     </Label>
                   </div>
                 ))}

@@ -10,6 +10,9 @@ interface Jackpot {
   next_draw: string | null;
   frequency: string;
   category: string;
+  background_image_url?: string | null;
+  created_at: string;
+  status: string;
 }
 
 interface ActiveJackpotsProps {
@@ -78,6 +81,9 @@ const ActiveJackpots = ({ onBuyTicket }: ActiveJackpotsProps = {}) => {
                 endTime={jackpot.next_draw ? new Date(jackpot.next_draw) : new Date(Date.now() + 24 * 60 * 60 * 1000)}
                 category={(jackpot.category || 'hourly') as "hourly" | "daily" | "weekly" | "monthly"}
                 onBuyClick={onBuyTicket ? () => onBuyTicket(jackpot) : undefined}
+                backgroundImageUrl={jackpot.background_image_url}
+                createdAt={new Date(jackpot.created_at)}
+                status={jackpot.status}
               />
             ))}
           </div>

@@ -241,6 +241,33 @@ export default function Admin() {
   const createJackpot = async () => {
     try {
       setProcessing('create-jackpot');
+      
+      // Calculate next draw time from frequency if not provided
+      let nextDrawTime = jackpotForm.next_draw;
+      if (!nextDrawTime && jackpotForm.frequency) {
+        const now = new Date();
+        if (jackpotForm.frequency === '30mins') {
+          now.setMinutes(now.getMinutes() + 30);
+        } else if (jackpotForm.frequency === '1hour') {
+          now.setHours(now.getHours() + 1);
+        } else if (jackpotForm.frequency === '2hours') {
+          now.setHours(now.getHours() + 2);
+        } else if (jackpotForm.frequency === '4hours') {
+          now.setHours(now.getHours() + 4);
+        } else if (jackpotForm.frequency === '12hours') {
+          now.setHours(now.getHours() + 12);
+        } else if (jackpotForm.frequency === '1day') {
+          now.setDate(now.getDate() + 1);
+        } else if (jackpotForm.frequency === '3days') {
+          now.setDate(now.getDate() + 3);
+        } else if (jackpotForm.frequency === '1week') {
+          now.setDate(now.getDate() + 7);
+        } else if (jackpotForm.frequency === '1month') {
+          now.setMonth(now.getMonth() + 1);
+        }
+        nextDrawTime = now.toISOString().slice(0, 16);
+      }
+
       const { error } = await supabase
         .from('jackpots')
         .insert({
@@ -248,7 +275,7 @@ export default function Admin() {
           description: jackpotForm.description,
           ticket_price: parseFloat(jackpotForm.ticket_price),
           frequency: jackpotForm.frequency,
-          next_draw: jackpotForm.next_draw,
+          next_draw: nextDrawTime,
           expires_at: jackpotForm.expires_at || null,
           status: 'active',
           prize_pool: 0,
@@ -581,13 +608,14 @@ export default function Admin() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="next_draw">Next Draw Date/Time</Label>
+                    <Label htmlFor="next_draw">Next Draw Date/Time (Optional if frequency set)</Label>
                     <Input
                       id="next_draw"
                       type="datetime-local"
                       value={jackpotForm.next_draw}
                       onChange={(e) => setJackpotForm({ ...jackpotForm, next_draw: e.target.value })}
                     />
+                    <p className="text-xs text-muted-foreground">Leave empty to auto-calculate from frequency</p>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -666,6 +694,24 @@ export default function Admin() {
                             disabled={processing === jackpot.id || jackpot.status !== 'active'}
                           >
                             {processing === jackpot.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Process Draw'}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setJackpotForm({
+                                name: jackpot.name,
+                                description: jackpot.description || "",
+                                ticket_price: jackpot.ticket_price.toString(),
+                                frequency: jackpot.frequency,
+                                next_draw: jackpot.next_draw ? new Date(jackpot.next_draw).toISOString().slice(0, 16) : "",
+                                expires_at: jackpot.expires_at ? new Date(jackpot.expires_at).toISOString().slice(0, 16) : "",
+                                category: jackpot.category || "hourly"
+                              });
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                          >
+                            Edit
                           </Button>
                           <Button
                             size="sm"

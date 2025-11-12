@@ -49,6 +49,12 @@ const EditProfile = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!userId) {
+      toast.error("User not found");
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -57,7 +63,6 @@ const EditProfile = () => {
         .update({
           full_name: fullName,
           avatar_url: avatarUrl,
-          updated_at: new Date().toISOString(),
         })
         .eq("id", userId);
 
@@ -80,6 +85,19 @@ const EditProfile = () => {
         toast.error("You must be logged in to upload an avatar.");
         return;
       }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size must be less than 5MB');
+        return;
+      }
+
       setUploading(true);
       const fileExt = file.name.split('.').pop();
       const filePath = `${userId}/${Date.now()}.${fileExt}`;
@@ -96,14 +114,13 @@ const EditProfile = () => {
 
       if (publicData?.publicUrl) {
         setAvatarUrl(publicData.publicUrl);
-        toast.success('Avatar uploaded');
+        toast.success('Avatar uploaded successfully');
       }
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || 'Failed to upload avatar');
     } finally {
       setUploading(false);
-      // reset input value so same file can be selected again
       if (e.target) e.target.value = '';
     }
   };

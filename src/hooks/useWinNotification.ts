@@ -42,6 +42,15 @@ export const useWinNotification = () => {
                 jackpotName: jackpot.name,
               });
               setShowWinModal(true);
+              
+              // Create notification for the win
+              await supabase.from('notifications').insert({
+                user_id: session.user.id,
+                type: 'win',
+                title: '🎉 Congratulations! You Won!',
+                message: `You won ₦${parseFloat(payload.new.prize_amount).toLocaleString()} in ${jackpot.name}!`,
+                is_read: false,
+              });
             }
           }
         )

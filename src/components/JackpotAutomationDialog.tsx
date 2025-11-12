@@ -27,6 +27,7 @@ export default function JackpotAutomationDialog({
     frequency: "5mins",
     ticketPrice: "",
     expiryHours: "",
+    expiryMinutes: "",
     category: "hourly",
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -80,9 +81,14 @@ export default function JackpotAutomationDialog({
 
       // Calculate expiry time
       let expiresAt = null;
-      if (formData.expiryHours) {
+      if (formData.expiryHours || formData.expiryMinutes) {
         expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + parseInt(formData.expiryHours));
+        if (formData.expiryHours) {
+          expiresAt.setHours(expiresAt.getHours() + parseInt(formData.expiryHours));
+        }
+        if (formData.expiryMinutes) {
+          expiresAt.setMinutes(expiresAt.getMinutes() + parseInt(formData.expiryMinutes));
+        }
       }
 
       // Get next jackpot number
@@ -123,6 +129,7 @@ export default function JackpotAutomationDialog({
         frequency: "5mins",
         ticketPrice: "",
         expiryHours: "",
+        expiryMinutes: "",
         category: "hourly",
       });
       setImageFile(null);
@@ -227,19 +234,31 @@ export default function JackpotAutomationDialog({
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="expiryHours">Expiry Duration (hours - optional)</Label>
-            <Input
-              id="expiryHours"
-              type="number"
-              value={formData.expiryHours}
-              onChange={(e) => setFormData({ ...formData, expiryHours: e.target.value })}
-              placeholder="e.g., 24 for 24 hours"
-            />
-            <p className="text-xs text-muted-foreground">
-              Leave empty for no expiry
-            </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="expiryHours">Expiry Hours (optional)</Label>
+              <Input
+                id="expiryHours"
+                type="number"
+                value={formData.expiryHours}
+                onChange={(e) => setFormData({ ...formData, expiryHours: e.target.value })}
+                placeholder="e.g., 24"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="expiryMinutes">Expiry Minutes (optional)</Label>
+              <Input
+                id="expiryMinutes"
+                type="number"
+                value={formData.expiryMinutes}
+                onChange={(e) => setFormData({ ...formData, expiryMinutes: e.target.value })}
+                placeholder="e.g., 30"
+              />
+            </div>
           </div>
+          <p className="text-xs text-muted-foreground -mt-2">
+            Leave both empty for no expiry
+          </p>
 
           <div className="space-y-2">
             <Label htmlFor="backgroundImage">Background Image (optional)</Label>

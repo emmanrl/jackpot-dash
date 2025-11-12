@@ -12,19 +12,25 @@ interface JackpotCardProps {
   endTime: Date;
   category: "hourly" | "daily" | "weekly" | "monthly";
   onBuyClick?: () => void;
+  backgroundImageUrl?: string | null;
+  createdAt?: Date;
+  status?: string;
 }
 
-const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, onBuyClick }: JackpotCardProps) => {
+const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, onBuyClick, backgroundImageUrl, createdAt, status }: JackpotCardProps) => {
   const [timeLeft, setTimeLeft] = useState("");
   const [poolGrowth, setPoolGrowth] = useState(0);
+  const [specialBadge, setSpecialBadge] = useState<string | null>(null);
+  const [isEnded, setIsEnded] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date().getTime();
       const distance = endTime.getTime() - now;
 
-      if (distance < 0) {
+      if (distance < 0 || status === 'completed') {
         setTimeLeft("ENDED");
+        setIsEnded(true);
         return;
       }
 
@@ -36,10 +42,10 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [endTime]);
+  }, [endTime, status]);
 
   useEffect(() => {
-    const fetchPoolGrowth = async () => {
+    const fetchPoolGrowthAndBadge = async () => {
       try {
         const { count } = await supabase
           .from('tickets')
@@ -47,33 +53,100 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
           .eq('jackpot_id', jackpotId);
 
         if (count && count > 0) {
-          // Calculate pool growth based on tickets sold
-          // More tickets = higher growth percentage
           const growthPercentage = Math.min(Math.floor(count * 2.5), 50);
           setPoolGrowth(growthPercentage);
         } else {
           setPoolGrowth(0);
         }
+
+        // Fetch all jackpots stats for badges
+        const { data: allJackpots } = await supabase
+          .from('jackpots')
+          .select('id, prize_pool')
+          .eq('status', 'active');
+
+        const { data: allTickets } = await supabase
+          .from('tickets')
+          .select('jackpot_id, user_id');
+
+        // Find jackpot with highest prize pool
+        const maxPrizeJackpot = allJackpots?.reduce((max, j) => 
+          Number(j.prize_pool) > Number(max.prize_pool) ? j : max
+        , allJackpots[0]);
+
+        // Find most bought jackpot (most tickets)
+        const ticketCounts = allTickets?.reduce((acc, t) => {
+          acc[t.jackpot_id] = (acc[t.jackpot_id] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        const mostBoughtId = Object.keys(ticketCounts || {}).reduce((a, b) => 
+          (ticketCounts?.[a] || 0) > (ticketCounts?.[b] || 0) ? a : b
+        , '');
+
+        // Find jackpot where one user bought most tickets
+        const userTicketCounts: Record<string, Record<string, number>> = {};
+        allTickets?.forEach(t => {
+          if (!userTicketCounts[t.jackpot_id]) userTicketCounts[t.jackpot_id] = {};
+          userTicketCounts[t.jackpot_id][t.user_id] = (userTicketCounts[t.jackpot_id][t.user_id] || 0) + 1;
+        });
+        let maxUserTickets = 0;
+        let bigLotsJackpotId = '';
+        Object.keys(userTicketCounts).forEach(jId => {
+          const maxForJackpot = Math.max(...Object.values(userTicketCounts[jId]));
+          if (maxForJackpot > maxUserTickets) {
+            maxUserTickets = maxForJackpot;
+            bigLotsJackpotId = jId;
+          }
+        });
+
+        // Set badge
+        if (maxPrizeJackpot?.id === jackpotId) {
+          setSpecialBadge('BIG WIN!!!');
+        } else if (mostBoughtId === jackpotId) {
+          setSpecialBadge('HOT');
+        } else if (bigLotsJackpotId === jackpotId && maxUserTickets >= 5) {
+          setSpecialBadge('BIG LOTS');
+        }
       } catch (error) {
-        console.error('Error fetching pool growth:', error);
+        console.error('Error fetching stats:', error);
         setPoolGrowth(0);
       }
     };
 
-    fetchPoolGrowth();
+    fetchPoolGrowthAndBadge();
   }, [jackpotId]);
 
   const categoryColors = {
-    hourly: "from-amber-500/20 to-orange-500/20",
-    daily: "from-blue-500/20 to-cyan-500/20",
-    weekly: "from-purple-500/20 to-pink-500/20",
-    monthly: "from-emerald-500/20 to-green-500/20",
+    hourly: "from-amber-500/30 to-orange-500/30",
+    daily: "from-blue-500/30 to-cyan-500/30",
+    weekly: "from-purple-500/30 to-pink-500/30",
+    monthly: "from-emerald-500/30 to-green-500/30",
+  };
+
+  // Calculate if 75% of duration has passed
+  const getDrawEndsSoonStatus = () => {
+    if (!createdAt) return "Draw ends soon";
+    const now = new Date().getTime();
+    const created = createdAt.getTime();
+    const end = endTime.getTime();
+    const totalDuration = end - created;
+    const elapsed = now - created;
+    const percentElapsed = (elapsed / totalDuration) * 100;
+    return percentElapsed >= 75 ? "Draw ends soon" : "";
   };
 
   return (
-    <Card className={`relative overflow-hidden border-2 border-border hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 group`}>
+    <Card className={`relative overflow-hidden border-2 border-border hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 group ${specialBadge === 'HOT' ? 'animate-pulse' : ''}`}>
+      {/* Background image */}
+      {backgroundImageUrl && (
+        <div 
+          className="absolute inset-0 bg-cover bg-center opacity-20"
+          style={{ backgroundImage: `url(${backgroundImageUrl})` }}
+        />
+      )}
+      
       {/* Gradient overlay */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${categoryColors[category]} opacity-50 group-hover:opacity-70 transition-opacity`} />
+      <div className={`absolute inset-0 bg-gradient-to-br ${categoryColors[category]} opacity-60 group-hover:opacity-80 transition-opacity`} />
       
       {/* Shimmer effect */}
       <div className="absolute inset-0 shimmer opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -88,8 +161,19 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
             <span>{poolGrowth > 0 ? `+${poolGrowth}% pool` : 'New pool'}</span>
           </div>
         </div>
+        {specialBadge && (
+          <div className={`mb-2 text-center ${specialBadge === 'HOT' ? 'animate-pulse' : ''}`}>
+            <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+              specialBadge === 'HOT' ? 'bg-red-500 text-white shadow-lg shadow-red-500/50' :
+              specialBadge === 'BIG WIN!!!' ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/50' :
+              'bg-purple-500 text-white shadow-lg shadow-purple-500/50'
+            }`}>
+              {specialBadge}
+            </span>
+          </div>
+        )}
         <CardTitle className="text-2xl font-bold">{title}</CardTitle>
-        <CardDescription>Draw ends soon</CardDescription>
+        <CardDescription>{getDrawEndsSoonStatus()}</CardDescription>
       </CardHeader>
 
       <CardContent className="relative space-y-4">
@@ -113,9 +197,15 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
       </CardContent>
 
       <CardFooter className="relative">
-        <Button variant="prize" className="w-full" size="lg" onClick={onBuyClick}>
+        <Button 
+          variant="prize" 
+          className="w-full" 
+          size="lg" 
+          onClick={onBuyClick}
+          disabled={isEnded}
+        >
           <Ticket className="w-4 h-4" />
-          Buy Tickets
+          {isEnded ? "Draw Ended" : "Buy Tickets"}
         </Button>
       </CardFooter>
     </Card>
