@@ -155,8 +155,8 @@ serve(async (req) => {
       reference = remitaData.RRR;
       
     } else if (provider === 'flutterwave') {
-      // Flutterwave payment initialization
-      const flutterwaveResponse = await fetch('https://api.flutterwave.com/v3/payments', {
+      // Flutterwave payment initialization using v4 API
+      const flutterwaveResponse = await fetch('https://api.flutterwave.com/v4/payments', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${secretKey}`,
@@ -175,6 +175,7 @@ serve(async (req) => {
           customizations: {
             title: 'Wallet Deposit',
             description: 'Add funds to your wallet',
+            logo: ''
           },
           meta: {
             user_id: user.id,
@@ -185,7 +186,7 @@ serve(async (req) => {
 
       const flutterwaveData = await flutterwaveResponse.json();
       
-      console.log('Flutterwave response:', flutterwaveData);
+      console.log('Flutterwave v4 response:', flutterwaveData);
       
       if (flutterwaveData.status !== 'success') {
         const errorMessage = flutterwaveData.message || 'Failed to initialize Flutterwave payment';

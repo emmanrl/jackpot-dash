@@ -68,7 +68,7 @@ serve(async (req) => {
       }
       
     } else if (provider === 'flutterwave') {
-      const verifyResponse = await fetch(`https://api.flutterwave.com/v3/transactions/${reference}/verify`, {
+      const verifyResponse = await fetch(`https://api.flutterwave.com/v4/transactions/${reference}/verify`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${settings.secret_key}`,
