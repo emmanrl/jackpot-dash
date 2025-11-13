@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import TopNav from "@/components/TopNav";
@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, Settings, Users } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import AdminPayments from "./AdminPayments";
 import TransactionDetailDrawer from "@/components/TransactionDetailDrawer";
@@ -543,8 +543,23 @@ export default function Admin() {
 
       <div className="container mx-auto px-6 py-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <div>
+            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+            <p className="text-muted-foreground">Manage jackpots, payments, site settings, and users</p>
+          </div>
           <div className="flex gap-2">
+            <Link to="/site-settings">
+              <Button variant="outline">
+                <Settings className="w-4 h-4 mr-2" />
+                Site Settings
+              </Button>
+            </Link>
+            <Link to="/user-management">
+              <Button variant="outline">
+                <Users className="w-4 h-4 mr-2" />
+                User Management
+              </Button>
+            </Link>
             <Button onClick={() => navigate('/statistics')} variant="outline">
               View Statistics
             </Button>

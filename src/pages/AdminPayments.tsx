@@ -41,8 +41,14 @@ const remitaSchema = z.object({
   public_key: z.string().min(1, "Public Key is required"),
 });
 
+const flutterwaveSchema = z.object({
+  public_key: z.string().min(1, "Public key is required"),
+  secret_key: z.string().min(1, "Secret key is required"),
+});
+
 type PaystackFormData = z.infer<typeof paystackSchema>;
 type RemitaFormData = z.infer<typeof remitaSchema>;
+type FlutterwaveFormData = z.infer<typeof flutterwaveSchema>;
 
 function PaystackSettingCard({ setting, onUpdate, onToggle }: { 
   setting: PaymentSetting; 
@@ -281,6 +287,116 @@ function RemitaSettingCard({ setting, onUpdate, onToggle }: {
   );
 }
 
+function FlutterwaveSettingCard({ setting, onUpdate, onToggle }: { 
+  setting: PaymentSetting; 
+  onUpdate: (id: string, updates: any) => Promise<void>;
+  onToggle: (id: string, currentState: boolean) => Promise<void>;
+}) {
+  const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<FlutterwaveFormData>({
+    resolver: zodResolver(flutterwaveSchema),
+    defaultValues: {
+      public_key: setting.public_key || "",
+      secret_key: setting.secret_key || "",
+    },
+  });
+
+  const onSubmit = async (data: FlutterwaveFormData) => {
+    setIsSubmitting(true);
+    try {
+      const normalized = {
+        public_key: data.public_key.trim(),
+        secret_key: data.secret_key.trim(),
+      };
+      await onUpdate(setting.id, normalized);
+      toast.success(`${setting.provider} settings updated successfully`);
+    } catch (error) {
+      toast.error(`Failed to update ${setting.provider} settings`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const toggleVisibility = (field: string) => {
+    setShowSecrets(prev => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="capitalize">Flutterwave Payment Gateway</CardTitle>
+            <CardDescription>
+              Configure Flutterwave payment integration for deposits and withdrawals
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="flutterwave-enabled" className="text-sm">
+              {setting.is_enabled ? "Enabled" : "Disabled"}
+            </Label>
+            <Switch
+              id="flutterwave-enabled"
+              checked={setting.is_enabled}
+              onCheckedChange={() => onToggle(setting.id, setting.is_enabled)}
+            />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="public_key"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Public Key</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="FLWPUBK-xxxxxxxxxxxxx" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="secret_key"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Secret Key</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input 
+                        {...field} 
+                        type={showSecrets.secret_key ? "text" : "password"}
+                        placeholder="FLWSECK-xxxxxxxxxxxxx" 
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleVisibility("secret_key")}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showSecrets.secret_key ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save Flutterwave Settings"}
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+}
+
 
 export default function AdminPayments({ paymentSettings, onUpdate }: AdminPaymentsProps) {
   const handleToggle = async (id: string, currentState: boolean) => {
@@ -294,6 +410,7 @@ export default function AdminPayments({ paymentSettings, onUpdate }: AdminPaymen
 
   const paystackSetting = paymentSettings.find(s => s.provider === "paystack");
   const remitaSetting = paymentSettings.find(s => s.provider === "remita");
+  const flutterwaveSetting = paymentSettings.find(s => s.provider === "flutterwave");
 
   return (
     <div className="space-y-6">
@@ -306,6 +423,13 @@ export default function AdminPayments({ paymentSettings, onUpdate }: AdminPaymen
       {paystackSetting && (
         <PaystackSettingCard
           setting={paystackSetting}
+          onUpdate={onUpdate}
+          onToggle={handleToggle}
+        />
+      )}
+      {flutterwaveSetting && (
+        <FlutterwaveSettingCard
+          setting={flutterwaveSetting}
           onUpdate={onUpdate}
           onToggle={handleToggle}
         />

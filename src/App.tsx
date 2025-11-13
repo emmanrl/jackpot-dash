@@ -19,6 +19,8 @@ import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import ChangePassword from "./pages/ChangePassword";
 import Withdrawal from "./pages/Withdrawal";
+import SiteSettings from "./pages/SiteSettings";
+import UserManagement from "./pages/UserManagement";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +66,8 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/payment/callback" element={<PaymentCallback />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/site-settings" element={<SiteSettings />} />
+          <Route path="/user-management" element={<UserManagement />} />
           <Route path="/statistics" element={<ProtectedStatistics />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/transactions" element={<TransactionHistory />} />

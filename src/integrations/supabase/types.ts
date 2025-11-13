@@ -227,6 +227,48 @@ export type Database = {
         }
         Relationships: []
       }
+      site_settings: {
+        Row: {
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          faq: Json | null
+          id: string
+          privacy_policy: string | null
+          site_logo_url: string | null
+          site_name: string
+          support_email: string | null
+          terms_of_service: string | null
+          updated_at: string
+        }
+        Insert: {
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          faq?: Json | null
+          id?: string
+          privacy_policy?: string | null
+          site_logo_url?: string | null
+          site_name?: string
+          support_email?: string | null
+          terms_of_service?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          faq?: Json | null
+          id?: string
+          privacy_policy?: string | null
+          site_logo_url?: string | null
+          site_name?: string
+          support_email?: string | null
+          terms_of_service?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tickets: {
         Row: {
           id: string

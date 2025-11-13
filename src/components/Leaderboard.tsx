@@ -18,42 +18,54 @@ const Leaderboard = () => {
   useEffect(() => {
     const fetchTopWinners = async () => {
       try {
-        const { data, error } = await supabase
+        const { data: winnersData, error } = await supabase
           .from('winners')
-          .select(`
-            user_id,
-            prize_amount,
-            profiles:user_id (
-              full_name,
-              email,
-              avatar_url
-            )
-          `);
+          .select('user_id, prize_amount');
 
         if (error) throw error;
 
+        if (!winnersData || winnersData.length === 0) {
+          setTopWinners([]);
+          setLoading(false);
+          return;
+        }
+
         // Aggregate winnings by user
-        const userWinnings = new Map<string, LeaderboardUser>();
+        const userWinnings = new Map<string, number>();
         
-        data?.forEach((winner: any) => {
+        winnersData.forEach((winner: any) => {
           const userId = winner.user_id;
-          const amount = Number(winner.prize_amount);
+          const amount = Number(winner.prize_amount) || 0;
           
           if (userWinnings.has(userId)) {
-            userWinnings.get(userId)!.total_winnings += amount;
+            userWinnings.set(userId, userWinnings.get(userId)! + amount);
           } else {
-            userWinnings.set(userId, {
-              user_id: userId,
-              total_winnings: amount,
-              full_name: winner.profiles?.full_name,
-              email: winner.profiles?.email || '',
-              avatar_url: winner.profiles?.avatar_url
-            });
+            userWinnings.set(userId, amount);
           }
         });
 
-        // Convert to array and sort by total winnings
-        const sortedWinners = Array.from(userWinnings.values())
+        // Get unique user IDs
+        const userIds = Array.from(userWinnings.keys());
+
+        // Fetch profiles for these users
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, full_name, email, avatar_url')
+          .in('id', userIds);
+
+        if (profilesError) throw profilesError;
+
+        // Combine data
+        const leaderboardUsers: LeaderboardUser[] = profilesData.map((profile: any) => ({
+          user_id: profile.id,
+          total_winnings: userWinnings.get(profile.id) || 0,
+          full_name: profile.full_name,
+          email: profile.email,
+          avatar_url: profile.avatar_url
+        }));
+
+        // Sort by total winnings and take top 5
+        const sortedWinners = leaderboardUsers
           .sort((a, b) => b.total_winnings - a.total_winnings)
           .slice(0, 5);
 
