@@ -66,6 +66,21 @@ serve(async (req) => {
         const amountMatch = verifyData.match(/amount=([0-9.]+)/);
         amount = amountMatch ? parseFloat(amountMatch[1]) : 0;
       }
+      
+    } else if (provider === 'flutterwave') {
+      const verifyResponse = await fetch(`https://api.flutterwave.com/v3/transactions/${reference}/verify`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${settings.secret_key}`,
+        }
+      });
+
+      const verifyData = await verifyResponse.json();
+      
+      if (verifyData.status === 'success' && verifyData.data.status === 'successful') {
+        paymentVerified = true;
+        amount = verifyData.data.amount;
+      }
     }
 
     if (!paymentVerified) {

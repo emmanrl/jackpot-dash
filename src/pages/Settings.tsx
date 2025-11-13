@@ -11,6 +11,7 @@ import { Sparkles, Moon, Sun, Plus, Trash2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import TopNav from "@/components/TopNav";
 import Footer from "@/components/Footer";
+import NotificationSettings from "@/components/NotificationSettings";
 
 interface WithdrawalAccount {
   id: string;
@@ -164,7 +165,9 @@ const Settings = () => {
   return (
     <div className="min-h-screen">
       <TopNav />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 space-y-6">
+        <NotificationSettings />
+        
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
             <CardTitle className="text-2xl">Settings</CardTitle>

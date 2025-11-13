@@ -9,7 +9,7 @@ const corsHeaders = {
 interface PaymentRequest {
   amount: number;
   email: string;
-  provider: 'paystack' | 'remita';
+  provider: 'paystack' | 'remita' | 'flutterwave';
 }
 
 serve(async (req) => {
@@ -56,24 +56,23 @@ serve(async (req) => {
     const publicKey = String(settings.public_key || '').trim();
     const secretKey = String(settings.secret_key || '').trim();
     
-    // Server-side validation of key format
-    const pkOk = /^pk_(test|live)_[a-zA-Z0-9]+$/.test(publicKey);
-    const skOk = /^sk_(test|live)_[a-zA-Z0-9]+$/.test(secretKey);
-    
-    if (!pkOk || !skOk) {
-      console.error('Invalid key format:', { 
-        pkPrefix: publicKey.slice(0, 10) + '...', 
-        skPrefix: secretKey.slice(0, 10) + '...',
-        pkValid: pkOk,
-        skValid: skOk
-      });
-      throw new Error('Payment gateway key format is invalid. Please update keys in the admin panel.');
+    // Validate keys based on provider
+    if (provider === 'paystack') {
+      const pkOk = /^pk_(test|live)_[a-zA-Z0-9]+$/.test(publicKey);
+      const skOk = /^sk_(test|live)_[a-zA-Z0-9]+$/.test(secretKey);
+      
+      if (!pkOk || !skOk) {
+        console.error('Invalid Paystack key format');
+        throw new Error('Payment gateway key format is invalid. Please update keys in the admin panel.');
+      }
+      console.log('Using Paystack keys');
+    } else if (provider === 'flutterwave') {
+      if (!publicKey.startsWith('FLWPUBK-') || !secretKey.startsWith('FLWSECK-')) {
+        console.error('Invalid Flutterwave key format');
+        throw new Error('Payment gateway key format is invalid. Please update keys in the admin panel.');
+      }
+      console.log('Using Flutterwave keys');
     }
-    
-    console.log('Using Paystack keys:', { 
-      pkPrefix: publicKey.slice(0, 10) + '...', 
-      skPrefix: secretKey.slice(0, 10) + '...' 
-    });
 
     // Create transaction record
     const { data: transaction, error: txError } = await supabase
@@ -154,6 +153,48 @@ serve(async (req) => {
 
       paymentUrl = `https://remitademo.net/remita/ecomm/${settings.public_key}/${remitaData.RRR}/${remitaData.orderId}/reset.reg`;
       reference = remitaData.RRR;
+      
+    } else if (provider === 'flutterwave') {
+      // Flutterwave payment initialization
+      const flutterwaveResponse = await fetch('https://api.flutterwave.com/v3/payments', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${secretKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tx_ref: reference,
+          amount: amount,
+          currency: 'NGN',
+          redirect_url: `${supabaseUrl.replace('.supabase.co', '.lovableproject.com')}/payment/callback`,
+          payment_options: 'card,banktransfer,ussd',
+          customer: {
+            email: email,
+            name: email.split('@')[0],
+          },
+          customizations: {
+            title: 'Wallet Deposit',
+            description: 'Add funds to your wallet',
+          },
+          meta: {
+            user_id: user.id,
+            transaction_id: transaction.id,
+          }
+        })
+      });
+
+      const flutterwaveData = await flutterwaveResponse.json();
+      
+      console.log('Flutterwave response:', flutterwaveData);
+      
+      if (flutterwaveData.status !== 'success') {
+        const errorMessage = flutterwaveData.message || 'Failed to initialize Flutterwave payment';
+        console.error('Flutterwave error:', errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      paymentUrl = flutterwaveData.data.link;
+      reference = flutterwaveData.data.tx_ref;
     }
 
     // Update transaction with payment reference

@@ -101,6 +101,30 @@ serve(async (req) => {
 
     console.log('Email sent successfully:', emailResponse);
 
+    // Create in-app notification
+    await supabase.from('notifications').insert({
+      user_id: userId,
+      type: type,
+      title: subject,
+      message: html.replace(/<[^>]*>/g, '').substring(0, 200), // Strip HTML tags
+      read: false,
+    });
+
+    // Try to send push notification if user has subscriptions
+    try {
+      await supabase.functions.invoke('send-push-notification', {
+        body: {
+          userId: userId,
+          title: subject,
+          body: `₦${amount.toFixed(2)} - ${type.replace('_', ' ')}`,
+          data: { type, amount },
+          url: '/dashboard',
+        }
+      });
+    } catch (pushError) {
+      console.log('Failed to send push notification, continuing...', pushError);
+    }
+
     return new Response(
       JSON.stringify({ success: true, emailResponse }),
       { 
