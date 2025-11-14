@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import PushNotificationPrompt from "@/components/PushNotificationPrompt";
 import { useDailyLogin } from "@/hooks/useDailyLogin";
 import { useAchievementNotifications } from "@/hooks/useAchievementNotifications";
+import { useDarkMode } from "@/hooks/useDarkMode";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -62,6 +63,9 @@ const ProtectedStatistics = () => {
 // Main App wrapper to handle authentication hooks
 const AppContent = () => {
   const [userId, setUserId] = useState<string | undefined>();
+
+  // Load dark mode preference
+  useDarkMode();
 
   useEffect(() => {
     const getUser = async () => {
