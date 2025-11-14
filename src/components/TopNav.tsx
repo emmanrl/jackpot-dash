@@ -134,6 +134,10 @@ const TopNav = () => {
                   <LayoutDashboard className="mr-2 h-4 w-4" />
                   <span>Dashboard</span>
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate(`/profile/${user.id}`)} className="cursor-pointer">
+                  <UserIcon className="mr-2 h-4 w-4" />
+                  <span>Public Profile</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/transactions")} className="cursor-pointer">
                   <UserIcon className="mr-2 h-4 w-4" />
                   <span>Transaction History</span>

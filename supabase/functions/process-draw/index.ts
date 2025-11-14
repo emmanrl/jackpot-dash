@@ -144,6 +144,12 @@ serve(async (req) => {
       p_user_id: winningTicket.user_id
     });
 
+    // Award referral commission (1% of winner's prize)
+    await supabase.rpc('award_referral_commission' as any, {
+      p_winner_id: winningTicket.user_id,
+      p_prize_amount: winnerPrize
+    });
+
     console.log('Winner wallet updated with prize and XP awarded');
 
     // Update or create admin wallet balance (20% of pool)
