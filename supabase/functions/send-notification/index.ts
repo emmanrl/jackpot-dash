@@ -20,16 +20,6 @@ serve(async (req) => {
   }
 
   try {
-    const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    if (!resendApiKey) {
-      console.log('RESEND_API_KEY not configured, skipping email notification');
-      return new Response(
-        JSON.stringify({ success: true, message: 'Email not configured' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-      );
-    }
-
-    const resend = new Resend(resendApiKey);
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -49,36 +39,59 @@ serve(async (req) => {
       throw new Error('User profile not found');
     }
 
+    // Fetch email settings from site_settings
+    const { data: siteSettings } = await supabase
+      .from('site_settings')
+      .select('email_from_name, email_from_address, resend_api_key, site_name')
+      .limit(1)
+      .maybeSingle();
+
+    // Determine which API key and from address to use
+    const resendApiKey = siteSettings?.resend_api_key || Deno.env.get('RESEND_API_KEY');
+    const fromName = siteSettings?.email_from_name || siteSettings?.site_name || 'JackpotWin';
+    const fromAddress = siteSettings?.email_from_address || 'onboarding@resend.dev';
+    const fromEmail = `${fromName} <${fromAddress}>`;
+
+    if (!resendApiKey) {
+      console.log('No Resend API key configured, skipping email notification');
+      return new Response(
+        JSON.stringify({ success: true, message: 'Email not configured' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
+    const resend = new Resend(resendApiKey);
+
     let subject = '';
     let html = '';
 
     switch (type) {
       case 'deposit_approved':
-        subject = 'Deposit Approved - JackpotWin';
+        subject = `Deposit Approved - ${fromName}`;
         html = `
           <h1>Deposit Approved!</h1>
           <p>Hi ${profile.full_name || 'there'},</p>
           <p>Your deposit of <strong>₦${amount.toFixed(2)}</strong> has been approved and added to your wallet.</p>
           <p>You can now use your balance to purchase lottery tickets and win big!</p>
           <p>Good luck!</p>
-          <p>Best regards,<br>The JackpotWin Team</p>
+          <p>Best regards,<br>The ${fromName} Team</p>
         `;
         break;
 
       case 'withdrawal_processed':
-        subject = 'Withdrawal Processed - JackpotWin';
+        subject = `Withdrawal Processed - ${fromName}`;
         html = `
           <h1>Withdrawal Processed!</h1>
           <p>Hi ${profile.full_name || 'there'},</p>
           <p>Your withdrawal request of <strong>₦${amount.toFixed(2)}</strong> has been processed.</p>
           <p>The funds should arrive in your account within 1-3 business days.</p>
-          <p>Thank you for using JackpotWin!</p>
-          <p>Best regards,<br>The JackpotWin Team</p>
+          <p>Thank you for using ${fromName}!</p>
+          <p>Best regards,<br>The ${fromName} Team</p>
         `;
         break;
 
       case 'jackpot_win':
-        subject = '🎉 Congratulations! You Won! - JackpotWin';
+        subject = `🎉 Congratulations! You Won! - ${fromName}`;
         html = `
           <h1 style="color: #e3a008;">🎉 CONGRATULATIONS! 🎉</h1>
           <p>Hi ${profile.full_name || 'there'},</p>
@@ -87,13 +100,13 @@ serve(async (req) => {
           <p>Your prize has been automatically credited to your wallet.</p>
           <p>You can now use it to buy more tickets or withdraw it to your bank account.</p>
           <p>Keep playing and good luck!</p>
-          <p>Best regards,<br>The JackpotWin Team</p>
+          <p>Best regards,<br>The ${fromName} Team</p>
         `;
         break;
     }
 
     const emailResponse = await resend.emails.send({
-      from: 'JackpotWin <onboarding@resend.dev>',
+      from: fromEmail,
       to: [profile.email],
       subject: subject,
       html: html,

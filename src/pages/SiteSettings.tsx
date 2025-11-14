@@ -20,6 +20,9 @@ interface SiteSettings {
   contact_email: string | null;
   contact_phone: string | null;
   support_email: string | null;
+  email_from_name: string | null;
+  email_from_address: string | null;
+  resend_api_key: string | null;
 }
 
 const SiteSettings = () => {
@@ -73,7 +76,10 @@ const SiteSettings = () => {
           faq: [],
           contact_email: null,
           contact_phone: null,
-          support_email: null
+          support_email: null,
+          email_from_name: 'JackpotWin',
+          email_from_address: null,
+          resend_api_key: null
         });
       }
     } catch (error) {
@@ -251,7 +257,78 @@ const SiteSettings = () => {
               />
             </div>
 
-            <div>
+            {/* Email Configuration Section */}
+            <div className="col-span-2 mt-6 pt-6 border-t">
+              <h3 className="text-lg font-semibold mb-4">Email Configuration</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Configure custom domain email sending via Resend. 
+                <a 
+                  href="https://resend.com/domains" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-primary hover:underline ml-1"
+                >
+                  Verify your domain here →
+                </a>
+              </p>
+              
+              <div className="grid gap-4">
+                <div>
+                  <Label htmlFor="email_from_name">From Name</Label>
+                  <Input
+                    id="email_from_name"
+                    type="text"
+                    value={settings.email_from_name || ''}
+                    onChange={(e) => setSettings({ ...settings, email_from_name: e.target.value })}
+                    placeholder="e.g., JackpotWin"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    The name that appears in sent emails
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="email_from_address">From Email Address</Label>
+                  <Input
+                    id="email_from_address"
+                    type="email"
+                    value={settings.email_from_address || ''}
+                    onChange={(e) => setSettings({ ...settings, email_from_address: e.target.value })}
+                    placeholder="e.g., noreply@yourdomain.com"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Must be from a verified domain in Resend
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="resend_api_key">Resend API Key</Label>
+                  <Input
+                    id="resend_api_key"
+                    type="password"
+                    value={settings.resend_api_key || ''}
+                    onChange={(e) => setSettings({ ...settings, resend_api_key: e.target.value })}
+                    placeholder="re_..."
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Get your API key from <a href="https://resend.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Resend dashboard</a>
+                  </p>
+                </div>
+
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Setup Instructions:</h4>
+                  <ol className="text-sm space-y-1 list-decimal list-inside">
+                    <li>Create account at <a href="https://resend.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">resend.com</a></li>
+                    <li>Add your domain and verify DNS records (SPF, DKIM, DMARC)</li>
+                    <li>Generate an API key</li>
+                    <li>Enter configuration above and save</li>
+                    <li>Test by triggering a notification (deposit, withdrawal, etc.)</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+
+            <div className="col-span-2">
               <Label htmlFor="terms_of_service">Terms of Service</Label>
               <Textarea
                 id="terms_of_service"

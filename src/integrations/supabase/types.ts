@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          achieved_at: string
+          achievement_type: string
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          achieved_at?: string
+          achievement_type: string
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          achieved_at?: string
+          achievement_type?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       admin_wallet: {
         Row: {
           balance: number
@@ -32,6 +56,72 @@ export type Database = {
           created_at?: string
           id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      bonus_settings: {
+        Row: {
+          bonus_type: string
+          created_at: string
+          description: string | null
+          end_date: string | null
+          fixed_amount: number | null
+          id: string
+          is_active: boolean
+          percentage: number | null
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          bonus_type: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          fixed_amount?: number | null
+          id?: string
+          is_active?: boolean
+          percentage?: number | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bonus_type?: string
+          created_at?: string
+          description?: string | null
+          end_date?: string | null
+          fixed_amount?: number | null
+          id?: string
+          is_active?: boolean
+          percentage?: number | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      daily_login_rewards: {
+        Row: {
+          created_at: string
+          id: string
+          login_date: string
+          streak_days: number
+          user_id: string
+          xp_awarded: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          login_date?: string
+          streak_days?: number
+          user_id: string
+          xp_awarded?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          login_date?: string
+          streak_days?: number
+          user_id?: string
+          xp_awarded?: number
         }
         Relationships: []
       }
@@ -94,6 +184,7 @@ export type Database = {
           status: Database["public"]["Enums"]["jackpot_status"]
           ticket_price: number
           updated_at: string
+          winners_count: number
         }
         Insert: {
           background_image_url?: string | null
@@ -111,6 +202,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["jackpot_status"]
           ticket_price: number
           updated_at?: string
+          winners_count?: number
         }
         Update: {
           background_image_url?: string | null
@@ -128,6 +220,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["jackpot_status"]
           ticket_price?: number
           updated_at?: string
+          winners_count?: number
         }
         Relationships: []
       }
@@ -204,25 +297,37 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          dark_mode: boolean | null
           email: string
+          experience_points: number | null
           full_name: string | null
           id: string
+          referral_code: string | null
+          theme: string | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          dark_mode?: boolean | null
           email: string
+          experience_points?: number | null
           full_name?: string | null
           id: string
+          referral_code?: string | null
+          theme?: string | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          dark_mode?: boolean | null
           email?: string
+          experience_points?: number | null
           full_name?: string | null
           id?: string
+          referral_code?: string | null
+          theme?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -251,14 +356,41 @@ export type Database = {
         }
         Relationships: []
       }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          referred_id: string
+          referrer_id: string
+          total_commission: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referred_id: string
+          referrer_id: string
+          total_commission?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referred_id?: string
+          referrer_id?: string
+          total_commission?: number
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           contact_email: string | null
           contact_phone: string | null
           created_at: string
+          email_from_address: string | null
+          email_from_name: string | null
           faq: Json | null
           id: string
           privacy_policy: string | null
+          resend_api_key: string | null
           site_logo_url: string | null
           site_name: string
           support_email: string | null
@@ -269,9 +401,12 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          email_from_address?: string | null
+          email_from_name?: string | null
           faq?: Json | null
           id?: string
           privacy_policy?: string | null
+          resend_api_key?: string | null
           site_logo_url?: string | null
           site_name?: string
           support_email?: string | null
@@ -282,9 +417,12 @@ export type Database = {
           contact_email?: string | null
           contact_phone?: string | null
           created_at?: string
+          email_from_address?: string | null
+          email_from_name?: string | null
           faq?: Json | null
           id?: string
           privacy_policy?: string | null
+          resend_api_key?: string | null
           site_logo_url?: string | null
           site_name?: string
           support_email?: string | null
@@ -370,6 +508,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -426,6 +585,7 @@ export type Database = {
           total_participants: number | null
           total_pool_amount: number | null
           user_id: string
+          winner_rank: number
         }
         Insert: {
           claimed_at?: string
@@ -437,6 +597,7 @@ export type Database = {
           total_participants?: number | null
           total_pool_amount?: number | null
           user_id: string
+          winner_rank?: number
         }
         Update: {
           claimed_at?: string
@@ -448,6 +609,7 @@ export type Database = {
           total_participants?: number | null
           total_pool_amount?: number | null
           user_id?: string
+          winner_rank?: number
         }
         Relationships: [
           {
@@ -508,9 +670,31 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_activity_feed: {
+        Row: {
+          activity_data: Json | null
+          activity_date: string | null
+          activity_type: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      apply_signup_bonus: { Args: { p_user_id: string }; Returns: undefined }
+      award_experience_points: {
+        Args: { p_amount: number; p_user_id: string }
+        Returns: undefined
+      }
+      award_referral_commission: {
+        Args: { p_prize_amount: number; p_winner_id: string }
+        Returns: undefined
+      }
+      check_and_award_achievements: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
+      generate_referral_code: { Args: never; Returns: string }
       get_next_ticket_sequence: {
         Args: { p_jackpot_id: string }
         Returns: number
@@ -522,11 +706,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_admin_wallet: { Args: { p_amount: number }; Returns: undefined }
       increment_wallet_balance: {
         Args: { p_amount: number; p_user_id: string }
         Returns: undefined
       }
       notify_upcoming_draws: { Args: never; Returns: undefined }
+      record_daily_login: { Args: { p_user_id: string }; Returns: number }
     }
     Enums: {
       app_role: "admin" | "user"
