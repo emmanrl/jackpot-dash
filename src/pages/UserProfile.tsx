@@ -6,6 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { AchievementBadge } from "@/components/AchievementBadge";
+import { UserActivityFeed } from "@/components/UserActivityFeed";
+import { UserFollowButton } from "@/components/UserFollowButton";
+import { UserFollowStats } from "@/components/UserFollowStats";
 import { Loader2, Trophy, Ticket, Star } from "lucide-react";
 import { toast } from "sonner";
 
@@ -13,6 +16,7 @@ export default function UserProfile() {
   const { userId } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [achievements, setAchievements] = useState<any[]>([]);
   const [stats, setStats] = useState({
@@ -23,10 +27,16 @@ export default function UserProfile() {
   });
 
   useEffect(() => {
+    fetchCurrentUser();
     if (userId) {
       fetchUserProfile();
     }
   }, [userId]);
+
+  const fetchCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setCurrentUser(user);
+  };
 
   const fetchUserProfile = async () => {
     try {
@@ -120,7 +130,13 @@ export default function UserProfile() {
               </Avatar>
               
               <div className="flex-1 text-center md:text-left">
-                <h1 className="text-3xl font-bold mb-2">{profile.full_name || 'Anonymous User'}</h1>
+                <div className="flex items-center justify-between mb-2">
+                  <h1 className="text-3xl font-bold">{profile.full_name || 'Anonymous User'}</h1>
+                  <UserFollowButton 
+                    userId={userId!} 
+                    currentUserId={currentUser?.id}
+                  />
+                </div>
                 <p className="text-muted-foreground mb-4">{profile.email}</p>
                 
                 <div className="flex flex-wrap gap-2 justify-center md:justify-start">
@@ -142,8 +158,11 @@ export default function UserProfile() {
           </CardContent>
         </Card>
 
+        {/* Follow Stats */}
+        <UserFollowStats userId={userId!} />
+
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-8">
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -181,31 +200,37 @@ export default function UserProfile() {
           </Card>
         </div>
 
-        {/* Achievements */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Achievements</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {achievements.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {achievements.map((achievement) => (
-                  <AchievementBadge
-                    key={achievement.id}
-                    type={achievement.achievement_type}
-                    achieved={true}
-                    achievedAt={achievement.achieved_at}
-                    metadata={achievement.metadata}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="text-center text-muted-foreground py-8">
-                No achievements yet. Start playing to unlock badges!
-              </p>
-            )}
-          </CardContent>
-        </Card>
+        {/* Activity Feed and Achievements Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Achievements */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Achievements</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {achievements.length > 0 ? (
+                <div className="space-y-4">
+                  {achievements.map((achievement) => (
+                    <AchievementBadge
+                      key={achievement.id}
+                      type={achievement.achievement_type}
+                      achieved={true}
+                      achievedAt={achievement.achieved_at}
+                      metadata={achievement.metadata}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">
+                  No achievements yet. Start playing to unlock badges!
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Activity Feed */}
+          <UserActivityFeed userId={userId!} />
+        </div>
       </div>
     </div>
   );
