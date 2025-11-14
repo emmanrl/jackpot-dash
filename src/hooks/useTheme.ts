@@ -87,6 +87,8 @@ export const useTheme = (userId: string | undefined) => {
   useEffect(() => {
     if (!userId) {
       setLoading(false);
+      setCurrentTheme('default');
+      applyTheme('default');
       return;
     }
 
@@ -100,13 +102,21 @@ export const useTheme = (userId: string | undefined) => {
 
         if (profile) {
           const xpValue = (profile as any).experience_points || 0;
-          const themeValue = (profile as any).theme || getThemeFromXP(xpValue);
+          const themeValue = (profile as any).theme;
+          
+          // Use user-selected theme if available, otherwise use XP-based theme
+          const finalTheme = themeValue && themeValue !== 'default' 
+            ? themeValue 
+            : getThemeFromXP(xpValue);
+          
           setXP(xpValue);
-          setCurrentTheme(themeValue as ThemeType);
-          applyTheme(themeValue as ThemeType);
+          setCurrentTheme(finalTheme as ThemeType);
+          applyTheme(finalTheme as ThemeType);
         }
       } catch (error) {
         console.error('Error fetching theme:', error);
+        setCurrentTheme('default');
+        applyTheme('default');
       } finally {
         setLoading(false);
       }

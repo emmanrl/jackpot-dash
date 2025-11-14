@@ -19,6 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import AdminPayments from "./AdminPayments";
 import AdminWithdrawals from "./AdminWithdrawals";
 import TransactionDetailDrawer from "@/components/TransactionDetailDrawer";
+import { BonusSettingsPanel } from "@/components/BonusSettingsPanel";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -424,23 +425,30 @@ export default function Admin() {
 
       const nextJackpotNumber = (maxJackpot?.jackpot_number || 0) + 1;
 
-      // Calculate next draw time based on frequency
+      // Calculate next draw time based on frequency - Fixed to proper time intervals
       const nextDraw = new Date();
       if (jackpot.frequency === '5mins') {
-        nextDraw.setMinutes(nextDraw.getMinutes() + 72);
+        nextDraw.setMinutes(nextDraw.getMinutes() + 5);
+      } else if (jackpot.frequency === '20mins') {
+        nextDraw.setMinutes(nextDraw.getMinutes() + 20);
       } else if (jackpot.frequency === '30mins') {
-        nextDraw.setHours(nextDraw.getHours() + 2);
-        nextDraw.setMinutes(nextDraw.getMinutes() + 24);
+        nextDraw.setMinutes(nextDraw.getMinutes() + 30);
       } else if (jackpot.frequency === '1hour') {
+        nextDraw.setHours(nextDraw.getHours() + 1);
+      } else if (jackpot.frequency === '2hours') {
+        nextDraw.setHours(nextDraw.getHours() + 2);
+      } else if (jackpot.frequency === '4hours') {
         nextDraw.setHours(nextDraw.getHours() + 4);
       } else if (jackpot.frequency === '12hours') {
-        nextDraw.setHours(18, 0, 0, 0);
-        if (nextDraw.getTime() <= Date.now()) {
-          nextDraw.setDate(nextDraw.getDate() + 1);
-        }
-      } else if (jackpot.frequency === '24hours') {
-        nextDraw.setHours(0, 0, 0, 0);
+        nextDraw.setHours(nextDraw.getHours() + 12);
+      } else if (jackpot.frequency === '24hours' || jackpot.frequency === '1day') {
         nextDraw.setDate(nextDraw.getDate() + 1);
+      } else if (jackpot.frequency === '3days') {
+        nextDraw.setDate(nextDraw.getDate() + 3);
+      } else if (jackpot.frequency === '1week') {
+        nextDraw.setDate(nextDraw.getDate() + 7);
+      } else if (jackpot.frequency === '1month') {
+        nextDraw.setMonth(nextDraw.getMonth() + 1);
       }
 
       const { error } = await supabase
@@ -605,12 +613,13 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="jackpots" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="jackpots">Jackpots</TabsTrigger>
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
             <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="payments">Payment Settings</TabsTrigger>
+            <TabsTrigger value="bonuses">Bonuses</TabsTrigger>
             <TabsTrigger value="withdrawal">Withdraw Funds</TabsTrigger>
           </TabsList>
 
@@ -1019,6 +1028,10 @@ export default function Admin() {
               paymentSettings={paymentSettings}
               onUpdate={updatePaymentSetting}
             />
+          </TabsContent>
+
+          <TabsContent value="bonuses">
+            <BonusSettingsPanel />
           </TabsContent>
 
           <TabsContent value="withdrawal">
