@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, Upload } from "lucide-react";
-import TopNav from "@/components/TopNav";
+import { AdminNav } from "@/components/AdminNav";
 
 interface SiteSettings {
   id: string;
@@ -166,7 +166,7 @@ const SiteSettings = () => {
   if (loading) {
     return (
       <div className="min-h-screen">
-        <TopNav />
+        <AdminNav />
         <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
@@ -178,15 +178,15 @@ const SiteSettings = () => {
 
   return (
     <div className="min-h-screen">
-      <TopNav />
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">Site Settings</h1>
-          <p className="text-muted-foreground">Manage your site configuration</p>
+      <AdminNav />
+      <div className="container mx-auto px-4 py-4 md:py-8">
+        <div className="mb-4 md:mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold">Site Settings</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Manage your site configuration</p>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <Card className="p-6 space-y-6">
+          <Card className="p-4 md:p-6 space-y-4 md:space-y-6">
             <div>
               <Label htmlFor="site_name">Site Name</Label>
               <Input

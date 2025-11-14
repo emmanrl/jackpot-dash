@@ -12,6 +12,7 @@ import ReceiptModal from "@/components/ReceiptModal";
 import TicketPurchaseDialog from "@/components/TicketPurchaseDialog";
 import WinCelebrationModal from "@/components/WinCelebrationModal";
 import { useWinNotification } from "@/hooks/useWinNotification";
+import { ImageSlider } from "@/components/ImageSlider";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -103,6 +104,7 @@ const Index = () => {
   return (
     <div className="min-h-screen">
       <TopNav />
+      <ImageSlider />
       {isLoggedIn ? (
         <>
           <ActiveJackpots onBuyTicket={handleBuyTicket} />

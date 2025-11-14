@@ -150,10 +150,10 @@ export default function JackpotAutomationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] md:w-full">
         <DialogHeader>
-          <DialogTitle>Create Automated Jackpot</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-lg md:text-xl">Create Automated Jackpot</DialogTitle>
+          <DialogDescription className="text-sm">
             Set up an automated jackpot with scheduled draws
           </DialogDescription>
         </DialogHeader>
