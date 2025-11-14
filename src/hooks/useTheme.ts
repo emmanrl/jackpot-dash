@@ -99,11 +99,11 @@ export const useTheme = (userId: string | undefined) => {
           .single();
 
         if (profile) {
-          setXP(profile.experience_points || 0);
-          const autoTheme = getThemeFromXP(profile.experience_points || 0);
-          const savedTheme = (profile.theme as ThemeType) || autoTheme;
-          setCurrentTheme(savedTheme);
-          applyTheme(savedTheme);
+          const xpValue = (profile as any).experience_points || 0;
+          const themeValue = (profile as any).theme || getThemeFromXP(xpValue);
+          setXP(xpValue);
+          setCurrentTheme(themeValue as ThemeType);
+          applyTheme(themeValue as ThemeType);
         }
       } catch (error) {
         console.error('Error fetching theme:', error);
@@ -158,7 +158,7 @@ export const useTheme = (userId: string | undefined) => {
     try {
       await supabase
         .from('profiles')
-        .update({ theme })
+        .update({ theme } as any)
         .eq('id', userId);
 
       setCurrentTheme(theme);

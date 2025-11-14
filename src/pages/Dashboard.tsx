@@ -138,7 +138,7 @@ const Dashboard = () => {
         .single();
       
       if (profileData) {
-        setProfile(profileData);
+        setProfile(profileData as any);
       }
 
       const { data: walletData, error: walletError } = await supabase
@@ -510,7 +510,7 @@ const Dashboard = () => {
                 ticketPrice={jackpot.ticket_price}
                 endTime={jackpot.next_draw}
                 category={jackpot.category}
-                onBuyTicket={() => handleBuyTicket(jackpot)}
+                onBuyClick={() => handleBuyTicket(jackpot)}
               />
             ))}
           </div>
@@ -528,7 +528,15 @@ const Dashboard = () => {
               {tickets.length > 0 ? (
                 <div className="space-y-2">
                   {tickets.slice(0, 5).map((ticket) => (
-                    <TicketCard key={ticket.id} ticket={ticket} />
+                    <TicketCard 
+                      key={ticket.id}
+                      ticketId={ticket.id}
+                      ticketNumber={ticket.ticket_number}
+                      purchasePrice={ticket.purchase_price}
+                      purchasedAt={ticket.purchased_at}
+                      jackpotName={ticket.jackpots.name}
+                      isWinner={ticket.isWinner}
+                    />
                   ))}
                 </div>
               ) : (
@@ -653,6 +661,7 @@ const Dashboard = () => {
         open={ticketDialogOpen}
         onOpenChange={setTicketDialogOpen}
         jackpot={selectedJackpot}
+        walletBalance={wallet?.balance || 0}
         onSuccess={handleTicketPurchaseSuccess}
       />
 
@@ -660,7 +669,7 @@ const Dashboard = () => {
         <DrawDetailsModal
           open={drawDetailsOpen}
           onOpenChange={setDrawDetailsOpen}
-          winner={selectedWin}
+          win={selectedWin}
         />
       )}
 
