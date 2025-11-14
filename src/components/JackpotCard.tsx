@@ -1,9 +1,10 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Ticket } from "lucide-react";
+import { TrendingUp, Ticket, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CountdownTimer } from "./CountdownTimer";
+import DrawDetailsModal from "./DrawDetailsModal";
 
 interface JackpotCardProps {
   jackpotId: string;
@@ -26,20 +27,29 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
   const [participantCount, setParticipantCount] = useState(0);
   const [ticketCount, setTicketCount] = useState(0);
   const [showDrawDetails, setShowDrawDetails] = useState(false);
+  const [winnerData, setWinnerData] = useState<any>(null);
 
   useEffect(() => {
     const fetchPoolGrowthAndBadge = async () => {
       try {
-        const { count } = await supabase
+        // Fetch ticket count and participant count
+        const { data: tickets } = await supabase
           .from('tickets')
-          .select('*', { count: 'exact', head: true })
+          .select('user_id')
           .eq('jackpot_id', jackpotId);
 
-        if (count && count > 0) {
-          const growthPercentage = Math.min(Math.floor(count * 2.5), 50);
+        if (tickets && tickets.length > 0) {
+          const growthPercentage = Math.min(Math.floor(tickets.length * 2.5), 50);
           setPoolGrowth(growthPercentage);
+          setTicketCount(tickets.length);
+          
+          // Count unique participants
+          const uniqueUsers = new Set(tickets.map(t => t.user_id));
+          setParticipantCount(uniqueUsers.size);
         } else {
           setPoolGrowth(0);
+          setTicketCount(0);
+          setParticipantCount(0);
         }
 
         // Fetch current jackpot for real prize pool
@@ -215,9 +225,31 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
           />
         </div>
 
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Ticket Price</span>
-          <span className="font-bold text-foreground">{ticketPrice}</span>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Ticket Price</span>
+            <span className="font-bold text-foreground">{ticketPrice}</span>
+          </div>
+          
+          {(participantCount > 0 || ticketCount > 0) && (
+            <div className="flex items-center justify-between text-xs p-2 rounded-md bg-muted/30">
+              <div className="flex items-center gap-1">
+                <Users className="w-3 h-3 text-primary" />
+                <span className="text-muted-foreground">Participants</span>
+              </div>
+              <span className="font-semibold text-foreground">{participantCount}</span>
+            </div>
+          )}
+          
+          {ticketCount > 0 && (
+            <div className="flex items-center justify-between text-xs p-2 rounded-md bg-muted/30">
+              <div className="flex items-center gap-1">
+                <Ticket className="w-3 h-3 text-primary" />
+                <span className="text-muted-foreground">Tickets Sold</span>
+              </div>
+              <span className="font-semibold text-foreground">{ticketCount}</span>
+            </div>
+          )}
         </div>
       </CardContent>
 
@@ -226,13 +258,41 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
           variant="prize" 
           className="w-full" 
           size="lg" 
-          onClick={onBuyClick}
-          disabled={isEnded}
+          onClick={async () => {
+            if (isEnded && status === 'completed') {
+              // Fetch winner data for this jackpot
+              const { data: winners } = await supabase
+                .from('winners')
+                .select(`
+                  *,
+                  jackpots (name, id),
+                  profiles (full_name, email)
+                `)
+                .eq('jackpot_id', jackpotId)
+                .order('winner_rank', { ascending: true });
+
+              if (winners && winners.length > 0) {
+                setWinnerData(winners[0]); // Show first winner in modal
+                setShowDrawDetails(true);
+              }
+            } else if (onBuyClick) {
+              onBuyClick();
+            }
+          }}
+          disabled={isEnded && status !== 'completed'}
         >
           <Ticket className="w-4 h-4" />
-          {isEnded ? "Draw Ended" : "Buy Tickets"}
+          {isEnded ? (status === 'completed' ? "View Winners" : "Draw Ended") : "Buy Tickets"}
         </Button>
       </CardFooter>
+
+      {winnerData && (
+        <DrawDetailsModal
+          open={showDrawDetails}
+          onOpenChange={setShowDrawDetails}
+          win={winnerData}
+        />
+      )}
     </Card>
   );
 };
