@@ -29,3 +29,12 @@ verify_jwt = false
 
 [functions.auto-create-jackpots]
 verify_jwt = false
+
+[functions.process-withdrawal]
+verify_jwt = true
+
+[functions.send-push-notification]
+verify_jwt = false
+
+[functions.delete-jackpot]
+verify_jwt = true
