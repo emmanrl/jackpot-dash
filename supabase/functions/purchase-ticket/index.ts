@@ -121,6 +121,11 @@ serve(async (req) => {
 
     if (xpError) console.error('Failed to award XP:', xpError);
 
+    // Check and award achievements
+    await supabase.rpc('check_and_award_achievements', {
+      p_user_id: user.id
+    });
+
     console.log('Tickets purchased successfully:', { count: quantity, totalCost, xpAwarded: quantity });
 
     return new Response(
