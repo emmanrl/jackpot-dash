@@ -113,7 +113,15 @@ serve(async (req) => {
 
     if (jackpotUpdateError) throw jackpotUpdateError;
 
-    console.log('Tickets purchased successfully:', { count: quantity, totalCost });
+    // Award XP for ticket purchase (1 XP per ticket)
+    const { error: xpError } = await supabase.rpc('award_experience_points', {
+      p_user_id: user.id,
+      p_amount: quantity
+    });
+
+    if (xpError) console.error('Failed to award XP:', xpError);
+
+    console.log('Tickets purchased successfully:', { count: quantity, totalCost, xpAwarded: quantity });
 
     return new Response(
       JSON.stringify({ 

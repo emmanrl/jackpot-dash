@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Wallet, Ticket, Trophy, LogOut } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Sparkles, Wallet, Ticket, Trophy, LogOut, Star, TrendingUp, Zap, Settings, User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
 import Footer from "@/components/Footer";
 import DepositDialog from "@/components/DepositDialog";
@@ -15,8 +18,12 @@ import TicketPurchaseDialog from "@/components/TicketPurchaseDialog";
 import DrawDetailsModal from "@/components/DrawDetailsModal";
 import TicketCard from "@/components/TicketCard";
 import WinCelebrationModal from "@/components/WinCelebrationModal";
+import JackpotCard from "@/components/JackpotCard";
 import { useDrawNotifications } from "@/hooks/useDrawNotifications";
 import { useWinNotification } from "@/hooks/useWinNotification";
+import { useTheme } from "@/hooks/useTheme";
+import NotificationBell from "@/components/NotificationBell";
+import { useRealtimeAvatar } from "@/hooks/useRealtimeAvatar";
 
 interface WalletData {
   balance: number;
@@ -47,31 +54,39 @@ interface WinnerData {
   };
 }
 
+interface WithdrawalAccount {
+  id: string;
+  bank_name: string;
+  account_number: string;
+  account_name: string;
+  is_default: boolean;
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [wallet, setWallet] = useState<WalletData | null>(null);
   const [tickets, setTickets] = useState<TicketData[]>([]);
   const [wins, setWins] = useState<WinnerData[]>([]);
+  const [withdrawalAccount, setWithdrawalAccount] = useState<WithdrawalAccount | null>(null);
   
-  // Enable draw notifications
   useDrawNotifications();
-  
-  // Enable win notifications
   const { winData, showWinModal, setShowWinModal } = useWinNotification();
+  const realtimeAvatarUrl = useRealtimeAvatar(user?.id);
+  const { currentTheme, xp, updateTheme, unlockedThemes, themes } = useTheme(user?.id);
   
-  // Sync realtime wins with celebration modal
   useEffect(() => {
     if (winData && showWinModal) {
       setCelebrationWin({
         prizeAmount: winData.prizeAmount,
         jackpotName: winData.jackpotName,
       });
-      setShowWinModal(false); // Reset
+      setShowWinModal(false);
     }
   }, [winData, showWinModal, setShowWinModal]);
-  const [depositAmount, setDepositAmount] = useState("");
+  
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [depositDialogOpen, setDepositDialogOpen] = useState(false);
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
@@ -80,7 +95,6 @@ const Dashboard = () => {
   const [activeJackpots, setActiveJackpots] = useState<any[]>([]);
   const [selectedWin, setSelectedWin] = useState<WinnerData | null>(null);
   const [drawDetailsOpen, setDrawDetailsOpen] = useState(false);
-  const [expandedJackpots, setExpandedJackpots] = useState<Set<string>>(new Set());
   const [celebrationWin, setCelebrationWin] = useState<{
     prizeAmount: number;
     jackpotName: string;
@@ -98,6 +112,7 @@ const Dashboard = () => {
       setUser(session.user);
       await fetchUserData(session.user.id);
       await fetchActiveJackpots();
+      await fetchWithdrawalAccount(session.user.id);
       setLoading(false);
     };
 
@@ -116,92 +131,80 @@ const Dashboard = () => {
 
   const fetchUserData = async (userId: string) => {
     try {
-      // Fetch wallet balance
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("full_name, email, avatar_url, experience_points, theme")
+        .eq("id", userId)
+        .single();
+      
+      if (profileData) {
+        setProfile(profileData);
+      }
+
       const { data: walletData, error: walletError } = await supabase
-        .from("wallets")
-        .select("balance")
-        .eq("user_id", userId)
+        .from('wallets')
+        .select('balance')
+        .eq('user_id', userId)
         .single();
 
       if (walletError) throw walletError;
       setWallet(walletData);
 
-      // Fetch tickets
       const { data: ticketsData, error: ticketsError } = await supabase
-        .from("tickets")
+        .from('tickets')
         .select(`
-          id,
-          ticket_number,
-          purchase_price,
-          purchased_at,
-          jackpot_id,
-          jackpots (name)
+          *,
+          jackpots(name)
         `)
-        .eq("user_id", userId)
-        .order("purchased_at", { ascending: false });
+        .eq('user_id', userId)
+        .order('purchased_at', { ascending: false })
+        .limit(10);
 
       if (ticketsError) throw ticketsError;
-      
-      // Fetch winning tickets
-      const { data: winningTickets } = await supabase
-        .from("winners")
-        .select("ticket_id")
-        .eq("user_id", userId);
-      
-      const winningTicketIds = new Set(winningTickets?.map(w => w.ticket_id) || []);
-      
-      // Get completed jackpot IDs
-      const { data: completedJackpots } = await supabase
-        .from("jackpots")
-        .select("id")
-        .eq("status", "completed");
-      
-      const completedJackpotIds = new Set(completedJackpots?.map(j => j.id) || []);
-      
-      // Mark tickets as winner/loser
-      const ticketsWithStatus = (ticketsData || []).map(ticket => ({
+
+      const { data: winnerRecords } = await supabase
+        .from('winners')
+        .select('ticket_id')
+        .eq('user_id', userId);
+
+      const winningTicketIds = new Set(winnerRecords?.map(w => w.ticket_id));
+      const ticketsWithStatus = ticketsData?.map(ticket => ({
         ...ticket,
-        isWinner: completedJackpotIds.has(ticket.jackpot_id)
-          ? winningTicketIds.has(ticket.id)
-          : undefined
-      }));
-      
+        isWinner: winningTicketIds.has(ticket.id)
+      })) || [];
+
       setTickets(ticketsWithStatus);
 
-      // Fetch win history
       const { data: winsData, error: winsError } = await supabase
-        .from("winners")
+        .from('winners')
         .select(`
-          id,
-          prize_amount,
-          claimed_at,
-          total_participants,
-          total_pool_amount,
-          ticket_id,
-          jackpot_id,
-          jackpots (name)
+          *,
+          jackpots(name)
         `)
-        .eq("user_id", userId)
-        .order("claimed_at", { ascending: false });
+        .eq('user_id', userId)
+        .order('claimed_at', { ascending: false });
 
       if (winsError) throw winsError;
       setWins(winsData || []);
-
-      // Check for new wins to celebrate
-      if (winsData && winsData.length > 0) {
-        const latestWin = winsData[0];
-        const winTime = new Date(latestWin.claimed_at).getTime();
-        const now = Date.now();
-        // If win is within last 5 seconds, show celebration
-        if (now - winTime < 5000) {
-          setCelebrationWin({
-            prizeAmount: Number(latestWin.prize_amount),
-            jackpotName: latestWin.jackpots.name,
-          });
-        }
-      }
     } catch (error: any) {
       toast.error(error.message || "Failed to fetch user data");
+    }
+  };
+
+  const fetchWithdrawalAccount = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('withdrawal_accounts')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_default', true)
+        .single();
+
+      if (!error && data) {
+        setWithdrawalAccount(data);
+      }
+    } catch (error: any) {
+      console.error('Error fetching withdrawal account:', error);
     }
   };
 
@@ -230,34 +233,6 @@ const Dashboard = () => {
     await fetchActiveJackpots();
   };
 
-  const handleDeposit = async () => {
-    try {
-      const amount = parseFloat(depositAmount);
-      if (isNaN(amount) || amount <= 0) {
-        toast.error("Please enter a valid amount");
-        return;
-      }
-
-      const { error } = await supabase
-        .from('transactions')
-        .insert({
-          user_id: user?.id,
-          type: 'deposit',
-          amount: amount,
-          status: 'pending',
-          reference: `Deposit request - ${new Date().toISOString()}`
-        });
-
-      if (error) throw error;
-
-      toast.success("Deposit request submitted. Awaiting admin approval.");
-      setDepositAmount("");
-      setDepositDialogOpen(false);
-    } catch (error: any) {
-      toast.error(`Failed to submit deposit: ${error.message}`);
-    }
-  };
-
   const handleWithdraw = async () => {
     try {
       const amount = parseFloat(withdrawAmount);
@@ -271,15 +246,7 @@ const Dashboard = () => {
         return;
       }
 
-      // Fetch user's default withdrawal account
-      const { data: accounts, error: accountError } = await supabase
-        .from('withdrawal_accounts')
-        .select('*')
-        .eq('user_id', user?.id)
-        .eq('is_default', true)
-        .single();
-
-      if (accountError || !accounts) {
+      if (!withdrawalAccount) {
         toast.error("Please add a withdrawal account in Settings first");
         return;
       }
@@ -293,15 +260,14 @@ const Dashboard = () => {
           status: 'pending',
           reference: `Withdrawal request - ${new Date().toISOString()}`,
           admin_note: JSON.stringify({
-            bank_name: accounts.bank_name,
-            account_number: accounts.account_number,
-            account_name: accounts.account_name,
+            bank_name: withdrawalAccount.bank_name,
+            account_number: withdrawalAccount.account_number,
+            account_name: withdrawalAccount.account_name,
           }),
         });
 
       if (error) throw error;
 
-      // Create notification for withdrawal placement
       await supabase.from('notifications').insert({
         user_id: user?.id,
         type: 'withdrawal_placed',
@@ -323,9 +289,34 @@ const Dashboard = () => {
     navigate("/");
   };
 
+  const getInitials = () => {
+    if (profile?.full_name) {
+      return profile.full_name.charAt(0).toUpperCase();
+    }
+    if (profile?.email) {
+      return profile.email.charAt(0).toUpperCase();
+    }
+    return "U";
+  };
+
+  const getXPProgress = () => {
+    const themeKeys = Object.keys(themes);
+    const currentIndex = themeKeys.findIndex(key => themes[key as keyof typeof themes].minXP <= xp && 
+      (themeKeys[themeKeys.indexOf(key) + 1] ? themes[themeKeys[themeKeys.indexOf(key) + 1] as keyof typeof themes].minXP > xp : true));
+    const nextThemeKey = themeKeys[currentIndex + 1];
+    
+    if (!nextThemeKey) return { current: xp, max: xp, percentage: 100 };
+    
+    const currentThemeXP = themes[themeKeys[currentIndex] as keyof typeof themes].minXP;
+    const nextThemeXP = themes[nextThemeKey as keyof typeof themes].minXP;
+    const progress = ((xp - currentThemeXP) / (nextThemeXP - currentThemeXP)) * 100;
+    
+    return { current: xp, max: nextThemeXP, percentage: Math.min(progress, 100) };
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <Sparkles className="w-12 h-12 text-primary animate-pulse mx-auto mb-4" />
           <p className="text-muted-foreground">Loading your dashboard...</p>
@@ -334,9 +325,10 @@ const Dashboard = () => {
     );
   }
 
+  const xpProgress = getXPProgress();
+
   return (
-    <div className="min-h-screen">
-      {/* Header */}
+    <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
@@ -348,351 +340,327 @@ const Dashboard = () => {
                 JackpotWin
               </span>
             </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-full"
-              onClick={() => navigate("/settings")}
-            >
-              <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-sm font-bold text-primary">
-                  {user?.email?.charAt(0).toUpperCase()}
-                </span>
-              </div>
-            </Button>
+            
+            <div className="flex items-center gap-3">
+              <NotificationBell />
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="gap-2 h-auto p-2">
+                    <Avatar className="h-10 w-10 border-2 border-primary/20">
+                      {(realtimeAvatarUrl || profile?.avatar_url) ? (
+                        <AvatarImage src={realtimeAvatarUrl || profile.avatar_url} alt={profile?.full_name || user?.email || "User"} />
+                      ) : null}
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        {getInitials()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="hidden md:flex flex-col items-start">
+                      <span className="text-sm font-semibold">{profile?.full_name || user?.email}</span>
+                      <div className="flex items-center gap-1">
+                        <Star className="w-3 h-3 text-primary" />
+                        <span className="text-xs text-muted-foreground">{xp} XP</span>
+                      </div>
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">{profile?.full_name || "User"}</p>
+                      <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <div className="px-2 py-2">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-medium">Experience</span>
+                      <Badge variant="secondary" className="text-xs">
+                        <Star className="w-3 h-3 mr-1" />
+                        {xp} XP
+                      </Badge>
+                    </div>
+                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500"
+                        style={{ width: `${xpProgress.percentage}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {xpProgress.max - xp} XP to next theme
+                    </p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+                    <Trophy className="w-4 h-4 mr-2" />
+                    Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/profile")}>
+                    <UserIcon className="w-4 h-4 mr-2" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/settings")}>
+                    <Settings className="w-4 h-4 mr-2" />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-8">
-        {/* Wallet Balance - Enhanced */}
-        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card shadow-lg">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Wallet className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl">Wallet Balance</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">Your available funds</p>
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="text-5xl font-bold text-primary gold-glow">
-              ₦{wallet?.balance?.toFixed(2) || "0.00"}
-            </div>
-            <div className="flex gap-3">
-              <Button 
-                variant="default" 
-                size="lg"
-                className="flex-1"
-                onClick={() => setDepositDialogOpen(true)}
-              >
-                <Wallet className="w-4 h-4 mr-2" />
-                Deposit Funds
-              </Button>
-              
-              <Dialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="lg" className="flex-1">
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Withdraw
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Withdraw Funds</DialogTitle>
-                    <DialogDescription>
-                      Submit a withdrawal request. Admin approval required.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="withdraw-amount">Amount</Label>
-                      <Input
-                        id="withdraw-amount"
-                        type="number"
-                        step="0.01"
-                        placeholder="0.00"
-                        value={withdrawAmount}
-                        onChange={(e) => setWithdrawAmount(e.target.value)}
-                      />
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Available balance: ₦{wallet?.balance?.toFixed(2) || '0.00'}
-                    </p>
+      <main className="container mx-auto px-4 py-6 md:py-8 space-y-6 md:space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card shadow-lg col-span-1 md:col-span-2">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Wallet className="w-5 h-5 text-primary" />
                   </div>
-                  <DialogFooter>
-                    <Button onClick={handleWithdraw}>Submit Request</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </CardContent>
-        </Card>
+                  <CardTitle className="text-lg md:text-xl">Wallet Balance</CardTitle>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-3xl md:text-5xl font-bold text-primary">
+                ₦{wallet?.balance?.toFixed(2) || "0.00"}
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button 
+                  variant="default" 
+                  size="lg"
+                  className="flex-1"
+                  onClick={() => setDepositDialogOpen(true)}
+                >
+                  <Wallet className="w-4 h-4 mr-2" />
+                  Deposit
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  className="flex-1"
+                  onClick={() => setWithdrawDialogOpen(true)}
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Withdraw
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Stats Grid - Enhanced */}
-        <div className="grid md:grid-cols-3 gap-6">
-          <Card className="border-border hover:border-primary/50 transition-colors">
+          <Card className="border-primary/20 shadow-lg">
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
-                <Ticket className="w-5 h-5 text-primary" />
-                <CardTitle className="text-base">Total Tickets</CardTitle>
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Star className="w-5 h-5 text-primary" />
+                </div>
+                <CardTitle className="text-lg">Your Progress</CardTitle>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-4xl font-bold text-primary">{tickets.length}</div>
-              <p className="text-sm text-muted-foreground mt-2">Tickets purchased</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-border hover:border-primary/50 transition-colors">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-primary" />
-                <CardTitle className="text-base">Total Wins</CardTitle>
+            <CardContent className="space-y-4">
+              <div className="text-3xl font-bold text-primary">
+                {xp} XP
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-4xl font-bold text-primary">{wins.length}</div>
-              <p className="text-sm text-muted-foreground mt-2">Jackpots won</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="border-border hover:border-primary/50 transition-colors">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                <CardTitle className="text-base">Total Won</CardTitle>
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Current Theme</span>
+                  <span className="font-medium text-foreground capitalize">{currentTheme}</span>
+                </div>
+                <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500"
+                    style={{ width: `${xpProgress.percentage}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {xpProgress.max - xp} XP to unlock next theme
+                </p>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-4xl font-bold text-primary">
-                ₦{wins.reduce((sum, win) => sum + Number(win.prize_amount), 0).toFixed(2)}
-              </div>
-              <p className="text-sm text-muted-foreground mt-2">Prize money earned</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Tickets Section - Enhanced with Grouping */}
-        <Card className="border-border shadow-sm">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Ticket className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle>My Tickets</CardTitle>
-                <CardDescription>Your tickets grouped by jackpot</CardDescription>
-              </div>
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap className="w-6 h-6 text-primary" />
+              <h2 className="text-2xl md:text-3xl font-bold">Active Jackpots</h2>
             </div>
-          </CardHeader>
-          <CardContent>
-            {tickets.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">No tickets purchased yet</p>
-            ) : (
-              <div className="space-y-8">
-                {Object.entries(
-                  tickets.reduce((acc, ticket) => {
-                    const jackpotName = ticket.jackpots.name;
-                    if (!acc[jackpotName]) {
-                      acc[jackpotName] = [];
-                    }
-                    acc[jackpotName].push(ticket);
-                    return acc;
-                  }, {} as Record<string, TicketData[]>)
-                ).map(([jackpotName, jackpotTickets]) => {
-                  const jackpotId = jackpotTickets[0].jackpot_id;
-                  const isExpanded = expandedJackpots.has(jackpotId);
-                  const displayedTickets = isExpanded ? jackpotTickets : jackpotTickets.slice(0, 2);
-                  
-                  return (
-                  <div key={jackpotName} className="space-y-3">
-                    <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
-                      <Trophy className="w-5 h-5" />
-                      {jackpotName}
-                      <span className="text-sm text-muted-foreground font-normal">
-                        ({jackpotTickets.length} ticket{jackpotTickets.length !== 1 ? 's' : ''})
-                      </span>
-                    </h3>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {displayedTickets.map((ticket) => (
-                        <TicketCard
-                          key={ticket.id}
-                          ticketId={ticket.id}
-                          ticketNumber={ticket.ticket_number}
-                          purchasePrice={Number(ticket.purchase_price)}
-                          purchasedAt={ticket.purchased_at}
-                          jackpotName={ticket.jackpots.name}
-                          isWinner={ticket.isWinner}
-                        />
-                      ))}
-                    </div>
-                    {jackpotTickets.length > 2 && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => {
-                          const newExpanded = new Set(expandedJackpots);
-                          if (isExpanded) {
-                            newExpanded.delete(jackpotId);
-                          } else {
-                            newExpanded.add(jackpotId);
-                          }
-                          setExpandedJackpots(newExpanded);
-                        }}
-                      >
-                        {isExpanded ? 'Show Less' : `Show ${jackpotTickets.length - 2} More`}
-                      </Button>
-                    )}
-                  </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            <Badge variant="secondary" className="hidden md:inline-flex">
+              <TrendingUp className="w-3 h-3 mr-1" />
+              {activeJackpots.length} Live
+            </Badge>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {activeJackpots.map((jackpot) => (
+              <JackpotCard
+                key={jackpot.id}
+                jackpotId={jackpot.id}
+                title={jackpot.name}
+                prize={jackpot.prize_pool}
+                ticketPrice={jackpot.ticket_price}
+                endTime={jackpot.next_draw}
+                category={jackpot.category}
+                onBuyTicket={() => handleBuyTicket(jackpot)}
+              />
+            ))}
+          </div>
+        </section>
 
-        {/* Active Jackpots - Enhanced */}
-        {activeJackpots.length > 0 && (
-          <Card className="border-border shadow-sm">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          <Card>
             <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                  <CardTitle>Active Jackpots</CardTitle>
-                  <CardDescription>Buy tickets and win big prizes!</CardDescription>
-                </div>
+              <div className="flex items-center gap-2">
+                <Ticket className="w-5 h-5 text-primary" />
+                <CardTitle>Recent Tickets</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-2 gap-4">
-                {activeJackpots.map((jackpot) => (
-                  <div
-                    key={jackpot.id}
-                    className="p-4 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20"
-                  >
-                    <h3 className="font-bold text-lg text-primary">{jackpot.name}</h3>
-                    <p className="text-sm text-muted-foreground mb-3">{jackpot.description}</p>
-                    <div className="space-y-2 mb-4">
-                      <div className="flex justify-between text-sm">
-                        <span>Prize Pool:</span>
-                        <span className="font-bold text-primary">₦{Number(jackpot.prize_pool).toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Ticket Price:</span>
-                        <span className="font-medium">₦{Number(jackpot.ticket_price).toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Next Draw:</span>
-                        <span className="font-medium">
-                          {new Date(jackpot.next_draw).toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-                    <Button 
-                      variant="hero" 
-                      size="sm" 
-                      className="w-full"
-                      onClick={() => handleBuyTicket(jackpot)}
-                    >
-                      Buy Tickets
-                    </Button>
-                  </div>
-                ))}
-              </div>
+              {tickets.length > 0 ? (
+                <div className="space-y-2">
+                  {tickets.slice(0, 5).map((ticket) => (
+                    <TicketCard key={ticket.id} ticket={ticket} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">No tickets yet. Buy your first ticket above!</p>
+              )}
             </CardContent>
           </Card>
-        )}
 
-        {/* Win History - Enhanced */}
-        <Card className="border-border shadow-sm">
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-primary" />
+                <CardTitle>Recent Wins</CardTitle>
               </div>
-              <div>
-                <CardTitle>Win History</CardTitle>
-                <CardDescription>Your winning tickets and prizes</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {wins.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">No wins yet - keep playing!</p>
-            ) : (
-              <div className="space-y-4">
-                {wins.map((win) => (
-                  <div
-                    key={win.id}
-                    className="flex justify-between items-center p-4 rounded-lg bg-primary/10 border border-primary/20"
-                  >
-                    <div className="flex-1">
-                      <p className="font-medium text-primary">{win.jackpots.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Won on {new Date(win.claimed_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-primary">
-                          ₦{Number(win.prize_amount).toFixed(2)}
+            </CardHeader>
+            <CardContent>
+              {wins.length > 0 ? (
+                <div className="space-y-3">
+                  {wins.slice(0, 5).map((win) => (
+                    <div 
+                      key={win.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/10 hover:bg-primary/10 transition-colors cursor-pointer"
+                      onClick={() => {
+                        setSelectedWin(win);
+                        setDrawDetailsOpen(true);
+                      }}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm truncate">{win.jackpots.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(win.claimed_at).toLocaleDateString()}
                         </p>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedWin(win);
-                            setDrawDetailsOpen(true);
-                          }}
-                        >
-                          View
-                        </Button>
+                      <div className="text-right ml-2">
+                        <p className="font-bold text-primary">+₦{win.prize_amount.toFixed(2)}</p>
+                        <p className="text-xs text-muted-foreground">+10 XP</p>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-sm">No wins yet. Keep playing!</p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </main>
 
       <Footer />
 
-      {/* Dialogs */}
       <DepositDialog
         open={depositDialogOpen}
         onOpenChange={setDepositDialogOpen}
-        userEmail={user?.email || ''}
+        userEmail={user?.email || ""}
       />
 
-      {selectedJackpot && (
-        <TicketPurchaseDialog
-          open={ticketDialogOpen}
-          onOpenChange={setTicketDialogOpen}
-          jackpot={selectedJackpot}
-          walletBalance={wallet?.balance || 0}
-          onSuccess={handleTicketPurchaseSuccess}
-        />
-      )}
+      <Dialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Withdraw Funds</DialogTitle>
+            <DialogDescription>
+              Submit a withdrawal request. Admin approval required.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {withdrawalAccount ? (
+              <div className="p-4 rounded-lg bg-muted/50 border border-border">
+                <p className="text-sm font-semibold mb-2">Withdrawal Account</p>
+                <div className="space-y-1 text-sm">
+                  <p className="text-muted-foreground">Bank: <span className="text-foreground font-medium">{withdrawalAccount.bank_name}</span></p>
+                  <p className="text-muted-foreground">Account: <span className="text-foreground font-medium">{withdrawalAccount.account_number}</span></p>
+                  <p className="text-muted-foreground">Name: <span className="text-foreground font-medium">{withdrawalAccount.account_name}</span></p>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+                <p className="text-sm text-destructive">
+                  No withdrawal account found. Please add one in Settings first.
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => {
+                    setWithdrawDialogOpen(false);
+                    navigate("/settings");
+                  }}
+                >
+                  Go to Settings
+                </Button>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="withdraw-amount">Amount</Label>
+              <Input
+                id="withdraw-amount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                disabled={!withdrawalAccount}
+              />
+              <p className="text-sm text-muted-foreground">
+                Available: ₦{wallet?.balance?.toFixed(2) || "0.00"}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              onClick={handleWithdraw}
+              disabled={!withdrawalAccount}
+            >
+              Submit Request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <TicketPurchaseDialog
+        open={ticketDialogOpen}
+        onOpenChange={setTicketDialogOpen}
+        jackpot={selectedJackpot}
+        onSuccess={handleTicketPurchaseSuccess}
+      />
 
       {selectedWin && (
         <DrawDetailsModal
           open={drawDetailsOpen}
           onOpenChange={setDrawDetailsOpen}
-          win={selectedWin}
-          userTickets={tickets.filter(t => t.jackpot_id === selectedWin.jackpot_id)}
+          winner={selectedWin}
         />
       )}
 

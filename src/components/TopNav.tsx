@@ -104,14 +104,14 @@ const TopNav = () => {
             <div className="flex items-center gap-2">
               <NotificationBell />
               <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="gap-2 h-auto p-2">
-                  <Avatar className="h-10 w-10 border-2 border-primary/20">
-                    {(realtimeAvatarUrl || profile?.avatar_url) ? (
-                      <AvatarImage src={realtimeAvatarUrl || profile.avatar_url} alt={profile.full_name || user.email || "User"} />
-                    ) : null}
-                    <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                      {getInitials()}
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="gap-2 h-auto p-2">
+                    <Avatar className="h-10 w-10 border-2 border-primary/20">
+                      {(realtimeAvatarUrl || profile?.avatar_url) ? (
+                        <AvatarImage src={realtimeAvatarUrl || profile.avatar_url} alt={profile?.full_name || user?.email || "User"} />
+                      ) : null}
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        {getInitials()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="hidden md:flex flex-col items-start text-sm">
