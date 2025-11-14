@@ -54,16 +54,32 @@ const Settings = () => {
         return;
       }
       setUserId(session.user.id);
+      
+      // Fetch user's dark mode preference from database
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('dark_mode')
+        .eq('id', session.user.id)
+        .single();
+      
+      if (profile) {
+        const userTheme = (profile as any).dark_mode ? 'dark' : 'light';
+        setTheme(userTheme);
+        
+        // Apply theme
+        if (userTheme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
+      
       await fetchWithdrawalAccounts(session.user.id);
       await fetchBanks();
       await fetchAchievements(session.user.id);
       setLoading(false);
     };
     checkUser();
-
-    // Check current theme
-    const currentTheme = document.documentElement.classList.contains("dark") ? "dark" : "light";
-    setTheme(currentTheme);
   }, [navigate]);
 
   const fetchBanks = async () => {
@@ -209,7 +225,9 @@ const Settings = () => {
     }
   };
 
-  const handleThemeToggle = () => {
+  const handleThemeToggle = async () => {
+    if (!userId) return;
+    
     const newTheme = theme === "dark" ? "light" : "dark";
     setTheme(newTheme);
     
@@ -219,8 +237,23 @@ const Settings = () => {
       document.documentElement.classList.remove("dark");
     }
     
+    // Save to localStorage for immediate persistence
     localStorage.setItem("theme", newTheme);
-    toast.success(`Switched to ${newTheme} mode`);
+    
+    // Save to database for cross-device persistence
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ dark_mode: newTheme === 'dark' } as any)
+        .eq('id', userId);
+      
+      if (error) throw error;
+      
+      toast.success(`Switched to ${newTheme} mode`);
+    } catch (error: any) {
+      console.error('Failed to save theme preference:', error);
+      toast.error('Theme changed but failed to save preference');
+    }
   };
 
   if (loading) {
