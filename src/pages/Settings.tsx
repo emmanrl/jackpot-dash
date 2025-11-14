@@ -98,14 +98,15 @@ const Settings = () => {
 
   const fetchAchievements = async (uid: string) => {
     try {
-      const { data, error } = await supabase
-        .from("achievements")
-        .select("*")
+      // Fetch achievements
+      const { data: achievementsData, error: achievementsError } = await supabase
+        .from('achievements' as any)
+        .select('*')
         .eq("user_id", uid)
         .order("achieved_at", { ascending: false });
 
-      if (error) throw error;
-      setAchievements(data || []);
+      if (achievementsError) throw achievementsError;
+      setAchievements(achievementsData || []);
     } catch (error: any) {
       console.error("Failed to fetch achievements:", error);
     }
