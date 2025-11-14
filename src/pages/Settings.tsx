@@ -15,6 +15,7 @@ import Footer from "@/components/Footer";
 import NotificationSettings from "@/components/NotificationSettings";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import { AchievementBadge } from "@/components/AchievementBadge";
+import { PhoneVerification } from "@/components/PhoneVerification";
 
 interface WithdrawalAccount {
   id: string;

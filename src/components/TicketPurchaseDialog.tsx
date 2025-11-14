@@ -83,20 +83,20 @@ export default function TicketPurchaseDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px] max-w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Ticket className="w-5 h-5 text-primary" />
+          <DialogTitle className="flex items-center gap-2 text-base md:text-lg">
+            <Ticket className="w-4 h-4 md:w-5 md:h-5 text-primary" />
             Purchase Tickets
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-xs md:text-sm">
             {jackpot.name} - ₦{ticketPrice.toFixed(2)} per ticket
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
+        <div className="space-y-3 md:space-y-4 py-2 md:py-4">
           <div className="space-y-2">
-            <Label htmlFor="quantity">Number of Tickets</Label>
+            <Label htmlFor="quantity" className="text-sm">Number of Tickets</Label>
             <Input
               id="quantity"
               type="number"
@@ -105,19 +105,20 @@ export default function TicketPurchaseDialog({
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               disabled={loading}
+              className="text-sm"
             />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs md:text-sm text-muted-foreground">
               Maximum 100 tickets per purchase
             </p>
           </div>
 
           {/* Total Amount - Prominent Display */}
-          <div className="rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 border-2 border-primary/40 p-6 text-center">
-            <p className="text-sm text-muted-foreground mb-2">Total Amount</p>
-            <p className="text-5xl font-bold text-primary gold-glow">
+          <div className="rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 border-2 border-primary/40 p-3 md:p-6 text-center">
+            <p className="text-xs md:text-sm text-muted-foreground mb-1 md:mb-2">Total Amount</p>
+            <p className="text-3xl md:text-5xl font-bold text-primary gold-glow">
               ₦{totalCost.toFixed(2)}
             </p>
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-[10px] md:text-xs text-muted-foreground mt-1 md:mt-2">
               {quantityNum} ticket{quantityNum > 1 ? 's' : ''} × ₦{ticketPrice.toFixed(2)}
             </p>
           </div>

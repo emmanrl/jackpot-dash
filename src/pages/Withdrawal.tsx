@@ -146,6 +146,29 @@ export default function Withdrawal() {
         return;
       }
 
+      // Check ticket purchase requirement (50% of deposit)
+      const { data: deposits } = await supabase
+        .from("transactions")
+        .select("amount")
+        .eq("user_id", user.id)
+        .eq("type", "deposit")
+        .eq("status", "completed");
+
+      const { data: tickets } = await supabase
+        .from("tickets")
+        .select("purchase_price")
+        .eq("user_id", user.id);
+
+      const totalDeposits = deposits?.reduce((sum, d) => sum + Number(d.amount), 0) || 0;
+      const totalTickets = tickets?.reduce((sum, t) => sum + Number(t.purchase_price), 0) || 0;
+      const requiredTickets = totalDeposits * 0.5;
+
+      if (totalTickets < requiredTickets) {
+        toast.error(`You must purchase tickets worth at least 50% of your deposits (₦${requiredTickets.toFixed(2)}) before withdrawing`);
+        setLoading(false);
+        return;
+      }
+
       // Create withdrawal transaction
       const { error: insertError } = await supabase
         .from("transactions")
