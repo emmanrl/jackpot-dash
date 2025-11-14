@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import TopNav from "@/components/TopNav";
+import { AdminNav } from "@/components/AdminNav";
 import JackpotAutomationDialog from "@/components/JackpotAutomationDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Sparkles, Settings, Users, Shield, Image, Mail } from "lucide-react";
+import { Loader2, Sparkles, Settings, Users, Shield, Image, Mail, CreditCard, Wallet } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import AdminPayments from "./AdminPayments";
 import AdminWithdrawals from "./AdminWithdrawals";
@@ -553,7 +553,7 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
-      <TopNav />
+      <AdminNav />
 
       <div className="container mx-auto px-4 py-8 space-y-8">
         <div className="flex items-center justify-between">
@@ -624,34 +624,37 @@ export default function Admin() {
         <Tabs defaultValue="jackpots" className="space-y-6">
           <ScrollArea className="w-full">
             <TabsList className="inline-flex w-full min-w-max h-auto p-1 bg-card/50 backdrop-blur-sm border border-border">
-              <TabsTrigger value="jackpots" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
-                <Sparkles className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Jackpots</span>
+              <TabsTrigger value="jackpots" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap flex items-center gap-2 px-3 py-2">
+                <Sparkles className="w-4 h-4" />
+                <span className="hidden md:inline">Jackpots</span>
               </TabsTrigger>
-              <TabsTrigger value="transactions" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
-                <span className="hidden sm:inline">Transactions</span>
+              <TabsTrigger value="transactions" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap flex items-center gap-2 px-3 py-2">
+                <CreditCard className="w-4 h-4" />
+                <span className="hidden md:inline">Transactions</span>
               </TabsTrigger>
-              <TabsTrigger value="withdrawals" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
-                <span className="hidden sm:inline">Withdrawals</span>
+              <TabsTrigger value="withdrawals" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap flex items-center gap-2 px-3 py-2">
+                <Wallet className="w-4 h-4" />
+                <span className="hidden md:inline">Withdrawals</span>
               </TabsTrigger>
-              <TabsTrigger value="users" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
-                <Users className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Users</span>
+              <TabsTrigger value="users" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap flex items-center gap-2 px-3 py-2">
+                <Users className="w-4 h-4" />
+                <span className="hidden md:inline">Users</span>
               </TabsTrigger>
-              <TabsTrigger value="slider" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
-                <Image className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Slider</span>
+              <TabsTrigger value="slider" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap flex items-center gap-2 px-3 py-2">
+                <Image className="w-4 h-4" />
+                <span className="hidden md:inline">Slider</span>
               </TabsTrigger>
-              <TabsTrigger value="email" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
-                <Mail className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Email</span>
+              <TabsTrigger value="email" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap flex items-center gap-2 px-3 py-2">
+                <Mail className="w-4 h-4" />
+                <span className="hidden md:inline">Email</span>
               </TabsTrigger>
-              <TabsTrigger value="payments" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
-                <Settings className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Settings</span>
+              <TabsTrigger value="payments" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap flex items-center gap-2 px-3 py-2">
+                <Settings className="w-4 h-4" />
+                <span className="hidden md:inline">Settings</span>
               </TabsTrigger>
-              <TabsTrigger value="bonuses" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
-                <span className="hidden sm:inline">Bonuses</span>
+              <TabsTrigger value="bonuses" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap flex items-center gap-2 px-3 py-2">
+                <Settings className="w-4 h-4" />
+                <span className="hidden md:inline">Bonuses</span>
               </TabsTrigger>
               <TabsTrigger value="withdrawal" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
                 <span className="hidden sm:inline">Withdraw</span>

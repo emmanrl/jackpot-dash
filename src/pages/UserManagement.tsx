@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2, Trash2, Send, Eye } from "lucide-react";
-import TopNav from "@/components/TopNav";
+import { AdminNav } from "@/components/AdminNav";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface User {
   id: string;
@@ -179,7 +180,7 @@ const UserManagement = () => {
   if (loading) {
     return (
       <div className="min-h-screen">
-        <TopNav />
+        <AdminNav />
         <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
@@ -189,37 +190,39 @@ const UserManagement = () => {
 
   return (
     <div className="min-h-screen">
-      <TopNav />
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">User Management</h1>
-          <p className="text-muted-foreground">View and manage all user accounts</p>
+      <AdminNav />
+      <div className="container mx-auto px-4 py-4 md:py-8">
+        <div className="mb-4 md:mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold">User Management</h1>
+          <p className="text-sm md:text-base text-muted-foreground">View and manage all user accounts</p>
         </div>
 
-        <Card className="p-6">
+        <Card className="p-4 md:p-6">
           <div className="mb-4">
             <Input
-              placeholder="Search users by email or name..."
+              placeholder="Search users..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              className="text-sm"
             />
           </div>
 
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Balance</TableHead>
-                  <TableHead>Tickets</TableHead>
-                  <TableHead>Total Spent</TableHead>
-                  <TableHead>Total Winnings</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+          <ScrollArea className="h-[calc(100vh-20rem)] rounded-md border">
+            <div className="min-w-[800px]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs md:text-sm">Email</TableHead>
+                    <TableHead className="text-xs md:text-sm">Name</TableHead>
+                    <TableHead className="text-xs md:text-sm">Balance</TableHead>
+                    <TableHead className="text-xs md:text-sm">Tickets</TableHead>
+                    <TableHead className="text-xs md:text-sm">Total Spent</TableHead>
+                    <TableHead className="text-xs md:text-sm">Total Winnings</TableHead>
+                    <TableHead className="text-xs md:text-sm">Joined</TableHead>
+                    <TableHead className="text-xs md:text-sm">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                 {filteredUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>{user.email}</TableCell>
@@ -256,9 +259,10 @@ const UserManagement = () => {
                     </TableCell>
                   </TableRow>
                 ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableBody>
+              </Table>
+            </div>
+          </ScrollArea>
         </Card>
       </div>
 
