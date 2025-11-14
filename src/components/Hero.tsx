@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import heroImage from "@/assets/hero-jackpot.jpg";
+import { ImageSlider } from "@/components/ImageSlider";
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -72,15 +73,15 @@ const Hero = () => {
           Hourly, daily, weekly draws with prizes up to <span className="text-primary font-bold">₦1,000,000</span>
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
           {user ? (
             <Button 
               variant="hero" 
               size="lg" 
-              className="text-lg px-8 py-6 h-auto"
+              className="text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 h-auto w-full sm:w-auto"
               onClick={() => navigate("/dashboard")}
             >
-              <LayoutDashboard className="w-5 h-5" />
+              <LayoutDashboard className="w-4 h-4 sm:w-5 sm:h-5" />
               Go to Dashboard
             </Button>
           ) : (
@@ -88,16 +89,16 @@ const Hero = () => {
               <Button 
                 variant="hero" 
                 size="lg" 
-                className="text-lg px-8 py-6 h-auto"
+                className="text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 h-auto w-full sm:w-auto"
                 onClick={() => navigate("/auth")}
               >
-                <Trophy className="w-5 h-5" />
+                <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
                 Get Started
               </Button>
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="text-lg px-8 py-6 h-auto border-primary/30 hover:border-primary"
+                className="text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 h-auto border-primary/30 hover:border-primary w-full sm:w-auto"
                 onClick={() => navigate("/auth")}
               >
                 Sign In
@@ -105,6 +106,9 @@ const Hero = () => {
             </>
           )}
         </div>
+
+        {/* Image Slider */}
+        <ImageSlider />
 
         <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
           {[

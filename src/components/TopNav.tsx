@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Sparkles, LogOut, LayoutDashboard, Shield, User as UserIcon, Settings, Key } from "lucide-react";
+import { Sparkles, LogOut, LayoutDashboard, Shield, User as UserIcon, Settings, Key, Wallet } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 import { useRealtimeAvatar } from "@/hooks/useRealtimeAvatar";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { LuckyWinLogo } from "@/components/LuckyWinLogo";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +23,7 @@ const TopNav = () => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [balance, setBalance] = useState<number>(0);
   const realtimeAvatarUrl = useRealtimeAvatar(user?.id);
   const { settings } = useSiteSettings();
 
@@ -32,6 +34,7 @@ const TopNav = () => {
       if (session?.user) {
         fetchProfile(session.user.id);
         checkAdminStatus(session.user.id);
+        fetchBalance(session.user.id);
       }
     });
 
@@ -41,9 +44,11 @@ const TopNav = () => {
       if (session?.user) {
         fetchProfile(session.user.id);
         checkAdminStatus(session.user.id);
+        fetchBalance(session.user.id);
       } else {
         setProfile(null);
         setIsAdmin(false);
+        setBalance(0);
       }
     });
 
@@ -71,6 +76,41 @@ const TopNav = () => {
     setIsAdmin(!!data);
   };
 
+  const fetchBalance = async (userId: string) => {
+    const { data } = await supabase
+      .from("wallets")
+      .select("balance")
+      .eq("user_id", userId)
+      .single();
+    
+    if (data) {
+      setBalance(data.balance);
+    }
+
+    // Subscribe to wallet changes
+    const subscription = supabase
+      .channel(`wallet-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'wallets',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload: any) => {
+          if (payload.new?.balance !== undefined) {
+            setBalance(payload.new.balance);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  };
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate("/");
@@ -88,28 +128,34 @@ const TopNav = () => {
 
   return (
     <nav className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex justify-between items-center">
+      <div className="container mx-auto px-2 sm:px-4 py-2 sm:py-3">
+        <div className="flex justify-between items-center gap-2">
           <div 
-            className="flex items-center gap-3 cursor-pointer group" 
+            className="flex items-center gap-2 sm:gap-3 cursor-pointer group" 
             onClick={() => navigate("/")}
           >
             {settings.site_logo_url ? (
-              <img src={settings.site_logo_url} alt={settings.site_name} className="h-8 w-auto" />
+              <img src={settings.site_logo_url} alt={settings.site_name} className="h-6 sm:h-8 w-auto" />
             ) : (
               <>
-                <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
-                  <Sparkles className="w-5 h-5 text-primary" />
+                <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                  {settings.site_name}
-                </span>
+                <LuckyWinLogo size="md" className="hidden sm:block" />
+                <LuckyWinLogo size="sm" className="block sm:hidden" />
               </>
             )}
           </div>
 
           {user ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
+              {/* Balance display */}
+              <div className="flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg bg-primary/10 border border-primary/20">
+                <Wallet className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
+                <span className="text-xs sm:text-sm font-semibold text-primary">
+                  ₦{balance.toLocaleString()}
+                </span>
+              </div>
               <NotificationBell />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

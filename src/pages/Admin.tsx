@@ -14,12 +14,15 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Sparkles, Settings, Users, Shield } from "lucide-react";
+import { Loader2, Sparkles, Settings, Users, Shield, Image, Mail } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import AdminPayments from "./AdminPayments";
 import AdminWithdrawals from "./AdminWithdrawals";
+import AdminSliderManagement from "./AdminSliderManagement";
+import AdminEmailSender from "./AdminEmailSender";
 import TransactionDetailDrawer from "@/components/TransactionDetailDrawer";
 import { BonusSettingsPanel } from "@/components/BonusSettingsPanel";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -619,29 +622,42 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="jackpots" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 h-auto p-1 bg-card/50 backdrop-blur-sm border border-border">
-            <TabsTrigger value="jackpots" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Jackpots
-            </TabsTrigger>
-            <TabsTrigger value="transactions" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Transactions
-            </TabsTrigger>
-            <TabsTrigger value="withdrawals" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Withdrawals
-            </TabsTrigger>
-            <TabsTrigger value="users" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Users
-            </TabsTrigger>
-            <TabsTrigger value="payments" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Payment Settings
-            </TabsTrigger>
-            <TabsTrigger value="bonuses" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Bonuses
-            </TabsTrigger>
-            <TabsTrigger value="withdrawal" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-              Withdraw Funds
-            </TabsTrigger>
-          </TabsList>
+          <ScrollArea className="w-full">
+            <TabsList className="inline-flex w-full min-w-max h-auto p-1 bg-card/50 backdrop-blur-sm border border-border">
+              <TabsTrigger value="jackpots" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
+                <Sparkles className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Jackpots</span>
+              </TabsTrigger>
+              <TabsTrigger value="transactions" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
+                <span className="hidden sm:inline">Transactions</span>
+              </TabsTrigger>
+              <TabsTrigger value="withdrawals" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
+                <span className="hidden sm:inline">Withdrawals</span>
+              </TabsTrigger>
+              <TabsTrigger value="users" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
+                <Users className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Users</span>
+              </TabsTrigger>
+              <TabsTrigger value="slider" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
+                <Image className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Slider</span>
+              </TabsTrigger>
+              <TabsTrigger value="email" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
+                <Mail className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Email</span>
+              </TabsTrigger>
+              <TabsTrigger value="payments" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
+                <Settings className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Settings</span>
+              </TabsTrigger>
+              <TabsTrigger value="bonuses" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
+                <span className="hidden sm:inline">Bonuses</span>
+              </TabsTrigger>
+              <TabsTrigger value="withdrawal" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
+                <span className="hidden sm:inline">Withdraw</span>
+              </TabsTrigger>
+            </TabsList>
+          </ScrollArea>
 
           <TabsContent value="jackpots" className="space-y-6">
             <Card>
@@ -1066,6 +1082,14 @@ export default function Admin() {
 
           <TabsContent value="bonuses">
             <BonusSettingsPanel />
+          </TabsContent>
+
+          <TabsContent value="slider">
+            <AdminSliderManagement />
+          </TabsContent>
+
+          <TabsContent value="email">
+            <AdminEmailSender />
           </TabsContent>
 
           <TabsContent value="withdrawal">
