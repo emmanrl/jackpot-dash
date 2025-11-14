@@ -76,10 +76,10 @@ serve(async (req) => {
       .single();
 
     if (settingsError || !settings || !settings.secret_key) {
-      throw new Error('Paystack is not configured or enabled');
+      throw new Error('Paystack is not configured or enabled. Please configure payment settings in admin panel.');
     }
 
-    // Get bank code from bank name (you may want to maintain a mapping)
+    // Get bank code from bank name
     const bankCode = await getBankCode(bankDetails.bank_name, settings.secret_key);
 
     // Step 1: Create Transfer Recipient
@@ -144,6 +144,10 @@ serve(async (req) => {
     console.log('Transfer response:', transferData);
 
     if (!transferData.status) {
+      // Check for Paystack account limitation error
+      if (transferData.message?.includes('starter business') || transferData.code === 'transfer_unavailable') {
+        throw new Error('Your Paystack account needs to be upgraded to a Registered Business to enable withdrawals. Please upgrade your Paystack account at https://dashboard.paystack.com/#/settings/business');
+      }
       throw new Error(transferData.message || 'Failed to initiate transfer');
     }
 

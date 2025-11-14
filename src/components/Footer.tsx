@@ -1,8 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { Sparkles } from "lucide-react";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Footer = () => {
   const navigate = useNavigate();
+  const { settings } = useSiteSettings();
 
   return (
     <footer className="py-16 px-4 border-t border-border/50 bg-gradient-to-b from-background to-muted/20">
@@ -11,12 +13,18 @@ const Footer = () => {
           {/* Brand Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 cursor-pointer group" onClick={() => navigate("/")}>
-              <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
-                <Sparkles className="w-6 h-6 text-primary" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                JackpotWin
-              </span>
+              {settings.site_logo_url ? (
+                <img src={settings.site_logo_url} alt={settings.site_name} className="h-8 w-auto" />
+              ) : (
+                <>
+                  <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                    <Sparkles className="w-6 h-6 text-primary" />
+                  </div>
+                  <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                    {settings.site_name}
+                  </span>
+                </>
+              )}
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               The most trusted and transparent jackpot system. Win big, win fair, win often.
@@ -58,22 +66,22 @@ const Footer = () => {
             <h3 className="font-semibold mb-4 text-foreground">Company</h3>
             <ul className="space-y-3 text-sm">
               <li>
-                <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => navigate("/")}>
+                <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => navigate("/about")}>
                   About Us
                 </span>
               </li>
               <li>
-                <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => navigate("/")}>
+                <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => navigate("/how-it-works")}>
                   How It Works
                 </span>
               </li>
               <li>
-                <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => navigate("/")}>
+                <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => navigate("/winners")}>
                   Winners Gallery
                 </span>
               </li>
               <li>
-                <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => navigate("/")}>
+                <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => navigate("/faq")}>
                   FAQ
                 </span>
               </li>
@@ -85,22 +93,22 @@ const Footer = () => {
             <h3 className="font-semibold mb-4 text-foreground">Legal</h3>
             <ul className="space-y-3 text-sm">
               <li>
-                <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => navigate("/")}>
+                <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => navigate("/terms")}>
                   Terms of Service
                 </span>
               </li>
               <li>
-                <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => navigate("/")}>
+                <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => navigate("/privacy")}>
                   Privacy Policy
                 </span>
               </li>
               <li>
-                <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => navigate("/")}>
+                <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => navigate("/fair-play")}>
                   Fair Play Policy
                 </span>
               </li>
               <li>
-                <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => navigate("/")}>
+                <span className="text-muted-foreground hover:text-primary transition-colors cursor-pointer" onClick={() => navigate("/contact")}>
                   Contact Support
                 </span>
               </li>

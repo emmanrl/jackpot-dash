@@ -23,6 +23,9 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
   const [specialBadge, setSpecialBadge] = useState<string | null>(null);
   const [isEnded, setIsEnded] = useState(status === 'completed');
   const [currentPrize, setCurrentPrize] = useState(prize);
+  const [participantCount, setParticipantCount] = useState(0);
+  const [ticketCount, setTicketCount] = useState(0);
+  const [showDrawDetails, setShowDrawDetails] = useState(false);
 
   useEffect(() => {
     const fetchPoolGrowthAndBadge = async () => {

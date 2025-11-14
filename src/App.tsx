@@ -27,6 +27,14 @@ import Withdrawal from "./pages/Withdrawal";
 import SiteSettings from "./pages/SiteSettings";
 import UserManagement from "./pages/UserManagement";
 import UserProfile from "./pages/UserProfile";
+import AboutUs from "./pages/AboutUs";
+import HowItWorksPage from "./pages/HowItWorksPage";
+import WinnersGallery from "./pages/WinnersGallery";
+import FAQ from "./pages/FAQ";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import FairPlayPolicy from "./pages/FairPlayPolicy";
+import ContactSupport from "./pages/ContactSupport";
 
 const queryClient = new QueryClient();
 
@@ -107,6 +115,14 @@ const AppContent = () => {
       <Route path="/edit-profile" element={<EditProfile />} />
       <Route path="/change-password" element={<ChangePassword />} />
       <Route path="/withdrawal" element={<Withdrawal />} />
+      <Route path="/about" element={<AboutUs />} />
+      <Route path="/how-it-works" element={<HowItWorksPage />} />
+      <Route path="/winners" element={<WinnersGallery />} />
+      <Route path="/faq" element={<FAQ />} />
+      <Route path="/terms" element={<TermsOfService />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/fair-play" element={<FairPlayPolicy />} />
+      <Route path="/contact" element={<ContactSupport />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

@@ -52,7 +52,7 @@ serve(async (req) => {
         if (!tickets || tickets.length === 0) {
           console.log(`No tickets for jackpot ${jackpot.id}, skipping draw`);
           // Reset jackpot with new draw time
-          const nextDraw = calculateNextDraw(jackpot.frequency);
+          const nextDraw = calculateNextDrawTime(jackpot.frequency);
           await supabase
             .from('jackpots')
             .update({ next_draw: nextDraw, prize_pool: 0 })
@@ -82,215 +82,218 @@ serve(async (req) => {
 
         console.log(`Processing draw for ${jackpot.name}: ${winnersCount} winners`);
 
-        // Create draw record
+        // Create draw record for first winner
         const { data: draw, error: drawError } = await supabase
           .from('draws')
           .insert({
             jackpot_id: jackpot.id,
-            winning_ticket_id: winningTicket.id,
-            prize_amount: winnerPrize,
+            winning_ticket_id: winningTickets[0].id,
+            prize_amount: calculatePrize(1),
             total_tickets: tickets.length,
+            drawn_at: new Date().toISOString()
           })
           .select()
           .single();
 
-        if (drawError) throw drawError;
-
-        // Create winner record
-        await supabase.from('winners').insert({
-          user_id: winningTicket.user_id,
-          jackpot_id: jackpot.id,
-          draw_id: draw.id,
-          ticket_id: winningTicket.id,
-          prize_amount: winnerPrize,
-          total_participants: tickets.length,
-          total_pool_amount: totalPool,
-        });
-
-        // Update winner's wallet
-        const { data: wallet } = await supabase
-          .from('wallets')
-          .select('balance')
-          .eq('user_id', winningTicket.user_id)
-          .single();
-
-        if (wallet) {
-          await supabase
-            .from('wallets')
-            .update({ balance: parseFloat(wallet.balance) + winnerPrize })
-            .eq('user_id', winningTicket.user_id);
+        if (drawError || !draw) {
+          console.error(`Failed to create draw record:`, drawError);
+          continue;
         }
 
-        // Update or create admin wallet
-        const { data: adminWallet } = await supabase
-          .from('admin_wallet')
-          .select('id, balance')
-          .limit(1)
-          .single();
+        // Process each winner
+        for (let i = 0; i < winningTickets.length; i++) {
+          const ticket = winningTickets[i];
+          const rank = i + 1;
+          const prize = calculatePrize(rank);
+          
+          // Determine XP based on rank
+          let xpReward = 25;
+          if (rank === 1) xpReward = 100;
+          else if (rank >= 2 && rank <= 4) xpReward = 50;
 
-        if (adminWallet) {
-          await supabase
-            .from('admin_wallet')
-            .update({ balance: parseFloat(adminWallet.balance) + adminShare })
-            .eq('id', adminWallet.id);
-        } else {
-          await supabase
-            .from('admin_wallet')
-            .insert({ balance: adminShare });
-        }
+          // Create winner record
+          const { error: winnerError } = await supabase
+            .from('winners')
+            .insert({
+              user_id: ticket.user_id,
+              jackpot_id: jackpot.id,
+              draw_id: draw.id,
+              ticket_id: ticket.id,
+              prize_amount: prize,
+              winner_rank: rank,
+              total_participants: tickets.length,
+              total_pool_amount: totalPool,
+              claimed_at: new Date().toISOString()
+            });
 
-        // Create win transaction record
-        await supabase
-          .from('transactions')
-          .insert({
-            user_id: winningTicket.user_id,
-            type: 'prize_win',
-            amount: winnerPrize,
-            status: 'completed',
-            reference: `Auto Draw ${jackpot.name}`,
+          if (winnerError) {
+            console.error(`Failed to create winner record for rank ${rank}:`, winnerError);
+            continue;
+          }
+
+          // Update winner's wallet
+          await supabase.rpc('increment_wallet_balance', {
+            p_user_id: ticket.user_id,
+            p_amount: prize
           });
 
-        // Create winner notification
-        await supabase.from('notifications').insert({
-          user_id: winningTicket.user_id,
-          type: 'jackpot_win',
-          title: '🎉 Congratulations! You Won!',
-          message: `You won ₦${winnerPrize.toFixed(2)} in ${jackpot.name}! The prize has been added to your wallet.`,
-          data: {
-            jackpot_id: jackpot.id,
-            draw_id: draw.id,
-            prize_amount: winnerPrize,
-            total_participants: tickets.length,
-            total_pool: totalPool,
-          },
+          // Award XP for winning
+          await supabase.rpc('award_experience_points', {
+            p_user_id: ticket.user_id,
+            p_amount: xpReward
+          });
+
+          // Check and award achievements
+          await supabase.rpc('check_and_award_achievements', {
+            p_user_id: ticket.user_id
+          });
+
+          // Award referral commission (1% of winner's prize)
+          await supabase.rpc('award_referral_commission' as any, {
+            p_winner_id: ticket.user_id,
+            p_prize_amount: prize
+          });
+
+          // Create transaction record
+          const { error: txError } = await supabase
+            .from('transactions')
+            .insert({
+              user_id: ticket.user_id,
+              type: 'prize_win',
+              amount: prize,
+              status: 'completed',
+              reference: `Auto Draw ${draw.id} - Rank ${rank}`
+            });
+
+          if (txError) {
+            console.error(`Failed to create transaction for rank ${rank}:`, txError);
+          }
+
+          // Send notification with rank info
+          const rankLabels = ['🥇 1st Place', '🥈 2nd Place', '🥉 3rd Place'];
+          const rankLabel = rank <= 3 ? rankLabels[rank - 1] : `🎖️ ${rank}th Place`;
+          
+          await supabase.from('notifications').insert({
+            user_id: ticket.user_id,
+            type: 'jackpot_win',
+            title: `🎉 Congratulations! You Won ${rankLabel}!`,
+            message: `You won ₦${prize.toFixed(2)} in ${jackpot.name}! The prize has been added to your wallet.`,
+            is_read: false,
+            data: {
+              jackpot_id: jackpot.id,
+              draw_id: draw.id,
+              prize_amount: prize,
+              winner_rank: rank,
+              total_participants: tickets.length,
+              total_pool: totalPool
+            }
+          });
+        }
+
+        // Update or create admin wallet balance (20% of pool)
+        await supabase.rpc('increment_admin_wallet', {
+          p_amount: adminShare
         });
 
-        // Calculate next draw time
-        const nextDraw = calculateNextDraw(jackpot.frequency);
-
-        // Update jackpot - set to completed and create new one
+        // Update jackpot status
         await supabase
           .from('jackpots')
-          .update({ status: 'completed', draw_time: new Date().toISOString() })
+          .update({ 
+            status: 'completed',
+            draw_time: new Date().toISOString()
+          })
           .eq('id', jackpot.id);
 
-        // Create new jackpot for next draw
-        const { data: maxJackpot } = await supabase
+        console.log(`Auto-draw completed for jackpot ${jackpot.id}. ${winningTickets.length} winners processed`);
+
+        // Create next jackpot based on frequency
+        const nextDrawTime = calculateNextDrawTime(jackpot.frequency);
+        const { data: nextJackpot, error: nextJackpotError} = await supabase
           .from('jackpots')
-          .select('jackpot_number')
-          .order('jackpot_number', { ascending: false })
-          .limit(1)
+          .insert({
+            name: jackpot.name,
+            description: jackpot.description,
+            ticket_price: jackpot.ticket_price,
+            prize_pool: 0,
+            category: jackpot.category,
+            frequency: jackpot.frequency,
+            next_draw: nextDrawTime,
+            expires_at: nextDrawTime,
+            status: 'active',
+            winners_count: jackpot.winners_count || 1,
+          })
+          .select()
           .single();
 
-        const nextJackpotNumber = (maxJackpot?.jackpot_number || 0) + 1;
-
-        await supabase.from('jackpots').insert({
-          name: jackpot.name,
-          description: jackpot.description,
-          frequency: jackpot.frequency,
-          ticket_price: jackpot.ticket_price,
-          prize_pool: 0,
-          next_draw: nextDraw,
-          status: 'active',
-          jackpot_number: nextJackpotNumber,
-        });
-
-        // Notify all users about new draw
-        const { data: allUsers } = await supabase
-          .from('profiles')
-          .select('id');
-
-        if (allUsers) {
-          const notifications = allUsers.map(user => ({
-            user_id: user.id,
-            type: 'new_draw',
-            title: '🎰 New Draw Available',
-            message: `${jackpot.name} is now open! Get your tickets before ${new Date(nextDraw).toLocaleString()}`,
-            data: { jackpot_id: jackpot.id },
-          }));
-
-          await supabase.from('notifications').insert(notifications);
+        if (nextJackpotError) {
+          console.error('Failed to create next jackpot:', nextJackpotError);
+        } else {
+          console.log(`Created next ${jackpot.frequency} jackpot ${nextJackpot.id}, draw at ${nextDrawTime}`);
         }
 
         results.push({
           jackpot_id: jackpot.id,
-          winner_id: winningTicket.user_id,
-          prize: winnerPrize,
+          draw_id: draw.id,
+          winners_count: winningTickets.length,
+          admin_share: adminShare
         });
       } catch (error: any) {
         console.error(`Error processing jackpot ${jackpot.id}:`, error);
         results.push({
           jackpot_id: jackpot.id,
-          error: error?.message || 'Unknown error',
+          error: error.message || 'Unknown error'
         });
       }
     }
 
     return new Response(
-      JSON.stringify({
-        success: true,
+      JSON.stringify({ 
+        success: true, 
         processed: results.length,
-        results,
+        results 
       }),
-      {
+      { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
+        status: 200 
       }
     );
+
   } catch (error: any) {
-    console.error('Auto-draw error:', error);
+    console.error('Error in process-auto-draw:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
+      { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: 400 
       }
     );
   }
 });
 
-function calculateNextDraw(frequency: string): string {
+function calculateNextDrawTime(frequency: string): string {
   const now = new Date();
   
-  switch(frequency) {
-    case '5mins':
-      now.setMinutes(now.getMinutes() + 5, 0, 0);
+  switch (frequency) {
+    case '5minutes':
+      now.setMinutes(now.getMinutes() + 5);
       break;
-    case '10mins':
-      now.setMinutes(now.getMinutes() + 10, 0, 0);
-      break;
-    case '20mins':
-      now.setMinutes(now.getMinutes() + 20, 0, 0);
-      break;
-    case '30mins':
-      now.setMinutes(now.getMinutes() + 30, 0, 0);
-      break;
-    case '1hour':
-      now.setHours(now.getHours() + 1, 0, 0, 0);
-      break;
-    case '3hours':
-      now.setHours(now.getHours() + 3, 0, 0, 0);
-      break;
-    case '6hours':
-      now.setHours(now.getHours() + 6, 0, 0, 0);
+    case 'hourly':
+      now.setHours(now.getHours() + 1);
       break;
     case '12hours':
-      now.setHours(now.getHours() + 12, 0, 0, 0);
+      now.setHours(now.getHours() + 12);
       break;
-    case '24hours':
-      now.setHours(now.getHours() + 24, 0, 0, 0);
+    case 'daily':
+      now.setDate(now.getDate() + 1);
       break;
     case 'weekly':
       now.setDate(now.getDate() + 7);
-      break;
-    case 'biweekly':
-      now.setDate(now.getDate() + 14);
       break;
     case 'monthly':
       now.setMonth(now.getMonth() + 1);
       break;
     default:
-      now.setHours(now.getHours() + 1, 0, 0, 0);
+      now.setHours(now.getHours() + 1);
   }
   
   return now.toISOString();
