@@ -241,26 +241,45 @@ serve(async (req) => {
 function calculateNextDraw(frequency: string): string {
   const now = new Date();
   
-  if (frequency === '5mins') {
-    // Next 30-minute mark (20 times per day - every 1.2 hours)
-    now.setMinutes(now.getMinutes() + 72, 0, 0); // 1 hour 12 minutes
-  } else if (frequency === '30mins') {
-    // Every 2.4 hours (10 times per day)
-    now.setHours(now.getHours() + 2);
-    now.setMinutes(now.getMinutes() + 24, 0, 0);
-  } else if (frequency === '1hour') {
-    // Every 4 hours (6 times per day)
-    now.setHours(now.getHours() + 4, 0, 0, 0);
-  } else if (frequency === '12hours') {
-    now.setHours(18, 0, 0, 0); // 6pm
-    if (now.getTime() <= Date.now()) {
-      now.setDate(now.getDate() + 1);
-    }
-  } else if (frequency === '24hours') {
-    now.setHours(24, 0, 0, 0); // Midnight
-    if (now.getTime() <= Date.now()) {
-      now.setDate(now.getDate() + 1);
-    }
+  switch(frequency) {
+    case '5mins':
+      now.setMinutes(now.getMinutes() + 5, 0, 0);
+      break;
+    case '10mins':
+      now.setMinutes(now.getMinutes() + 10, 0, 0);
+      break;
+    case '20mins':
+      now.setMinutes(now.getMinutes() + 20, 0, 0);
+      break;
+    case '30mins':
+      now.setMinutes(now.getMinutes() + 30, 0, 0);
+      break;
+    case '1hour':
+      now.setHours(now.getHours() + 1, 0, 0, 0);
+      break;
+    case '3hours':
+      now.setHours(now.getHours() + 3, 0, 0, 0);
+      break;
+    case '6hours':
+      now.setHours(now.getHours() + 6, 0, 0, 0);
+      break;
+    case '12hours':
+      now.setHours(now.getHours() + 12, 0, 0, 0);
+      break;
+    case '24hours':
+      now.setHours(now.getHours() + 24, 0, 0, 0);
+      break;
+    case 'weekly':
+      now.setDate(now.getDate() + 7);
+      break;
+    case 'biweekly':
+      now.setDate(now.getDate() + 14);
+      break;
+    case 'monthly':
+      now.setMonth(now.getMonth() + 1);
+      break;
+    default:
+      now.setHours(now.getHours() + 1, 0, 0, 0);
   }
   
   return now.toISOString();
