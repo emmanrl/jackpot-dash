@@ -40,10 +40,31 @@ serve(async (req) => {
       throw new Error('Transaction is not pending');
     }
 
-    // Parse bank details from admin_note
-    const bankDetails = JSON.parse(transaction.admin_note || '{}');
-    if (!bankDetails.account_number || !bankDetails.bank_name || !bankDetails.account_name) {
-      throw new Error('Invalid bank details');
+    // Parse bank details from admin_note, or fetch from withdrawal_accounts
+    let bankDetails = transaction.admin_note ? JSON.parse(transaction.admin_note) : null;
+    
+    if (!bankDetails?.account_number || !bankDetails?.bank_name || !bankDetails?.account_name) {
+      console.log('Bank details not in admin_note, fetching from withdrawal_accounts...');
+      
+      // Fetch from withdrawal_accounts table
+      const { data: account, error: accountError } = await supabase
+        .from('withdrawal_accounts')
+        .select('*')
+        .eq('user_id', transaction.user_id)
+        .eq('is_default', true)
+        .single();
+
+      if (accountError || !account) {
+        throw new Error('No withdrawal account found for this user');
+      }
+
+      bankDetails = {
+        account_number: account.account_number,
+        bank_name: account.bank_name,
+        account_name: account.account_name,
+      };
+      
+      console.log('Retrieved bank details from withdrawal_accounts:', bankDetails);
     }
 
     // Get Paystack settings

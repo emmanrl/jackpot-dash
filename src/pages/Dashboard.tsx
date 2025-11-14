@@ -271,6 +271,19 @@ const Dashboard = () => {
         return;
       }
 
+      // Fetch user's default withdrawal account
+      const { data: accounts, error: accountError } = await supabase
+        .from('withdrawal_accounts')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('is_default', true)
+        .single();
+
+      if (accountError || !accounts) {
+        toast.error("Please add a withdrawal account in Settings first");
+        return;
+      }
+
       const { error } = await supabase
         .from('transactions')
         .insert({
@@ -278,7 +291,12 @@ const Dashboard = () => {
           type: 'withdrawal',
           amount: amount,
           status: 'pending',
-          reference: `Withdrawal request - ${new Date().toISOString()}`
+          reference: `Withdrawal request - ${new Date().toISOString()}`,
+          admin_note: JSON.stringify({
+            bank_name: accounts.bank_name,
+            account_number: accounts.account_number,
+            account_name: accounts.account_name,
+          }),
         });
 
       if (error) throw error;
