@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { Sparkles } from "lucide-react";
+import { ReferralSignupField } from "@/components/ReferralSignupField";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [referralCode, setReferralCode] = useState("");
 
   useEffect(() => {
     // Check if user is already logged in
@@ -37,6 +39,7 @@ const Auth = () => {
           emailRedirectTo: `${window.location.origin}/dashboard`,
           data: {
             full_name: fullName,
+            referral_code: referralCode,
           },
         },
       });
@@ -51,6 +54,7 @@ const Auth = () => {
       setEmail("");
       setPassword("");
       setFullName("");
+      setReferralCode("");
     } catch (error: any) {
       toast({
         title: "Error",
@@ -212,6 +216,10 @@ const Auth = () => {
                     minLength={6}
                   />
                 </div>
+                <ReferralSignupField
+                  value={referralCode}
+                  onChange={setReferralCode}
+                />
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Creating account..." : "Sign Up"}
                 </Button>

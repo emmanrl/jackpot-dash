@@ -25,6 +25,7 @@ import { useTheme } from "@/hooks/useTheme";
 import NotificationBell from "@/components/NotificationBell";
 import { useRealtimeAvatar } from "@/hooks/useRealtimeAvatar";
 import { PublicProfileCard } from "@/components/PublicProfileCard";
+import { ReferralCard } from "@/components/ReferralCard";
 
 interface WalletData {
   balance: number;
@@ -489,16 +490,19 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Public Profile Card */}
-        <PublicProfileCard
-          profile={profile}
-          avatarUrl={realtimeAvatarUrl || profile?.avatar_url}
-          stats={{
-            xp: xp,
-            totalWins: wins.length,
-            totalTickets: tickets.length,
-          }}
-        />
+        {/* Referral Stats */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ReferralCard userId={user.id} />
+          <PublicProfileCard
+            profile={profile}
+            avatarUrl={realtimeAvatarUrl || profile?.avatar_url}
+            stats={{
+              xp: xp,
+              totalWins: wins.length,
+              totalTickets: tickets.length,
+            }}
+          />
+        </div>
 
         <section className="space-y-4">
           <div className="flex items-center justify-between">
