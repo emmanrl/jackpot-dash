@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Clock } from "lucide-react";
 
 interface CountdownTimerProps {
-  targetDate: Date;
+  targetDate: Date | string;
   onExpire?: () => void;
   className?: string;
   showIcon?: boolean;
@@ -20,7 +20,8 @@ export const CountdownTimer = ({
   useEffect(() => {
     const calculateTimeLeft = () => {
       const now = new Date().getTime();
-      const distance = targetDate.getTime() - now;
+      const target = typeof targetDate === 'string' ? new Date(targetDate) : targetDate;
+      const distance = target.getTime() - now;
 
       if (distance < 0) {
         setTimeLeft("ENDED");
