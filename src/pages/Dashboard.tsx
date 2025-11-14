@@ -24,6 +24,7 @@ import { useWinNotification } from "@/hooks/useWinNotification";
 import { useTheme } from "@/hooks/useTheme";
 import NotificationBell from "@/components/NotificationBell";
 import { useRealtimeAvatar } from "@/hooks/useRealtimeAvatar";
+import { PublicProfileCard } from "@/components/PublicProfileCard";
 
 interface WalletData {
   balance: number;
@@ -487,6 +488,17 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Public Profile Card */}
+        <PublicProfileCard
+          profile={profile}
+          avatarUrl={realtimeAvatarUrl || profile?.avatar_url}
+          stats={{
+            xp: xp,
+            totalWins: wins.length,
+            totalTickets: tickets.length,
+          }}
+        />
 
         <section className="space-y-4">
           <div className="flex items-center justify-between">
