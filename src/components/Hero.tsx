@@ -4,11 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import heroImage from "@/assets/hero-jackpot.jpg";
 
 const Hero = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const { settings } = useSiteSettings();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {

@@ -103,13 +103,13 @@ serve(async (req) => {
 
     console.log(`Winners selected: ${winnersCount} winners, admin share ${adminShare}`);
 
-    // Create draw record
+    // Create draw record for first winner
     const { data: draw, error: drawError } = await supabase
       .from('draws')
       .insert({
         jackpot_id: jackpot_id,
-        winning_ticket_id: winningTicket.id,
-        prize_amount: winnerPrize,
+        winning_ticket_id: winningTickets[0].id,
+        prize_amount: calculatePrize(1),
         total_tickets: tickets.length,
         drawn_at: new Date().toISOString()
       })
@@ -120,48 +120,107 @@ serve(async (req) => {
       throw new Error(`Failed to create draw record: ${drawError?.message}`);
     }
 
-    // Create winner record with additional details
-    const { error: winnerError } = await supabase
-      .from('winners')
-      .insert({
-        user_id: winningTicket.user_id,
-        jackpot_id: jackpot_id,
-        draw_id: draw.id,
-        ticket_id: winningTicket.id,
-        prize_amount: winnerPrize,
-        total_participants: tickets.length,
-        total_pool_amount: totalPool,
-        claimed_at: new Date().toISOString()
+    // Process each winner
+    const winnersData = [];
+    for (let i = 0; i < winningTickets.length; i++) {
+      const ticket = winningTickets[i];
+      const rank = i + 1;
+      const prize = calculatePrize(rank);
+      
+      // Determine XP based on rank
+      let xpReward = 25;
+      if (rank === 1) xpReward = 100;
+      else if (rank >= 2 && rank <= 4) xpReward = 50;
+
+      // Create winner record
+      const { error: winnerError } = await supabase
+        .from('winners')
+        .insert({
+          user_id: ticket.user_id,
+          jackpot_id: jackpot_id,
+          draw_id: draw.id,
+          ticket_id: ticket.id,
+          prize_amount: prize,
+          winner_rank: rank,
+          total_participants: tickets.length,
+          total_pool_amount: totalPool,
+          claimed_at: new Date().toISOString()
+        });
+
+      if (winnerError) {
+        console.error(`Failed to create winner record for rank ${rank}:`, winnerError);
+        continue;
+      }
+
+      // Update winner's wallet balance
+      await supabase.rpc('increment_wallet_balance', {
+        p_user_id: ticket.user_id,
+        p_amount: prize
       });
 
-    if (winnerError) {
-      throw new Error(`Failed to create winner record: ${winnerError.message}`);
+      // Award XP for winning
+      await supabase.rpc('award_experience_points', {
+        p_user_id: ticket.user_id,
+        p_amount: xpReward
+      });
+
+      // Check and award achievements
+      await supabase.rpc('check_and_award_achievements', {
+        p_user_id: ticket.user_id
+      });
+
+      // Award referral commission (1% of winner's prize)
+      await supabase.rpc('award_referral_commission' as any, {
+        p_winner_id: ticket.user_id,
+        p_prize_amount: prize
+      });
+
+      // Create win transaction record
+      const { error: txError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: ticket.user_id,
+          type: 'prize_win',
+          amount: prize,
+          status: 'completed',
+          reference: `Draw ${draw.id} - Rank ${rank}`,
+          processed_by: user.id,
+          processed_at: new Date().toISOString()
+        });
+
+      if (txError) {
+        console.error(`Failed to create transaction for rank ${rank}:`, txError);
+      }
+
+      // Create winner notification with rank info
+      const rankLabels = ['🥇 1st Place', '🥈 2nd Place', '🥉 3rd Place'];
+      const rankLabel = rank <= 3 ? rankLabels[rank - 1] : `🎖️ ${rank}th Place`;
+      
+      await supabase.from('notifications').insert({
+        user_id: ticket.user_id,
+        type: 'jackpot_win',
+        title: `🎉 Congratulations! You Won ${rankLabel}!`,
+        message: `You won ₦${prize.toFixed(2)} in ${jackpot.name}! The prize has been added to your wallet.`,
+        is_read: false,
+        data: {
+          jackpot_id: jackpot_id,
+          draw_id: draw.id,
+          prize_amount: prize,
+          winner_rank: rank,
+          total_participants: tickets.length,
+          total_pool: totalPool
+        }
+      });
+
+      winnersData.push({
+        user_id: ticket.user_id,
+        ticket_id: ticket.id,
+        prize_amount: prize,
+        rank: rank
+      });
     }
 
-    // Update winner's wallet balance (80% of pool)
-    await supabase.rpc('increment_wallet_balance', {
-      p_user_id: winningTicket.user_id,
-      p_amount: winnerPrize
-    });
-
-    // Award XP for winning (10 XP per win)
-    await supabase.rpc('award_experience_points', {
-      p_user_id: winningTicket.user_id,
-      p_amount: 10
-    });
-
-    // Check and award achievements
-    await supabase.rpc('check_and_award_achievements', {
-      p_user_id: winningTicket.user_id
-    });
-
-    // Award referral commission (1% of winner's prize)
-    await supabase.rpc('award_referral_commission' as any, {
-      p_winner_id: winningTicket.user_id,
-      p_prize_amount: winnerPrize
-    });
-
-    console.log('Winner wallet updated with prize and XP awarded');
+    console.log(`${winnersData.length} winners processed with prizes and XP awarded`);
 
     // Update or create admin wallet balance (20% of pool)
     const { data: adminWallet, error: adminWalletError } = await supabase
@@ -183,39 +242,6 @@ serve(async (req) => {
         .insert({ balance: adminShare });
     }
 
-    // Create win transaction record
-    const { error: txError } = await supabase
-      .from('transactions')
-      .insert({
-        user_id: winningTicket.user_id,
-        type: 'prize_win',
-        amount: winnerPrize,
-        status: 'completed',
-        reference: `Draw ${draw.id}`,
-        processed_by: user.id,
-        processed_at: new Date().toISOString()
-      });
-
-    if (txError) {
-      console.error('Failed to create transaction record:', txError);
-    }
-
-    // Create winner notification
-    await supabase.from('notifications').insert({
-      user_id: winningTicket.user_id,
-      type: 'jackpot_win',
-      title: '🎉 Congratulations! You Won!',
-      message: `You won ₦${winnerPrize.toFixed(2)} in ${jackpot.name}! The prize has been added to your wallet.`,
-      is_read: false,
-      data: {
-        jackpot_id: jackpot_id,
-        draw_id: draw.id,
-        prize_amount: winnerPrize,
-        total_participants: tickets.length,
-        total_pool: totalPool
-      }
-    });
-
     // Update jackpot status
     const { error: updateJackpotError } = await supabase
       .from('jackpots')
@@ -229,18 +255,14 @@ serve(async (req) => {
       console.error('Failed to update jackpot status:', updateJackpotError);
     }
 
-    console.log(`Draw completed successfully. Winner: ${winningTicket.user_id}, Prize: ${winnerPrize}, Admin share: ${adminShare}`);
+    console.log(`Draw completed successfully. Winners: ${winnersData.length}, Admin share: ${adminShare}`);
 
     return new Response(
       JSON.stringify({ 
         success: true,
         draw_id: draw.id,
-        winner: {
-          user_id: winningTicket.user_id,
-          ticket_id: winningTicket.id,
-          prize_amount: winnerPrize,
-          admin_share: adminShare
-        }
+        winners: winnersData,
+        admin_share: adminShare
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
