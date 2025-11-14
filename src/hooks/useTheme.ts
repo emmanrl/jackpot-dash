@@ -135,16 +135,18 @@ export const useTheme = (userId: string | undefined) => {
           table: 'profiles',
           filter: `id=eq.${userId}`,
         },
-        (payload: any) => {
-          if (payload.new.experience_points !== undefined) {
-            setXP(payload.new.experience_points);
-            const newTheme = getThemeFromXP(payload.new.experience_points);
-            if (newTheme !== currentTheme) {
-              setCurrentTheme(newTheme);
-              applyTheme(newTheme);
-            }
-          }
+      (payload: any) => {
+        // Check for theme changes first (manual selection takes priority)
+        if (payload.new.theme !== undefined && payload.new.theme !== payload.old.theme) {
+          setCurrentTheme(payload.new.theme);
+          applyTheme(payload.new.theme);
         }
+        
+        // Update XP
+        if (payload.new.experience_points !== undefined) {
+          setXP(payload.new.experience_points);
+        }
+      }
       )
       .subscribe();
 
