@@ -98,13 +98,16 @@ serve(async (req) => {
       throw new Error('Transaction not found');
     }
 
-    // Update transaction status
+    // Auto-approve and update transaction status
     await supabase
       .from('transactions')
-      .update({ status: 'approved', processed_at: new Date().toISOString() })
+      .update({ 
+        status: 'approved', 
+        processed_at: new Date().toISOString()
+      })
       .eq('id', transaction.id);
 
-    // Update wallet balance
+    // Auto-update wallet balance
     await supabase.rpc('increment_wallet_balance', {
       p_user_id: transaction.user_id,
       p_amount: amount
