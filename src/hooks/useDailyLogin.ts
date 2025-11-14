@@ -12,7 +12,7 @@ export const useDailyLogin = (userId: string | undefined) => {
     const recordLogin = async () => {
       try {
         // Call the record_daily_login function
-        const { data, error } = await supabase.rpc('record_daily_login', {
+        const { data, error } = await supabase.rpc('record_daily_login' as any, {
           p_user_id: userId,
         });
 
@@ -22,7 +22,7 @@ export const useDailyLogin = (userId: string | undefined) => {
         }
 
         // If data is 0, user already logged in today
-        if (data === 0) return;
+        if (data === 0 || data === null) return;
 
         // Fetch current streak
         const { data: loginData } = await supabase
@@ -35,16 +35,21 @@ export const useDailyLogin = (userId: string | undefined) => {
 
         const currentStreak = (loginData as any)?.streak_days || 1;
         setStreak(currentStreak);
-        setLoginReward(data);
+        
+        // Ensure data is a number
+        const xpReward = typeof data === 'number' ? data : 0;
+        setLoginReward(xpReward);
 
-        // Show reward notification
-        toast.success(
-          `Daily login reward! +${data} XP`,
-          {
-            description: `🔥 ${currentStreak} day streak!`,
-            duration: 5000,
-          }
-        );
+        if (xpReward > 0) {
+          // Show reward notification
+          toast.success(
+            `Daily login reward! +${xpReward} XP`,
+            {
+              description: `🔥 ${currentStreak} day streak!`,
+              duration: 5000,
+            }
+          );
+        }
       } catch (error) {
         console.error('Error in daily login:', error);
       }
