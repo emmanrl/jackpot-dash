@@ -128,25 +128,18 @@ serve(async (req) => {
     }
 
     // Update winner's wallet balance (80% of pool)
-    const { data: wallet, error: walletError } = await supabase
-      .from('wallets')
-      .select('balance')
-      .eq('user_id', winningTicket.user_id)
-      .single();
+    await supabase.rpc('increment_wallet_balance', {
+      p_user_id: winningTicket.user_id,
+      p_amount: winnerPrize
+    });
 
-    if (walletError || !wallet) {
-      throw new Error('Winner wallet not found');
-    }
+    // Award XP for winning (10 XP per win)
+    await supabase.rpc('award_experience_points', {
+      p_user_id: winningTicket.user_id,
+      p_amount: 10
+    });
 
-    const newBalance = parseFloat(wallet.balance) + winnerPrize;
-    const { error: balanceError } = await supabase
-      .from('wallets')
-      .update({ balance: newBalance })
-      .eq('user_id', winningTicket.user_id);
-
-    if (balanceError) {
-      throw new Error(`Failed to update wallet balance: ${balanceError.message}`);
-    }
+    console.log('Winner wallet updated with prize and XP awarded');
 
     // Update or create admin wallet balance (20% of pool)
     const { data: adminWallet, error: adminWalletError } = await supabase
