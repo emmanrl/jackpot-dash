@@ -104,14 +104,16 @@ export const useTheme = (userId: string | undefined) => {
           const xpValue = (profile as any).experience_points || 0;
           const themeValue = (profile as any).theme;
           
-          // Use user-selected theme if available, otherwise use XP-based theme
-          const finalTheme = themeValue && themeValue !== 'default' 
-            ? themeValue 
-            : getThemeFromXP(xpValue);
+          // Use user-selected theme if available, otherwise keep default for new users
+          const finalTheme = themeValue || 'default';
           
           setXP(xpValue);
           setCurrentTheme(finalTheme as ThemeType);
           applyTheme(finalTheme as ThemeType);
+        } else {
+          // New user - use default theme
+          setCurrentTheme('default');
+          applyTheme('default');
         }
       } catch (error) {
         console.error('Error fetching theme:', error);
@@ -159,6 +161,15 @@ export const useTheme = (userId: string | undefined) => {
     const root = document.documentElement;
     const config = themes[theme];
     
+    // Don't override CSS variables for default theme - let index.css handle it
+    if (theme === 'default') {
+      root.style.removeProperty('--primary');
+      root.style.removeProperty('--secondary');
+      root.style.removeProperty('--accent');
+      return;
+    }
+    
+    // For custom themes, apply colors but respect light/dark mode context
     root.style.setProperty('--primary', config.colors.primary);
     root.style.setProperty('--secondary', config.colors.secondary);
     root.style.setProperty('--accent', config.colors.accent);
