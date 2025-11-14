@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Sparkles, Settings, Users } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import AdminPayments from "./AdminPayments";
+import AdminWithdrawals from "./AdminWithdrawals";
 import TransactionDetailDrawer from "@/components/TransactionDetailDrawer";
 
 export default function Admin() {
@@ -604,12 +605,13 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="jackpots" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="jackpots">Jackpots</TabsTrigger>
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
+            <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="payments">Payment Settings</TabsTrigger>
-            <TabsTrigger value="withdrawal">Withdraw</TabsTrigger>
+            <TabsTrigger value="withdrawal">Withdraw Funds</TabsTrigger>
           </TabsList>
 
           <TabsContent value="jackpots" className="space-y-6">
@@ -930,6 +932,10 @@ export default function Admin() {
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="withdrawals">
+            <AdminWithdrawals />
           </TabsContent>
 
           <TabsContent value="users">
