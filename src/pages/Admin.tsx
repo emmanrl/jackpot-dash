@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Sparkles, Settings, Users } from "lucide-react";
+import { Loader2, Sparkles, Settings, Users, Shield } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import AdminPayments from "./AdminPayments";
 import AdminWithdrawals from "./AdminWithdrawals";
@@ -309,6 +309,7 @@ export default function Admin() {
           status: 'active',
           prize_pool: 0,
           category: jackpotForm.category,
+          winners_count: parseInt(jackpotForm.winners_count),
           background_image_url: backgroundImageUrl
         });
 
@@ -548,39 +549,43 @@ export default function Admin() {
   if (!isAdmin) return null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
       <TopNav />
 
-      <div className="container mx-auto px-6 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Manage jackpots, payments, site settings, and users</p>
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-primary/10 rounded-lg shadow-lg shadow-primary/10">
+              <Shield className="w-8 h-8 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                Admin Dashboard
+              </h1>
+              <p className="text-muted-foreground mt-1">Manage jackpots, transactions, and users</p>
+            </div>
           </div>
           <div className="flex gap-2">
             <Link to="/site-settings">
-              <Button variant="outline">
-                <Settings className="w-4 h-4 mr-2" />
+              <Button variant="outline" className="gap-2">
+                <Settings className="w-4 h-4" />
                 Site Settings
               </Button>
             </Link>
             <Link to="/user-management">
-              <Button variant="outline">
-                <Users className="w-4 h-4 mr-2" />
+              <Button variant="outline" className="gap-2">
+                <Users className="w-4 h-4" />
                 User Management
               </Button>
             </Link>
-            <Button onClick={() => navigate('/statistics')} variant="outline">
-              View Statistics
-            </Button>
-            <Button onClick={() => setAutomationDialogOpen(true)}>
+            <Button onClick={() => setAutomationDialogOpen(true)} variant="default">
               Create Automated Jackpot
             </Button>
           </div>
         </div>
         {/* Admin Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="bg-gradient-to-br from-primary/10 to-primary/5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Earnings</CardTitle>
             </CardHeader>
@@ -590,7 +595,7 @@ export default function Admin() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5">
+          <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">Active Users</CardTitle>
             </CardHeader>
@@ -614,14 +619,28 @@ export default function Admin() {
         </div>
 
         <Tabs defaultValue="jackpots" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
-            <TabsTrigger value="jackpots">Jackpots</TabsTrigger>
-            <TabsTrigger value="transactions">Transactions</TabsTrigger>
-            <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="payments">Payment Settings</TabsTrigger>
-            <TabsTrigger value="bonuses">Bonuses</TabsTrigger>
-            <TabsTrigger value="withdrawal">Withdraw Funds</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-7 h-auto p-1 bg-card/50 backdrop-blur-sm border border-border">
+            <TabsTrigger value="jackpots" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Jackpots
+            </TabsTrigger>
+            <TabsTrigger value="transactions" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Transactions
+            </TabsTrigger>
+            <TabsTrigger value="withdrawals" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Withdrawals
+            </TabsTrigger>
+            <TabsTrigger value="users" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Users
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Payment Settings
+            </TabsTrigger>
+            <TabsTrigger value="bonuses" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Bonuses
+            </TabsTrigger>
+            <TabsTrigger value="withdrawal" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              Withdraw Funds
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="jackpots" className="space-y-6">

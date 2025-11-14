@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sparkles, LogOut, LayoutDashboard, Shield, User as UserIcon, Settings, Key } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 import { useRealtimeAvatar } from "@/hooks/useRealtimeAvatar";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +23,7 @@ const TopNav = () => {
   const [profile, setProfile] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const realtimeAvatarUrl = useRealtimeAvatar(user?.id);
+  const { settings } = useSiteSettings();
 
   useEffect(() => {
     // Check current session
@@ -89,15 +91,21 @@ const TopNav = () => {
       <div className="container mx-auto px-4 py-3">
         <div className="flex justify-between items-center">
           <div 
-            className="flex items-center gap-3 cursor-pointer" 
+            className="flex items-center gap-3 cursor-pointer group" 
             onClick={() => navigate("/")}
           >
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Sparkles className="w-5 h-5 text-primary" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              JackpotWin
-            </span>
+            {settings.site_logo_url ? (
+              <img src={settings.site_logo_url} alt={settings.site_name} className="h-8 w-auto" />
+            ) : (
+              <>
+                <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                </div>
+                <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                  {settings.site_name}
+                </span>
+              </>
+            )}
           </div>
 
           {user ? (
