@@ -29,6 +29,7 @@ export default function JackpotAutomationDialog({
     expiryHours: "",
     expiryMinutes: "",
     category: "hourly",
+    winnersCount: "1",
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
 
@@ -131,6 +132,7 @@ export default function JackpotAutomationDialog({
         expiryHours: "",
         expiryMinutes: "",
         category: "hourly",
+        winnersCount: "1",
       });
       setImageFile(null);
       onSuccess();
@@ -232,6 +234,20 @@ export default function JackpotAutomationDialog({
                 <SelectItem value="long">Long</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="winnersCount">Number of Winners (1-10)</Label>
+            <Input
+              id="winnersCount"
+              type="number"
+              min="1"
+              max="10"
+              value={formData.winnersCount}
+              onChange={(e) => setFormData({ ...formData, winnersCount: e.target.value })}
+              placeholder="1"
+            />
+            <p className="text-xs text-muted-foreground">1st: 60% | 2nd-4th: 25% | 5th-10th: 15%</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

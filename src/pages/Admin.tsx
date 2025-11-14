@@ -50,6 +50,7 @@ export default function Admin() {
     next_draw: "",
     expires_at: "",
     category: "hourly",
+    winners_count: "1",
     background_image: null as File | null
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -314,7 +315,7 @@ export default function Admin() {
       if (error) throw error;
 
       toast.success('Jackpot created successfully');
-      setJackpotForm({ name: "", description: "", ticket_price: "", frequency: "1hour", next_draw: "", expires_at: "", category: "hourly", background_image: null });
+      setJackpotForm({ name: "", description: "", ticket_price: "", frequency: "1hour", next_draw: "", expires_at: "", category: "hourly", winners_count: "1", background_image: null });
       setImagePreview(null);
       await fetchJackpots();
     } catch (error: any) {
@@ -717,6 +718,19 @@ export default function Admin() {
                   </Select>
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="winners_count">Number of Winners (1-10)</Label>
+                  <Input
+                    id="winners_count"
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={jackpotForm.winners_count}
+                    onChange={(e) => setJackpotForm({ ...jackpotForm, winners_count: e.target.value })}
+                    placeholder="1"
+                  />
+                  <p className="text-xs text-muted-foreground">1st: 60% | 2nd-4th: 25% | 5th-10th: 15% of prize pool</p>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="background_image">Background Image (Optional)</Label>
                   <Input
                     id="background_image"
@@ -821,16 +835,17 @@ export default function Admin() {
                             size="sm"
                             variant="outline"
                             onClick={() => {
-                              setJackpotForm({
-                                name: jackpot.name,
-                                description: jackpot.description || "",
-                                ticket_price: jackpot.ticket_price.toString(),
-                                frequency: jackpot.frequency,
-                                next_draw: jackpot.next_draw ? new Date(jackpot.next_draw).toISOString().slice(0, 16) : "",
-                                expires_at: jackpot.expires_at ? new Date(jackpot.expires_at).toISOString().slice(0, 16) : "",
-                                category: jackpot.category || "hourly",
-                                background_image: null
-                              });
+                            setJackpotForm({
+                              name: jackpot.name,
+                              description: jackpot.description || "",
+                              ticket_price: jackpot.ticket_price.toString(),
+                              frequency: jackpot.frequency,
+                              next_draw: jackpot.next_draw ? new Date(jackpot.next_draw).toISOString().slice(0, 16) : "",
+                              expires_at: jackpot.expires_at ? new Date(jackpot.expires_at).toISOString().slice(0, 16) : "",
+                              category: jackpot.category || "hourly",
+                              winners_count: (jackpot.winners_count || 1).toString(),
+                              background_image: null
+                            });
                               setImagePreview(null);
                               window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}

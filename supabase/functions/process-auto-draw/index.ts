@@ -60,16 +60,27 @@ serve(async (req) => {
           continue;
         }
 
-        // Select random winner
-        const randomIndex = Math.floor(Math.random() * tickets.length);
-        const winningTicket = tickets[randomIndex];
-        const totalPool = parseFloat(jackpot.prize_pool);
+        // Get winners count from jackpot (default to 1)
+        const winnersCount = Math.min(jackpot.winners_count || 1, tickets.length);
         
-        // Calculate 80% for winner, 20% for admin
-        const winnerPrize = totalPool * 0.8;
-        const adminShare = totalPool * 0.2;
+        // Select random winners (no duplicates)
+        const shuffledTickets = [...tickets].sort(() => Math.random() - 0.5);
+        const winningTickets = shuffledTickets.slice(0, winnersCount);
 
-        console.log(`Processing draw for ${jackpot.name}: Winner ${winningTicket.user_id}, Prize ${winnerPrize}`);
+        // Calculate prize distribution
+        const totalPool = parseFloat(jackpot.prize_pool);
+        const adminShare = totalPool * 0.2;
+        const prizePool = totalPool * 0.8;
+        
+        // Prize distribution tiers: 60% for 1st, 25% for 2nd-4th, 15% for 5th-10th
+        const calculatePrize = (rank: number) => {
+          if (winnersCount === 1) return prizePool;
+          if (rank === 1) return prizePool * 0.6;
+          if (rank >= 2 && rank <= 4) return (prizePool * 0.25) / Math.min(3, winnersCount - 1);
+          return (prizePool * 0.15) / Math.max(1, winnersCount - 4);
+        };
+
+        console.log(`Processing draw for ${jackpot.name}: ${winnersCount} winners`);
 
         // Create draw record
         const { data: draw, error: drawError } = await supabase
