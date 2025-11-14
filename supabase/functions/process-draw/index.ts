@@ -139,6 +139,11 @@ serve(async (req) => {
       p_amount: 10
     });
 
+    // Check and award achievements
+    await supabase.rpc('check_and_award_achievements', {
+      p_user_id: winningTicket.user_id
+    });
+
     console.log('Winner wallet updated with prize and XP awarded');
 
     // Update or create admin wallet balance (20% of pool)

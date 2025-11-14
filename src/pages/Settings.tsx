@@ -8,11 +8,13 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Sparkles, Moon, Sun, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import { Sparkles, Moon, Sun, Plus, Trash2, CheckCircle2, Award } from "lucide-react";
 import { toast } from "sonner";
 import TopNav from "@/components/TopNav";
 import Footer from "@/components/Footer";
 import NotificationSettings from "@/components/NotificationSettings";
+import { ThemeSelector } from "@/components/ThemeSelector";
+import { AchievementBadge } from "@/components/AchievementBadge";
 
 interface WithdrawalAccount {
   id: string;
@@ -42,6 +44,7 @@ const Settings = () => {
   const [banks, setBanks] = useState<Bank[]>([]);
   const [selectedBankCode, setSelectedBankCode] = useState("");
   const [verifyingAccount, setVerifyingAccount] = useState(false);
+  const [achievements, setAchievements] = useState<any[]>([]);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -53,6 +56,7 @@ const Settings = () => {
       setUserId(session.user.id);
       await fetchWithdrawalAccounts(session.user.id);
       await fetchBanks();
+      await fetchAchievements(session.user.id);
       setLoading(false);
     };
     checkUser();
@@ -89,6 +93,21 @@ const Settings = () => {
       setAccounts(data || []);
     } catch (error: any) {
       console.error("Failed to fetch accounts:", error);
+    }
+  };
+
+  const fetchAchievements = async (uid: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("achievements")
+        .select("*")
+        .eq("user_id", uid)
+        .order("achieved_at", { ascending: false });
+
+      if (error) throw error;
+      setAchievements(data || []);
+    } catch (error: any) {
+      console.error("Failed to fetch achievements:", error);
     }
   };
 
@@ -215,6 +234,38 @@ const Settings = () => {
     <div className="min-h-screen">
       <TopNav />
       <main className="container mx-auto px-4 py-8 space-y-6">
+        {/* Theme Selector */}
+        <ThemeSelector userId={userId || undefined} />
+
+        {/* Achievements */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Award className="w-5 h-5 text-primary" />
+              <CardTitle>Achievements</CardTitle>
+            </div>
+            <CardDescription>
+              Complete milestones to unlock achievements
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {['tickets_10', 'tickets_50', 'tickets_100', 'first_win', 'wins_5', 'xp_100', 'xp_500'].map((type) => {
+                const achievement = achievements.find(a => a.achievement_type === type);
+                return (
+                  <AchievementBadge
+                    key={type}
+                    type={type}
+                    achieved={!!achievement}
+                    achievedAt={achievement?.achieved_at}
+                    metadata={achievement?.metadata}
+                  />
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
         <NotificationSettings />
         
         <Card className="max-w-2xl mx-auto">
