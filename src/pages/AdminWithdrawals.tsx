@@ -63,12 +63,38 @@ export default function AdminWithdrawals() {
         .select("id, email, full_name")
         .in("id", userIds);
 
-      // Map profiles to transactions
+      // Fetch withdrawal accounts for users who don't have bank details in admin_note
+      const { data: withdrawalAccounts } = await supabase
+        .from("withdrawal_accounts")
+        .select("*")
+        .in("user_id", userIds)
+        .eq("is_default", true);
+
+      // Map profiles and withdrawal accounts to transactions
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
-      const enrichedData = (data || []).map(tx => ({
-        ...tx,
-        profiles: profileMap.get(tx.user_id) || null
-      }));
+      const accountMap = new Map(withdrawalAccounts?.map(a => [a.user_id, a]) || []);
+      
+      const enrichedData = (data || []).map(tx => {
+        let adminNote = tx.admin_note;
+        
+        // If admin_note is missing or empty, try to get from withdrawal_accounts
+        if (!adminNote) {
+          const account = accountMap.get(tx.user_id);
+          if (account) {
+            adminNote = JSON.stringify({
+              account_number: account.account_number,
+              bank_name: account.bank_name,
+              account_name: account.account_name
+            });
+          }
+        }
+        
+        return {
+          ...tx,
+          admin_note: adminNote,
+          profiles: profileMap.get(tx.user_id) || null
+        };
+      });
 
       setWithdrawals(enrichedData);
     } catch (error: any) {

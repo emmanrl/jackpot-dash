@@ -29,7 +29,7 @@ serve(async (req) => {
     // Get all tickets for this jackpot
     const { data: tickets, error: ticketsError } = await supabaseClient
       .from('tickets')
-      .select('*, users:user_id(id, email)')
+      .select('user_id, purchase_price')
       .eq('jackpot_id', jackpotId);
 
     if (ticketsError) throw ticketsError;
@@ -37,37 +37,29 @@ serve(async (req) => {
     console.log('Found tickets to refund:', tickets?.length);
 
     // Group tickets by user and calculate refunds
-    const userRefunds = new Map<string, { userId: string, totalRefund: number, email: string }>();
+    const userRefunds = new Map<string, number>();
     
     tickets?.forEach(ticket => {
       const userId = ticket.user_id;
       const amount = Number(ticket.purchase_price);
       
-      if (userRefunds.has(userId)) {
-        const existing = userRefunds.get(userId)!;
-        existing.totalRefund += amount;
-      } else {
-        userRefunds.set(userId, {
-          userId,
-          totalRefund: amount,
-          email: ticket.users?.email || ''
-        });
-      }
+      const current = userRefunds.get(userId) || 0;
+      userRefunds.set(userId, current + amount);
     });
 
     // Process refunds for each user
-    for (const [userId, refundData] of userRefunds) {
-      console.log(`Refunding ${refundData.totalRefund} to user ${userId}`);
+    for (const [userId, totalRefund] of userRefunds) {
+      console.log(`Refunding ${totalRefund} to user ${userId}`);
       
-      // Update wallet balance
+      // Update wallet balance using RPC function
       const { error: walletError } = await supabaseClient.rpc(
         'increment_wallet_balance',
-        { p_user_id: userId, p_amount: refundData.totalRefund }
+        { p_user_id: userId, p_amount: totalRefund }
       );
 
       if (walletError) {
         console.error('Error updating wallet:', walletError);
-        continue;
+        throw walletError;
       }
 
       // Create notification
@@ -77,10 +69,10 @@ serve(async (req) => {
           user_id: userId,
           type: 'refund',
           title: 'Jackpot Deleted - Refund Issued',
-          message: `A jackpot has been cancelled and ₦${refundData.totalRefund.toFixed(2)} has been refunded to your wallet.`,
+          message: `A jackpot has been cancelled and ₦${totalRefund.toFixed(2)} has been refunded to your wallet.`,
           data: { 
             jackpotId,
-            amount: refundData.totalRefund 
+            amount: totalRefund 
           }
         });
 
@@ -103,7 +95,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         refundedUsers: userRefunds.size,
-        totalRefunded: Array.from(userRefunds.values()).reduce((sum, r) => sum + r.totalRefund, 0)
+        totalRefunded: Array.from(userRefunds.values()).reduce((sum, amount) => sum + amount, 0)
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

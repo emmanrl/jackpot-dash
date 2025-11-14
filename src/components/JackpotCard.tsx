@@ -1,8 +1,9 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, TrendingUp, Ticket } from "lucide-react";
+import { TrendingUp, Ticket } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { CountdownTimer } from "./CountdownTimer";
 
 interface JackpotCardProps {
   jackpotId: string;
@@ -18,31 +19,10 @@ interface JackpotCardProps {
 }
 
 const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, onBuyClick, backgroundImageUrl, createdAt, status }: JackpotCardProps) => {
-  const [timeLeft, setTimeLeft] = useState("");
   const [poolGrowth, setPoolGrowth] = useState(0);
   const [specialBadge, setSpecialBadge] = useState<string | null>(null);
-  const [isEnded, setIsEnded] = useState(false);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      const now = new Date().getTime();
-      const distance = endTime.getTime() - now;
-
-      if (distance < 0 || status === 'completed') {
-        setTimeLeft("ENDED");
-        setIsEnded(true);
-        return;
-      }
-
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-      setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [endTime, status]);
+  const [isEnded, setIsEnded] = useState(status === 'completed');
+  const [currentPrize, setCurrentPrize] = useState(prize);
 
   useEffect(() => {
     const fetchPoolGrowthAndBadge = async () => {
@@ -57,6 +37,17 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
           setPoolGrowth(growthPercentage);
         } else {
           setPoolGrowth(0);
+        }
+
+        // Fetch current jackpot for real prize pool
+        const { data: jackpot } = await supabase
+          .from('jackpots')
+          .select('prize_pool')
+          .eq('id', jackpotId)
+          .single();
+
+        if (jackpot) {
+          setCurrentPrize(`₦${Number(jackpot.prize_pool).toLocaleString()}`);
         }
 
         // Fetch all jackpots stats for badges
@@ -114,6 +105,29 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
     };
 
     fetchPoolGrowthAndBadge();
+
+    // Subscribe to realtime updates for prize pool
+    const channel = supabase
+      .channel(`jackpot-${jackpotId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'jackpots',
+          filter: `id=eq.${jackpotId}`
+        },
+        (payload) => {
+          if (payload.new.prize_pool !== undefined) {
+            setCurrentPrize(`₦${Number(payload.new.prize_pool).toLocaleString()}`);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [jackpotId]);
 
   const categoryColors: Record<string, string> = {
@@ -183,15 +197,19 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
       <CardContent className="relative space-y-4">
         <div className="text-center p-4 rounded-lg bg-primary/5 border border-primary/10">
           <div className="text-sm text-muted-foreground mb-1">Prize Pool</div>
-          <div className="text-4xl font-bold text-primary gold-glow">{prize}</div>
+          <div className="text-4xl font-bold text-primary gold-glow">{currentPrize}</div>
         </div>
 
         <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
           <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-primary animate-pulse" />
             <span className="text-sm font-medium">Time Left</span>
           </div>
-          <span className="text-lg font-bold text-primary">{timeLeft}</span>
+          <CountdownTimer 
+            targetDate={endTime} 
+            onExpire={() => setIsEnded(true)}
+            showIcon={false}
+            className="text-lg"
+          />
         </div>
 
         <div className="flex items-center justify-between text-sm">
