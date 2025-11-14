@@ -14,7 +14,7 @@ interface TicketPurchaseDialogProps {
     id: string;
     name: string;
     ticket_price: number;
-  };
+  } | null;
   walletBalance: number;
   onSuccess: () => void;
 }
@@ -28,6 +28,10 @@ export default function TicketPurchaseDialog({
 }: TicketPurchaseDialogProps) {
   const [quantity, setQuantity] = useState("1");
   const [loading, setLoading] = useState(false);
+
+  if (!jackpot) {
+    return null;
+  }
 
   const ticketPrice = Number(jackpot.ticket_price);
   const quantityNum = parseInt(quantity) || 1;
