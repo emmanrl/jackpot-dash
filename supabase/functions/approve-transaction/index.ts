@@ -66,7 +66,7 @@ serve(async (req) => {
     }
 
     // Update transaction status
-    const newStatus = action === 'approve' ? 'completed' : 'cancelled';
+    const newStatus = action === 'approve' ? 'completed' : 'rejected';
     const { error: updateError } = await supabase
       .from('transactions')
       .update({

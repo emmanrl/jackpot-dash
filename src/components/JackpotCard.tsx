@@ -167,7 +167,7 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
   };
 
   return (
-    <Card className={`relative overflow-hidden border-2 border-border hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 group ${specialBadge === 'HOT' ? 'animate-pulse' : ''}`}>
+    <Card className={`relative overflow-hidden border-2 border-border hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 group ${specialBadge === 'HOT' ? 'animate-pulse' : ''} md:h-auto h-[260px]`}>
       {/* Background image */}
       {backgroundImageUrl && (
         <div 
@@ -182,19 +182,20 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
       {/* Shimmer effect */}
       <div className="absolute inset-0 shimmer opacity-0 group-hover:opacity-100 transition-opacity" />
 
-      <CardHeader className="relative">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-primary px-2 py-1 rounded-full bg-primary/10 border border-primary/20">
+      <CardHeader className="relative p-2 md:p-6">
+        <div className="flex items-center justify-between mb-1 md:mb-2">
+          <span className="text-[9px] md:text-xs font-semibold uppercase tracking-wider text-primary px-1.5 md:px-2 py-0.5 md:py-1 rounded-full bg-primary/10 border border-primary/20">
             {category}
           </span>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <TrendingUp className="w-3 h-3" />
-            <span>{poolGrowth > 0 ? `+${poolGrowth}% pool` : 'New pool'}</span>
+          <div className="flex items-center gap-0.5 md:gap-1 text-[9px] md:text-xs text-muted-foreground">
+            <TrendingUp className="w-2.5 h-2.5 md:w-3 md:h-3" />
+            <span className="hidden md:inline">{poolGrowth > 0 ? `+${poolGrowth}% pool` : 'New'}</span>
+            <span className="md:hidden">+{poolGrowth}%</span>
           </div>
         </div>
         {specialBadge && (
-          <div className={`mb-2 text-center ${specialBadge === 'HOT' ? 'animate-pulse' : ''}`}>
-            <span className={`text-xs font-bold px-3 py-1 rounded-full ${
+          <div className={`mb-1 md:mb-2 text-center ${specialBadge === 'HOT' ? 'animate-pulse' : ''}`}>
+            <span className={`text-[9px] md:text-xs font-bold px-2 md:px-3 py-0.5 md:py-1 rounded-full ${
               specialBadge === 'HOT' ? 'bg-red-500 text-white shadow-lg shadow-red-500/50' :
               specialBadge === 'BIG WIN!!!' ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/50' :
               'bg-purple-500 text-white shadow-lg shadow-purple-500/50'
@@ -203,49 +204,47 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
             </span>
           </div>
         )}
-        <CardTitle className="text-2xl font-bold">{title}</CardTitle>
-        <CardDescription>{getDrawEndsSoonStatus()}</CardDescription>
+        <CardTitle className="text-sm md:text-2xl font-bold truncate">{title}</CardTitle>
+        <CardDescription className="text-[10px] md:text-sm truncate">{getDrawEndsSoonStatus()}</CardDescription>
       </CardHeader>
 
-      <CardContent className="relative space-y-4">
-        <div className="text-center p-4 rounded-lg bg-primary/5 border border-primary/10">
-          <div className="text-sm text-muted-foreground mb-1">Prize Pool</div>
-          <div className="text-4xl font-bold text-primary gold-glow">{currentPrize}</div>
+      <CardContent className="relative space-y-1.5 md:space-y-4 p-2 md:p-6">
+        <div className="text-center p-2 md:p-4 rounded-lg bg-primary/5 border border-primary/10">
+          <div className="text-[9px] md:text-sm text-muted-foreground mb-0.5 md:mb-1">Prize Pool</div>
+          <div className="text-base md:text-4xl font-bold text-primary gold-glow">{currentPrize}</div>
         </div>
 
-        <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Time Left</span>
-          </div>
+        <div className="flex items-center justify-between p-1.5 md:p-3 rounded-lg bg-muted/50 text-[10px] md:text-sm">
+          <span className="font-medium">Time</span>
           <CountdownTimer 
             targetDate={endTime} 
             onExpire={() => setIsEnded(true)}
             showIcon={false}
-            className="text-lg"
+            className="text-xs md:text-lg"
           />
         </div>
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Ticket Price</span>
+        <div className="space-y-1 md:space-y-2">
+          <div className="flex items-center justify-between text-[10px] md:text-sm">
+            <span className="text-muted-foreground">Ticket</span>
             <span className="font-bold text-foreground">{ticketPrice}</span>
           </div>
           
           {(participantCount > 0 || ticketCount > 0) && (
-            <div className="flex items-center justify-between text-xs p-2 rounded-md bg-muted/30">
-              <div className="flex items-center gap-1">
-                <Users className="w-3 h-3 text-primary" />
-                <span className="text-muted-foreground">Participants</span>
+            <div className="flex items-center justify-between text-[9px] md:text-xs p-1 md:p-2 rounded-md bg-muted/30">
+              <div className="flex items-center gap-0.5 md:gap-1">
+                <Users className="w-2 h-2 md:w-3 md:h-3 text-primary" />
+                <span className="text-muted-foreground">Players</span>
               </div>
               <span className="font-semibold text-foreground">{participantCount}</span>
             </div>
           )}
           
           {ticketCount > 0 && (
-            <div className="flex items-center justify-between text-xs p-2 rounded-md bg-muted/30">
-              <div className="flex items-center gap-1">
-                <Ticket className="w-3 h-3 text-primary" />
-                <span className="text-muted-foreground">Tickets Sold</span>
+            <div className="flex items-center justify-between text-[9px] md:text-xs p-1 md:p-2 rounded-md bg-muted/30">
+              <div className="flex items-center gap-0.5 md:gap-1">
+                <Ticket className="w-2 h-2 md:w-3 md:h-3 text-primary" />
+                <span className="text-muted-foreground">Sold</span>
               </div>
               <span className="font-semibold text-foreground">{ticketCount}</span>
             </div>
@@ -253,11 +252,11 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
         </div>
       </CardContent>
 
-      <CardFooter className="relative">
+      <CardFooter className="relative p-2 md:p-6">
         <Button 
           variant="prize" 
-          className="w-full" 
-          size="lg" 
+          className="w-full text-xs md:text-base h-7 md:h-10" 
+          size="sm"
           onClick={async () => {
             if (isEnded && status === 'completed') {
               // Fetch winner data for this jackpot
