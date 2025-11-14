@@ -69,6 +69,24 @@ const Statistics = () => {
     };
 
     checkAuthAndFetch();
+
+    // Setup realtime subscription for live updates
+    const channel = supabase
+      .channel('statistics-updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => {
+        fetchStatistics();
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'winners' }, () => {
+        fetchStatistics();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'jackpots' }, () => {
+        fetchStatistics();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [navigate]);
 
   const fetchStatistics = async () => {
