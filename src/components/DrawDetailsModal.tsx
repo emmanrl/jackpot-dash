@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Trophy, Users, DollarSign, Share2, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import WinShareCard from "./WinShareCard";
-import { useState } from "react";
+import WinnersPodium from "./WinnersPodium";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DrawDetailsModalProps {
   open: boolean;
@@ -25,6 +27,29 @@ interface DrawDetailsModalProps {
 
 export default function DrawDetailsModal({ open, onOpenChange, win, userTickets = [] }: DrawDetailsModalProps) {
   const [showShareCard, setShowShareCard] = useState(false);
+  const [allWinners, setAllWinners] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (open && win.jackpots.id) {
+      fetchAllWinners();
+    }
+  }, [open, win.jackpots.id]);
+
+  const fetchAllWinners = async () => {
+    const { data } = await supabase
+      .from('winners')
+      .select(`
+        winner_rank,
+        prize_amount,
+        profiles (full_name, email)
+      `)
+      .eq('jackpot_id', win.jackpots.id)
+      .order('winner_rank', { ascending: true });
+
+    if (data) {
+      setAllWinners(data);
+    }
+  };
 
   const handleShare = () => {
     setShowShareCard(true);
@@ -52,6 +77,13 @@ export default function DrawDetailsModal({ open, onOpenChange, win, userTickets 
                 Won on {new Date(win.claimed_at).toLocaleDateString()}
               </p>
             </div>
+
+            {/* Winners Podium */}
+            {allWinners.length > 0 && (
+              <div className="border-b border-border pb-6">
+                <WinnersPodium winners={allWinners} />
+              </div>
+            )}
 
             {/* Prize Amount */}
             <div className="bg-primary/10 rounded-lg p-6 text-center border border-primary/20">
