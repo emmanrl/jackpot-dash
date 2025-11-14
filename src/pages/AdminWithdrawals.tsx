@@ -37,6 +37,8 @@ export default function AdminWithdrawals() {
   const [processing, setProcessing] = useState<string | null>(null);
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<WithdrawalTransaction | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [batchProcessing, setBatchProcessing] = useState(false);
 
   useEffect(() => {
     fetchWithdrawals();
@@ -108,6 +110,39 @@ export default function AdminWithdrawals() {
     }
   };
 
+  const handleBatchProcess = async () => {
+    if (selectedIds.length === 0) {
+      toast.error("Please select withdrawals to process");
+      return;
+    }
+
+    if (!confirm(`Process ${selectedIds.length} withdrawal(s) via Paystack bulk transfer?`)) return;
+
+    setBatchProcessing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('process-batch-withdrawal', {
+        body: {
+          transactionIds: selectedIds,
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success(`Successfully processed ${data.processed} withdrawal(s)`);
+      if (data.failed > 0) {
+        toast.warning(`Failed to process ${data.failed} withdrawal(s)`);
+      }
+      
+      setSelectedIds([]);
+      await fetchWithdrawals();
+    } catch (error: any) {
+      console.error("Batch processing failed:", error);
+      toast.error(`Failed to process withdrawals: ${error.message}`);
+    } finally {
+      setBatchProcessing(false);
+    }
+  };
+
   const handleRejectWithdrawal = async (id: string) => {
     if (!confirm("Are you sure you want to reject this withdrawal request?")) return;
 
@@ -131,6 +166,19 @@ export default function AdminWithdrawals() {
     } finally {
       setProcessing(null);
     }
+  };
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    const pendingIds = withdrawals.filter(w => w.status === "pending").map(w => w.id);
+    setSelectedIds(prev => 
+      prev.length === pendingIds.length ? [] : pendingIds
+    );
   };
 
   const getStatusBadge = (status: string) => {
@@ -169,9 +217,30 @@ export default function AdminWithdrawals() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Withdrawal Requests</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>Withdrawal Requests</span>
+            {selectedIds.length > 0 && (
+              <Button 
+                onClick={handleBatchProcess}
+                disabled={batchProcessing}
+                className="ml-auto"
+              >
+                {batchProcessing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processing {selectedIds.length} withdrawal(s)...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Process {selectedIds.length} Selected
+                  </>
+                )}
+              </Button>
+            )}
+          </CardTitle>
           <CardDescription>
-            Process user withdrawal requests via Paystack Transfer API
+            Process user withdrawal requests via Paystack Transfer API (1% fee applied)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -179,6 +248,14 @@ export default function AdminWithdrawals() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[50px]">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.length === withdrawals.filter(w => w.status === "pending").length && withdrawals.filter(w => w.status === "pending").length > 0}
+                      onChange={toggleSelectAll}
+                      className="cursor-pointer"
+                    />
+                  </TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>User</TableHead>
                   <TableHead>Amount</TableHead>
@@ -191,7 +268,7 @@ export default function AdminWithdrawals() {
               <TableBody>
                 {withdrawals.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">
                       No withdrawal requests found
                     </TableCell>
                   </TableRow>
@@ -200,6 +277,16 @@ export default function AdminWithdrawals() {
                     const bankDetails = parseBankDetails(withdrawal.admin_note);
                     return (
                       <TableRow key={withdrawal.id}>
+                        <TableCell>
+                          {withdrawal.status === "pending" && (
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.includes(withdrawal.id)}
+                              onChange={() => toggleSelection(withdrawal.id)}
+                              className="cursor-pointer"
+                            />
+                          )}
+                        </TableCell>
                         <TableCell>
                           {format(new Date(withdrawal.created_at), "MMM dd, yyyy HH:mm")}
                         </TableCell>

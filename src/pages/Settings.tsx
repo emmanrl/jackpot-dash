@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Sparkles, Moon, Sun, Plus, Trash2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
@@ -21,6 +22,13 @@ interface WithdrawalAccount {
   is_default: boolean;
 }
 
+interface Bank {
+  id: number;
+  name: string;
+  code: string;
+  slug: string;
+}
+
 const Settings = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -31,6 +39,9 @@ const Settings = () => {
   const [accountNumber, setAccountNumber] = useState("");
   const [accountName, setAccountName] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
+  const [banks, setBanks] = useState<Bank[]>([]);
+  const [selectedBankCode, setSelectedBankCode] = useState("");
+  const [verifyingAccount, setVerifyingAccount] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -41,6 +52,7 @@ const Settings = () => {
       }
       setUserId(session.user.id);
       await fetchWithdrawalAccounts(session.user.id);
+      await fetchBanks();
       setLoading(false);
     };
     checkUser();
@@ -49,6 +61,21 @@ const Settings = () => {
     const currentTheme = document.documentElement.classList.contains("dark") ? "dark" : "light";
     setTheme(currentTheme);
   }, [navigate]);
+
+  const fetchBanks = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('get-banks');
+      
+      if (error) throw error;
+      
+      if (data?.banks) {
+        setBanks(data.banks);
+      }
+    } catch (error: any) {
+      console.error("Failed to fetch banks:", error);
+      toast.error("Failed to load banks list");
+    }
+  };
 
   const fetchWithdrawalAccounts = async (uid: string) => {
     try {
@@ -69,27 +96,49 @@ const Settings = () => {
     if (!userId) return;
     
     try {
-      if (!bankName || !accountNumber || !accountName) {
-        toast.error("Please fill all fields");
+      if (!selectedBankCode || !accountNumber) {
+        toast.error("Please select a bank and enter account number");
         return;
       }
+
+      setVerifyingAccount(true);
+
+      // Verify account before adding
+      const { data, error: verifyError } = await supabase.functions.invoke('verify-bank-account', {
+        body: {
+          accountNumber,
+          bankCode: selectedBankCode,
+        }
+      });
+
+      setVerifyingAccount(false);
+
+      if (verifyError || !data?.success) {
+        toast.error(data?.error || "Failed to verify bank account");
+        return;
+      }
+
+      // Use verified account name and bank name
+      const selectedBank = banks.find(b => b.code === selectedBankCode);
+      const verifiedAccountName = data.accountName;
 
       const { error } = await supabase
         .from("withdrawal_accounts")
         .insert({
           user_id: userId,
-          bank_name: bankName,
+          bank_name: selectedBank?.name || bankName,
           account_number: accountNumber,
-          account_name: accountName,
+          account_name: verifiedAccountName,
           is_default: accounts.length === 0
         });
 
       if (error) throw error;
 
-      toast.success("Withdrawal account added");
+      toast.success(`Account verified: ${verifiedAccountName}`);
       setBankName("");
       setAccountNumber("");
       setAccountName("");
+      setSelectedBankCode("");
       setAddAccountOpen(false);
       await fetchWithdrawalAccounts(userId);
     } catch (error: any) {
@@ -214,32 +263,46 @@ const Settings = () => {
                     </DialogHeader>
                     <div className="space-y-4">
                       <div>
-                        <Label>Bank Name</Label>
-                        <Input
-                          value={bankName}
-                          onChange={(e) => setBankName(e.target.value)}
-                          placeholder="Enter bank name"
-                        />
+                        <Label>Bank</Label>
+                        <Select value={selectedBankCode} onValueChange={(value) => {
+                          setSelectedBankCode(value);
+                          const bank = banks.find(b => b.code === value);
+                          if (bank) setBankName(bank.name);
+                        }}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select your bank" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {banks.map((bank) => (
+                              <SelectItem key={bank.code} value={bank.code}>
+                                {bank.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div>
                         <Label>Account Number</Label>
                         <Input
                           value={accountNumber}
                           onChange={(e) => setAccountNumber(e.target.value)}
-                          placeholder="Enter account number"
+                          placeholder="Enter 10-digit account number"
+                          maxLength={10}
                         />
                       </div>
-                      <div>
-                        <Label>Account Name</Label>
-                        <Input
-                          value={accountName}
-                          onChange={(e) => setAccountName(e.target.value)}
-                          placeholder="Enter account name"
-                        />
-                      </div>
+                      {accountName && (
+                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">
+                          <Label className="text-sm text-green-800 dark:text-green-200">
+                            Verified Account Name
+                          </Label>
+                          <p className="font-semibold text-green-900 dark:text-green-100">{accountName}</p>
+                        </div>
+                      )}
                     </div>
                     <DialogFooter>
-                      <Button onClick={handleAddAccount}>Add Account</Button>
+                      <Button onClick={handleAddAccount} disabled={verifyingAccount}>
+                        {verifyingAccount ? "Verifying..." : "Verify & Add Account"}
+                      </Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>

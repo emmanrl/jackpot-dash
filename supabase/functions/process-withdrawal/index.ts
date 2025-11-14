@@ -87,12 +87,22 @@ serve(async (req) => {
 
     const recipientCode = recipientData.data.recipient_code;
 
-    // Step 2: Initiate Transfer
+    // Step 2: Calculate withdrawal fee (1%)
+    const withdrawalFee = parseFloat(transaction.amount) * 0.01;
+    const netAmount = parseFloat(transaction.amount) - withdrawalFee;
+    
+    console.log('Withdrawal fee calculated:', { 
+      originalAmount: transaction.amount, 
+      fee: withdrawalFee, 
+      netAmount 
+    });
+
+    // Step 3: Initiate Transfer
     console.log('Initiating transfer...');
     const transferReference = `WTH-${Date.now()}-${transactionId.substring(0, 8)}`;
     
-    // Convert amount to kobo (smallest currency unit)
-    const amountInKobo = Math.round(parseFloat(transaction.amount) * 100);
+    // Convert net amount to kobo (smallest currency unit)
+    const amountInKobo = Math.round(netAmount * 100);
 
     const transferResponse = await fetch('https://api.paystack.co/transfer', {
       method: 'POST',
@@ -127,6 +137,7 @@ serve(async (req) => {
           ...bankDetails,
           transfer_code: transferData.data.transfer_code,
           recipient_code: recipientCode,
+          withdrawal_fee: withdrawalFee,
         }),
       })
       .eq('id', transactionId);
@@ -142,6 +153,16 @@ serve(async (req) => {
     if (walletError) {
       console.error('Failed to update wallet:', walletError);
       throw new Error('Failed to update wallet balance');
+    }
+
+    // Add withdrawal fee to admin wallet
+    const { error: adminWalletError } = await supabase.rpc('increment_admin_wallet', {
+      p_amount: withdrawalFee,
+    });
+
+    if (adminWalletError) {
+      console.error('Failed to update admin wallet:', adminWalletError);
+      // Don't fail the withdrawal if admin wallet update fails
     }
 
     // Send notification
