@@ -113,33 +113,40 @@ const RecentWinners = () => {
             <p className="text-muted-foreground">No winners yet. Be the first!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {winners.map((winner) => (
               <Card 
                 key={winner.id}
                 className="border-2 border-border hover:border-primary/50 transition-all duration-300 hover:shadow-lg group overflow-hidden"
               >
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4">
-                    <Avatar className="w-14 h-14 border-2 border-primary/20 group-hover:border-primary transition-colors">
-                      <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                    <Avatar className="w-10 h-10 sm:w-12 sm:h-12 border-2 border-primary/20 group-hover:border-primary/50 transition-colors flex-shrink-0">
+                      <AvatarFallback className="bg-primary/10 text-primary font-bold text-sm">
                         {getInitials(winner)}
                       </AvatarFallback>
                     </Avatar>
-
-                    <div className="flex-1">
-                      <div className="font-bold text-lg">{getDisplayName(winner)}</div>
-                      <div className="text-sm text-muted-foreground">{winner.jackpots.name}</div>
-                      <div className="text-xs text-muted-foreground mt-1">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm sm:text-base text-foreground truncate group-hover:text-primary transition-colors">
+                        {getDisplayName(winner)}
+                      </p>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">
                         {formatDistanceToNow(new Date(winner.claimed_at), { addSuffix: true })}
-                      </div>
+                      </p>
                     </div>
+                  </div>
 
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-primary gold-glow">
-                        ₦{Number(winner.prize_amount).toLocaleString()}
-                      </div>
-                      <Trophy className="w-5 h-5 text-primary mx-auto mt-1 animate-pulse" />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs sm:text-sm text-muted-foreground">Prize Won</span>
+                      <span className="text-xl sm:text-2xl font-bold text-primary">
+                        ₦{winner.prize_amount.toLocaleString('en-NG')}
+                      </span>
+                    </div>
+                    <div className="pt-2 border-t border-border/50">
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate" title={winner.jackpots.name}>
+                        {winner.jackpots.name}
+                      </p>
                     </div>
                   </div>
                 </CardContent>

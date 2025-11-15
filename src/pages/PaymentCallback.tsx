@@ -37,9 +37,9 @@ export default function PaymentCallback() {
         setMessage("Payment verified successfully. Funds added to your wallet.");
         toast.success("Deposit successful! Your wallet has been updated.");
         
-        // Redirect to homepage with receipt modal
+        // Redirect to dashboard
         setTimeout(() => {
-          navigate(`/?receipt=true&reference=${reference}&amount=${data.amount || 0}`);
+          window.location.href = `https://luckywin.name.ng/dashboard`;
         }, 1500);
       } catch (err: any) {
         console.error("Verification error:", err);
@@ -47,7 +47,9 @@ export default function PaymentCallback() {
         setStatus("error");
         setMessage(msg);
         toast.error(msg);
-        setTimeout(() => navigate("/"), 2000);
+        setTimeout(() => {
+          window.location.href = "https://luckywin.name.ng/dashboard";
+        }, 2000);
       }
     };
 
