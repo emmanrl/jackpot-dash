@@ -504,12 +504,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 gap-4 md:gap-6">
           <Card className="rounded-2xl shadow-xl transition-transform hover:scale-[1.005] duration-300 w-full">
             <CardHeader className="p-6 pb-4">
-              <CardTitle className="text-2xl font-extrabold flex items-center gap-2">
-
-
-
-
-Dashboard   <Wallet className="w-5 h-5 text-primary" /> Dashboard Overview
+              <CardTitle className="text-2xl font-extrabold flex items-center gap-2"><Wallet className="w-5 h-5 text-primary" /> Dashboard Overview
               </CardTitle>
             </CardHeader>
             
