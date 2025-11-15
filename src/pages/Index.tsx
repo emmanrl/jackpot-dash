@@ -104,6 +104,7 @@ const Index = () => {
   return (
     <div className="min-h-screen">
       <TopNav />
+      <ImageSlider />
       <Hero />
       <JackpotCarouselSection onBuyTicket={isLoggedIn ? handleBuyTicket : undefined} />
       <HowItWorks />

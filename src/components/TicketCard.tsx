@@ -11,22 +11,16 @@ interface TicketCardProps {
 
 const TicketCard = ({ ticketId, ticketNumber, purchasePrice, purchasedAt, jackpotName, isWinner }: TicketCardProps) => {
   const isWon = isWinner === true;
-  const isPending = isWinner === undefined;
-  const isLost = isWinner === false && !isPending;
+  const isLost = isWinner === false;
   
   return (
     <div className={`relative bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 rounded-lg p-4 border-2 border-dashed border-primary/40 shadow-lg hover:shadow-xl transition-all w-full ${
-      isWon ? 'ring-2 ring-green-500 bg-green-500/10' : isLost ? 'bg-red-500/5 opacity-75' : isPending ? 'bg-muted/30' : ''
+      isWon ? 'ring-2 ring-green-500 bg-green-500/10' : isLost ? 'bg-red-500/5 opacity-75' : ''
     }`}>
-      {/* Winner/Pending/Loser Overlay */}
+      {/* Winner/Loser Overlay */}
       {isWon && (
         <div className="absolute top-2 right-2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
           <span>🏆</span> WON
-        </div>
-      )}
-      {isPending && (
-        <div className="absolute top-2 right-2 bg-muted text-muted-foreground px-3 py-1 rounded-full text-xs font-bold">
-          PENDING
         </div>
       )}
       {isLost && (

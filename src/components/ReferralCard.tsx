@@ -71,7 +71,7 @@ export const ReferralCard = ({ userId }: ReferralCardProps) => {
   };
 
   const handleCopyLink = async () => {
-    const referralLink = `https://luckywin.name.ng/auth?ref=${referralData.referralCode}`;
+    const referralLink = `${window.location.origin}/auth?ref=${referralData.referralCode}`;
     
     try {
       await navigator.clipboard.writeText(referralLink);

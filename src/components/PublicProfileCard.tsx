@@ -20,7 +20,7 @@ export const PublicProfileCard = ({ profile, avatarUrl, stats }: PublicProfileCa
   const [copied, setCopied] = useState(false);
 
   const handleShareProfile = async () => {
-    const profileUrl = `https://luckywin.name.ng/profile/${profile.id}`;
+    const profileUrl = `${window.location.origin}/profile/${profile.id}`;
     
     try {
       await navigator.clipboard.writeText(profileUrl);
@@ -95,7 +95,7 @@ export const PublicProfileCard = ({ profile, avatarUrl, stats }: PublicProfileCa
         <div className="p-3 bg-muted/50 rounded-lg">
           <p className="text-xs text-muted-foreground mb-1">Your Public Profile URL</p>
           <code className="text-xs break-all text-primary">
-            https://luckywin.name.ng/profile/{profile.id}
+            {window.location.origin}/profile/{profile.id}
           </code>
         </div>
 

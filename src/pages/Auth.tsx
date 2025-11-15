@@ -36,7 +36,7 @@ const Auth = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `https://luckywin.name.ng/dashboard`,
+          emailRedirectTo: `${window.location.origin}/dashboard`,
           data: {
             full_name: fullName,
             referral_code: referralCode,
@@ -112,17 +112,17 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-background via-primary/5 to-background">
-      {/* Enhanced Background effects */}
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM4ODg4ODgiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDE2YzAtMi4yMS0xLjc5LTQtNC00cy00IDEuNzktNCA0IDEuNzkgNCA0IDQgNC0xLjc5IDQtNHptMCAwYzAtMi4yMS0xLjc5LTQtNC00cy00IDEuNzktNCA0IDEuNzkgNCA0IDQgNC0xLjc5IDQtNHoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-40" />
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background effects */}
+      <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background" />
       <div className="absolute inset-0 overflow-hidden">
-        {[...Array(30)].map((_, i) => (
+        {[...Array(15)].map((_, i) => (
           <div
             key={i}
-            className="absolute rounded-full bg-primary/10 animate-pulse"
+            className="absolute rounded-full bg-primary/20"
             style={{
-              width: Math.random() * 6 + 3 + "px",
-              height: Math.random() * 6 + 3 + "px",
+              width: Math.random() * 4 + 2 + "px",
+              height: Math.random() * 4 + 2 + "px",
               left: Math.random() * 100 + "%",
               top: Math.random() * 100 + "%",
               animation: `float ${Math.random() * 3 + 2}s ease-in-out infinite`,
@@ -132,19 +132,16 @@ const Auth = () => {
         ))}
       </div>
 
-      <Card className="relative z-10 w-full max-w-md backdrop-blur-xl bg-card/98 border-2 border-primary/30 shadow-2xl hover:shadow-primary/20 transition-shadow duration-300">
-        <CardHeader className="space-y-3 pb-6">
-          <div className="flex items-center justify-center mb-2">
-            <div className="p-4 bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl animate-pulse">
-              <Sparkles className="w-10 h-10 text-primary drop-shadow-lg" />
+      <Card className="w-full max-w-md relative z-10 border-border bg-card/95 backdrop-blur-sm">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
+              <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+              <span className="text-sm font-medium text-primary">JackpotWin</span>
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold text-center bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-            Welcome to LuckyWin
-          </CardTitle>
-          <CardDescription className="text-center text-base">
-            🎰 Sign in or create your account to start winning
-          </CardDescription>
+          <CardTitle className="text-2xl">Welcome</CardTitle>
+          <CardDescription>Sign in to your account or create a new one</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">

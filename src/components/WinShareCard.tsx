@@ -27,7 +27,7 @@ export default function WinShareCard({
 
   const handleShare = async (platform: 'twitter' | 'facebook' | 'whatsapp') => {
     const text = `🎉 I just won ₦${prizeAmount.toLocaleString()} in ${jackpotName}! 🎊`;
-    const url = 'https://luckywin.name.ng';
+    const url = window.location.origin;
 
     const shareUrls = {
       twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
