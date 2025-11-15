@@ -177,6 +177,7 @@ export type Database = {
           expires_at: string | null
           frequency: string
           id: string
+          initial_prize_pool: number | null
           jackpot_number: number | null
           name: string
           next_draw: string | null
@@ -195,6 +196,7 @@ export type Database = {
           expires_at?: string | null
           frequency: string
           id?: string
+          initial_prize_pool?: number | null
           jackpot_number?: number | null
           name: string
           next_draw?: string | null
@@ -213,6 +215,7 @@ export type Database = {
           expires_at?: string | null
           frequency?: string
           id?: string
+          initial_prize_pool?: number | null
           jackpot_number?: number | null
           name?: string
           next_draw?: string | null
