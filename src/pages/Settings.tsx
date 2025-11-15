@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Sparkles, Moon, Sun, Plus, Trash2, CheckCircle2, Award } from "lucide-react";
+import { Sparkles, Moon, Sun, Plus, Trash2, CheckCircle2, Award, Mail, Phone } from "lucide-react";
 import { toast } from "sonner";
 import TopNav from "@/components/TopNav";
 import Footer from "@/components/Footer";
@@ -16,6 +16,7 @@ import NotificationSettings from "@/components/NotificationSettings";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import { AchievementBadge } from "@/components/AchievementBadge";
 import { PhoneVerification } from "@/components/PhoneVerification";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface WithdrawalAccount {
   id: string;
@@ -46,6 +47,10 @@ const Settings = () => {
   const [selectedBankCode, setSelectedBankCode] = useState("");
   const [verifyingAccount, setVerifyingAccount] = useState(false);
   const [achievements, setAchievements] = useState<any[]>([]);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+  const [sendingVerification, setSendingVerification] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -55,6 +60,9 @@ const Settings = () => {
         return;
       }
       setUserId(session.user.id);
+      setUserEmail(session.user.email || "");
+      setEmailVerified(session.user.email_confirmed_at !== null);
+      setPhoneVerified(session.user.phone_confirmed_at !== null);
       
       // Fetch user's dark mode preference from database
       const { data: profile } = await supabase
@@ -257,6 +265,27 @@ const Settings = () => {
     }
   };
 
+  const sendEmailVerification = async () => {
+    setSendingVerification(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: userEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/settings`
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success("Verification email sent! Please check your inbox.");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to send verification email");
+    } finally {
+      setSendingVerification(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -328,6 +357,63 @@ const Settings = () => {
                   onCheckedChange={handleThemeToggle}
                 />
               </div>
+            </div>
+
+            {/* Email Verification Section */}
+            <div className="border-t pt-6 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Mail className="w-5 h-5 text-primary" />
+                <Label className="text-base">Email Verification</Label>
+              </div>
+              {emailVerified ? (
+                <Alert>
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <AlertDescription className="text-green-700">
+                    Your email is verified ✓
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <div className="space-y-3">
+                  <Alert>
+                    <AlertDescription className="text-amber-700">
+                      Please verify your email to withdraw winnings
+                    </AlertDescription>
+                  </Alert>
+                  <Button 
+                    onClick={sendEmailVerification}
+                    disabled={sendingVerification}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {sendingVerification ? "Sending..." : "Send Verification Email"}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Phone Verification Section */}
+            <div className="border-t pt-6 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Phone className="w-5 h-5 text-primary" />
+                <Label className="text-base">Phone Verification</Label>
+              </div>
+              {phoneVerified ? (
+                <Alert>
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <AlertDescription className="text-green-700">
+                    Your phone number is verified ✓
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <div className="space-y-3">
+                  <Alert>
+                    <AlertDescription className="text-amber-700">
+                      Please verify your phone number to withdraw winnings
+                    </AlertDescription>
+                  </Alert>
+                  {userId && <PhoneVerification userId={userId} />}
+                </div>
+              )}
             </div>
 
             <div className="border-t pt-6 space-y-4">
