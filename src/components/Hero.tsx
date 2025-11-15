@@ -1,17 +1,23 @@
 import { Button } from "@/components/ui/button";
-import { Sparkles, Trophy, LayoutDashboard } from "lucide-react";
+import { Sparkles, Trophy, LayoutDashboard, TrendingUp, Users, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import heroImage from "@/assets/hero-jackpot.jpg";
-import { ImageSlider } from "@/components/ImageSlider";
+import { Card } from "@/components/ui/card";
 
 const Hero = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const { settings } = useSiteSettings();
+  const [stats, setStats] = useState({
+    totalPrizeToday: 0,
+    winnersThisWeek: 0,
+    activeJackpots: 0,
+    nextDrawIn: "Loading...",
+  });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -22,8 +28,62 @@ const Hero = () => {
       setUser(session?.user ?? null);
     });
 
+    fetchStats();
+
     return () => subscription.unsubscribe();
   }, []);
+
+  const fetchStats = async () => {
+    // Fetch total prize pool today
+    const { data: jackpots } = await supabase
+      .from("jackpots")
+      .select("prize_pool")
+      .eq("status", "active");
+    
+    const totalPrize = jackpots?.reduce((sum, j) => sum + Number(j.prize_pool), 0) || 0;
+
+    // Fetch winners this week
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const { count: winnersCount } = await supabase
+      .from("winners")
+      .select("*", { count: "exact", head: true })
+      .gte("claimed_at", weekAgo.toISOString());
+
+    // Fetch active jackpots count
+    const { count: jackpotsCount } = await supabase
+      .from("jackpots")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "active");
+
+    // Get next draw time
+    const { data: nextJackpot } = await supabase
+      .from("jackpots")
+      .select("next_draw")
+      .eq("status", "active")
+      .order("next_draw", { ascending: true })
+      .limit(1)
+      .single();
+
+    let nextDrawText = "Soon";
+    if (nextJackpot?.next_draw) {
+      const timeDiff = new Date(nextJackpot.next_draw).getTime() - Date.now();
+      const minutes = Math.floor(timeDiff / 60000);
+      if (minutes < 60) {
+        nextDrawText = `${minutes}m`;
+      } else {
+        const hours = Math.floor(minutes / 60);
+        nextDrawText = `${hours}h`;
+      }
+    }
+
+    setStats({
+      totalPrizeToday: totalPrize,
+      winnersThisWeek: winnersCount || 0,
+      activeJackpots: jackpotsCount || 0,
+      nextDrawIn: nextDrawText,
+    });
+  };
   
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
@@ -107,21 +167,55 @@ const Hero = () => {
           )}
         </div>
 
-        {/* Image Slider */}
-        <ImageSlider />
-
-        <div className="mt-12 grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-          {[
-            { label: "Active Players", value: "100K+" },
-            { label: "Total Prizes", value: "₦50M+" },
-            { label: "Winners Today", value: "1,250" },
-            { label: "Success Rate", value: "99.9%" },
-          ].map((stat, i) => (
-            <div key={i} className="p-4 rounded-lg bg-card border border-border">
-              <div className="text-3xl font-bold text-primary mb-1">{stat.value}</div>
-              <div className="text-sm text-muted-foreground">{stat.label}</div>
+        {/* Enhanced Stats Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto">
+          <Card className="bg-card/50 backdrop-blur-sm p-3 sm:p-4 border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:scale-105 group">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              </div>
             </div>
-          ))}
+            <p className="text-2xl sm:text-3xl font-bold text-primary mb-1 animate-count-up">
+              ₦{(stats.totalPrizeToday / 1000000).toFixed(1)}M
+            </p>
+            <p className="text-xs sm:text-sm text-muted-foreground">Prize Pool Today</p>
+          </Card>
+          
+          <Card className="bg-card/50 backdrop-blur-sm p-3 sm:p-4 border-2 border-accent/20 hover:border-accent/40 transition-all duration-300 hover:scale-105 group">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
+              </div>
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold text-accent mb-1 animate-count-up">
+              {stats.winnersThisWeek}+
+            </p>
+            <p className="text-xs sm:text-sm text-muted-foreground">Winners This Week</p>
+          </Card>
+          
+          <Card className="bg-card/50 backdrop-blur-sm p-3 sm:p-4 border-2 border-secondary/20 hover:border-secondary/40 transition-all duration-300 hover:scale-105 group">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 rounded-lg bg-secondary/10 group-hover:bg-secondary/20 transition-colors">
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-secondary" />
+              </div>
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold text-secondary mb-1 animate-count-up">
+              {stats.activeJackpots}
+            </p>
+            <p className="text-xs sm:text-sm text-muted-foreground">Active Jackpots</p>
+          </Card>
+          
+          <Card className="bg-card/50 backdrop-blur-sm p-3 sm:p-4 border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:scale-105 group">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-primary animate-pulse" />
+              </div>
+            </div>
+            <p className="text-2xl sm:text-3xl font-bold text-primary mb-1">
+              {stats.nextDrawIn}
+            </p>
+            <p className="text-xs sm:text-sm text-muted-foreground">Next Draw In</p>
+          </Card>
         </div>
       </div>
     </section>

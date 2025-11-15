@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import TopNav from "@/components/TopNav";
 import Hero from "@/components/Hero";
-import ActiveJackpots from "@/components/ActiveJackpots";
+import JackpotCarouselSection from "@/components/JackpotCarouselSection";
 import HowItWorks from "@/components/HowItWorks";
 import RecentWinners from "@/components/RecentWinners";
 import Leaderboard from "@/components/Leaderboard";
@@ -105,23 +105,11 @@ const Index = () => {
     <div className="min-h-screen">
       <TopNav />
       <ImageSlider />
-      {isLoggedIn ? (
-        <>
-          <ActiveJackpots onBuyTicket={handleBuyTicket} />
-          <Hero />
-          <HowItWorks />
-          <Leaderboard />
-          <RecentWinners />
-        </>
-      ) : (
-        <>
-          <Hero />
-          <HowItWorks />
-          <ActiveJackpots />
-          <Leaderboard />
-          <RecentWinners />
-        </>
-      )}
+      <Hero />
+      <JackpotCarouselSection onBuyTicket={isLoggedIn ? handleBuyTicket : undefined} />
+      <HowItWorks />
+      <Leaderboard />
+      <RecentWinners />
       <Footer />
       
       <ReceiptModal
