@@ -26,11 +26,9 @@ import NotificationBell from "@/components/NotificationBell";
 import { useRealtimeAvatar } from "@/hooks/useRealtimeAvatar";
 import { PublicProfileCard } from "@/components/PublicProfileCard";
 import { ReferralCard } from "@/components/ReferralCard";
-
 interface WalletData {
   balance: number;
 }
-
 interface TicketData {
   id: string;
   ticket_number: string;
@@ -42,7 +40,6 @@ interface TicketData {
   };
   isWinner?: boolean;
 }
-
 interface WinnerData {
   id: string;
   prize_amount: number;
@@ -55,7 +52,6 @@ interface WinnerData {
     name: string;
   };
 }
-
 interface WithdrawalAccount {
   id: string;
   bank_name: string;
@@ -63,7 +59,6 @@ interface WithdrawalAccount {
   account_name: string;
   is_default: boolean;
 }
-
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
@@ -73,141 +68,134 @@ const Dashboard = () => {
   const [tickets, setTickets] = useState<TicketData[]>([]);
   const [wins, setWins] = useState<WinnerData[]>([]);
   const [withdrawalAccount, setWithdrawalAccount] = useState<WithdrawalAccount | null>(null);
-  
   useDrawNotifications();
-  const { winData, showWinModal, setShowWinModal } = useWinNotification();
+  const {
+    winData,
+    showWinModal,
+    setShowWinModal
+  } = useWinNotification();
   const realtimeAvatarUrl = useRealtimeAvatar(user?.id);
-  const { currentTheme, xp, updateTheme, unlockedThemes, themes } = useTheme(user?.id);
-  
+  const {
+    currentTheme,
+    xp,
+    updateTheme,
+    unlockedThemes,
+    themes
+  } = useTheme(user?.id);
   useEffect(() => {
     if (winData && showWinModal) {
       setCelebrationWin({
         prizeAmount: winData.prizeAmount,
-        jackpotName: winData.jackpotName,
+        jackpotName: winData.jackpotName
       });
       setShowWinModal(false);
     }
   }, [winData, showWinModal, setShowWinModal]);
-  
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [depositDialogOpen, setDepositDialogOpen] = useState(false);
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
   const [selectedJackpot, setSelectedJackpot] = useState<any>(null);
   const [activeJackpots, setActiveJackpots] = useState<any[]>([]);
-  const [jackpotStats, setJackpotStats] = useState<Record<string, { ticketsSold: number, participants: number }>>({});
+  const [jackpotStats, setJackpotStats] = useState<Record<string, {
+    ticketsSold: number;
+    participants: number;
+  }>>({});
   const [selectedWin, setSelectedWin] = useState<WinnerData | null>(null);
   const [drawDetailsOpen, setDrawDetailsOpen] = useState(false);
   const [celebrationWin, setCelebrationWin] = useState<{
     prizeAmount: number;
     jackpotName: string;
   } | null>(null);
-
   useEffect(() => {
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
+      const {
+        data: {
+          session
+        }
+      } = await supabase.auth.getSession();
       if (!session) {
         navigate("/auth");
         return;
       }
-
       setUser(session.user);
       await fetchUserData(session.user.id);
       await fetchActiveJackpots();
       await fetchWithdrawalAccount(session.user.id);
       setLoading(false);
     };
-
     checkUser();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: {
+        subscription
+      }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
         navigate("/auth");
       } else {
         setUser(session.user);
       }
     });
-
     return () => subscription.unsubscribe();
   }, [navigate]);
-
   const fetchUserData = async (userId: string) => {
     try {
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("full_name, email, avatar_url, experience_points, theme, username")
-        .eq("id", userId)
-        .single();
-      
+      const {
+        data: profileData
+      } = await supabase.from("profiles").select("full_name, email, avatar_url, experience_points, theme, username").eq("id", userId).single();
       if (profileData) {
         setProfile(profileData as any);
       }
-
-      const { data: walletData, error: walletError } = await supabase
-        .from('wallets')
-        .select('balance')
-        .eq('user_id', userId)
-        .single();
-
+      const {
+        data: walletData,
+        error: walletError
+      } = await supabase.from('wallets').select('balance').eq('user_id', userId).single();
       if (walletError) throw walletError;
       setWallet(walletData);
-
-      const { data: ticketsData, error: ticketsError } = await supabase
-        .from('tickets')
-        .select(`
+      const {
+        data: ticketsData,
+        error: ticketsError
+      } = await supabase.from('tickets').select(`
           *,
           jackpots(name, status)
-        `)
-        .eq('user_id', userId)
-        .order('purchased_at', { ascending: false })
-        .limit(10);
-
+        `).eq('user_id', userId).order('purchased_at', {
+        ascending: false
+      }).limit(10);
       if (ticketsError) throw ticketsError;
-
-      const { data: winnerRecords } = await supabase
-        .from('winners')
-        .select('ticket_id')
-        .eq('user_id', userId);
-
+      const {
+        data: winnerRecords
+      } = await supabase.from('winners').select('ticket_id').eq('user_id', userId);
       const winningTicketIds = new Set(winnerRecords?.map(w => w.ticket_id));
       const ticketsWithStatus = ticketsData?.map(ticket => {
         const jackpotCompleted = ticket.jackpots.status === 'completed';
         const isWinner = winningTicketIds.has(ticket.id);
-        
         return {
           ...ticket,
           isWinner: jackpotCompleted ? isWinner : undefined
         };
       }) || [];
-
       setTickets(ticketsWithStatus);
-
-      const { data: winsData, error: winsError } = await supabase
-        .from('winners')
-        .select(`
+      const {
+        data: winsData,
+        error: winsError
+      } = await supabase.from('winners').select(`
           *,
           jackpots(name)
-        `)
-        .eq('user_id', userId)
-        .order('claimed_at', { ascending: false });
-
+        `).eq('user_id', userId).order('claimed_at', {
+        ascending: false
+      });
       if (winsError) throw winsError;
       setWins(winsData || []);
     } catch (error: any) {
       toast.error(error.message || "Failed to fetch user data");
     }
   };
-
   const fetchWithdrawalAccount = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('withdrawal_accounts')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('is_default', true)
-        .single();
-
+      const {
+        data,
+        error
+      } = await supabase.from('withdrawal_accounts').select('*').eq('user_id', userId).eq('is_default', true).single();
       if (!error && data) {
         setWithdrawalAccount(data);
       }
@@ -215,18 +203,17 @@ const Dashboard = () => {
       console.error('Error fetching withdrawal account:', error);
     }
   };
-
   const fetchActiveJackpots = async () => {
     try {
-      const { data, error } = await supabase
-        .from('jackpots')
-        .select('*')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
-
+      const {
+        data,
+        error
+      } = await supabase.from('jackpots').select('*').eq('status', 'active').order('created_at', {
+        ascending: false
+      });
       if (error) throw error;
       setActiveJackpots(data || []);
-      
+
       // Fetch statistics for each jackpot
       if (data && data.length > 0) {
         await fetchJackpotStats(data.map(j => j.id));
@@ -235,17 +222,17 @@ const Dashboard = () => {
       console.error('Error fetching jackpots:', error);
     }
   };
-
   const fetchJackpotStats = async (jackpotIds: string[]) => {
     try {
-      const stats: Record<string, { ticketsSold: number, participants: number }> = {};
-      
+      const stats: Record<string, {
+        ticketsSold: number;
+        participants: number;
+      }> = {};
       for (const id of jackpotIds) {
-        const { data, error } = await supabase
-          .from('tickets')
-          .select('user_id')
-          .eq('jackpot_id', id);
-        
+        const {
+          data,
+          error
+        } = await supabase.from('tickets').select('user_id').eq('jackpot_id', id);
         if (!error && data) {
           const uniqueUsers = new Set(data.map(t => t.user_id));
           stats[id] = {
@@ -253,26 +240,25 @@ const Dashboard = () => {
             participants: uniqueUsers.size
           };
         } else {
-          stats[id] = { ticketsSold: 0, participants: 0 };
+          stats[id] = {
+            ticketsSold: 0,
+            participants: 0
+          };
         }
       }
-      
       setJackpotStats(stats);
     } catch (error) {
       console.error("Error fetching jackpot stats:", error);
     }
   };
-
   const handleBuyTicket = (jackpot: any) => {
     setSelectedJackpot(jackpot);
     setTicketDialogOpen(true);
   };
-
   const handleTicketPurchaseSuccess = async () => {
     await fetchUserData(user!.id);
     await fetchActiveJackpots();
   };
-
   const handleWithdraw = async () => {
     try {
       const amount = parseFloat(withdrawAmount);
@@ -280,34 +266,29 @@ const Dashboard = () => {
         toast.error("Please enter a valid amount");
         return;
       }
-
       if (amount > (wallet?.balance || 0)) {
         toast.error("Insufficient balance");
         return;
       }
-
       if (!withdrawalAccount) {
         toast.error("Please add a withdrawal account in Settings first");
         return;
       }
-
-      const { error } = await supabase
-        .from('transactions')
-        .insert({
-          user_id: user?.id,
-          type: 'withdrawal',
-          amount: amount,
-          status: 'pending',
-          reference: `Withdrawal request - ${new Date().toISOString()}`,
-          admin_note: JSON.stringify({
-            bank_name: withdrawalAccount.bank_name,
-            account_number: withdrawalAccount.account_number,
-            account_name: withdrawalAccount.account_name,
-          }),
-        });
-
+      const {
+        error
+      } = await supabase.from('transactions').insert({
+        user_id: user?.id,
+        type: 'withdrawal',
+        amount: amount,
+        status: 'pending',
+        reference: `Withdrawal request - ${new Date().toISOString()}`,
+        admin_note: JSON.stringify({
+          bank_name: withdrawalAccount.bank_name,
+          account_number: withdrawalAccount.account_number,
+          account_name: withdrawalAccount.account_name
+        })
+      });
       if (error) throw error;
-
       await supabase.from('notifications').insert({
         user_id: user?.id,
         type: 'withdrawal_placed',
@@ -315,7 +296,6 @@ const Dashboard = () => {
         message: `Your withdrawal request of ₦${amount.toFixed(2)} is being processed. You'll be notified once approved.`,
         is_read: false
       });
-
       toast.success("Withdrawal request submitted. Awaiting admin approval.");
       setWithdrawAmount("");
       setWithdrawDialogOpen(false);
@@ -323,12 +303,10 @@ const Dashboard = () => {
       toast.error(`Failed to submit withdrawal: ${error.message}`);
     }
   };
-
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate("/");
   };
-
   const getInitials = () => {
     if (profile?.full_name) {
       return profile.full_name.charAt(0).toUpperCase();
@@ -338,37 +316,34 @@ const Dashboard = () => {
     }
     return "U";
   };
-
   const getXPProgress = () => {
     const themeKeys = Object.keys(themes);
-    const currentIndex = themeKeys.findIndex(key => themes[key as keyof typeof themes].minXP <= xp && 
-      (themeKeys[themeKeys.indexOf(key) + 1] ? themes[themeKeys[themeKeys.indexOf(key) + 1] as keyof typeof themes].minXP > xp : true));
+    const currentIndex = themeKeys.findIndex(key => themes[key as keyof typeof themes].minXP <= xp && (themeKeys[themeKeys.indexOf(key) + 1] ? themes[themeKeys[themeKeys.indexOf(key) + 1] as keyof typeof themes].minXP > xp : true));
     const nextThemeKey = themeKeys[currentIndex + 1];
-    
-    if (!nextThemeKey) return { current: xp, max: xp, percentage: 100 };
-    
+    if (!nextThemeKey) return {
+      current: xp,
+      max: xp,
+      percentage: 100
+    };
     const currentThemeXP = themes[themeKeys[currentIndex] as keyof typeof themes].minXP;
     const nextThemeXP = themes[nextThemeKey as keyof typeof themes].minXP;
-    const progress = ((xp - currentThemeXP) / (nextThemeXP - currentThemeXP)) * 100;
-    
-    return { current: xp, max: nextThemeXP, percentage: Math.min(progress, 100) };
+    const progress = (xp - currentThemeXP) / (nextThemeXP - currentThemeXP) * 100;
+    return {
+      current: xp,
+      max: nextThemeXP,
+      percentage: Math.min(progress, 100)
+    };
   };
-
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+    return <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <Sparkles className="w-12 h-12 text-primary animate-pulse mx-auto mb-4" />
           <p className="text-muted-foreground">Loading your dashboard...</p>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   const xpProgress = getXPProgress();
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
@@ -377,7 +352,7 @@ const Dashboard = () => {
                 <Sparkles className="w-5 h-5 text-primary" />
               </div>
               <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                JackpotWin
+                LuckyWin
               </span>
             </div>
             
@@ -388,9 +363,7 @@ const Dashboard = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="gap-2 h-auto p-2">
                     <Avatar className="h-10 w-10 border-2 border-primary/20">
-                      {(realtimeAvatarUrl || profile?.avatar_url) ? (
-                        <AvatarImage src={realtimeAvatarUrl || profile.avatar_url} alt={profile?.full_name || user?.email || "User"} />
-                      ) : null}
+                      {realtimeAvatarUrl || profile?.avatar_url ? <AvatarImage src={realtimeAvatarUrl || profile.avatar_url} alt={profile?.full_name || user?.email || "User"} /> : null}
                       <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                         {getInitials()}
                       </AvatarFallback>
@@ -421,10 +394,9 @@ const Dashboard = () => {
                       </Badge>
                     </div>
                     <div className="h-3 bg-secondary rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500"
-                        style={{ width: `${xpProgress.percentage}%` }}
-                      />
+                      <div className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500" style={{
+                      width: `${xpProgress.percentage}%`
+                    }} />
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
                       {xpProgress.max - xp} XP to next theme
@@ -459,8 +431,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 gap-4 md:gap-6">
           <Card className="rounded-2xl shadow-xl transition-transform hover:scale-[1.005] duration-300 w-full">
             <CardHeader className="p-6 pb-4">
-              <CardTitle className="text-2xl font-extrabold flex items-center gap-2">
-                <Wallet className="w-5 h-5 text-primary" /> Dashboard Overview
+              <CardTitle className="text-2xl font-extrabold flex items-center gap-2">Account Overview<Wallet className="w-5 h-5 text-primary" /> Dashboard Overview
               </CardTitle>
             </CardHeader>
             
@@ -477,20 +448,10 @@ const Dashboard = () => {
 
                   {/* Action Buttons */}
                   <div className="flex flex-col sm:flex-row gap-4 pt-2 px-4 sm:px-0">
-                    <Button
-                      variant="default"
-                      size="lg"
-                      className="flex-1 min-w-0 flex items-center justify-center gap-2 h-12 font-semibold px-6 py-3"
-                      onClick={() => setDepositDialogOpen(true)}
-                    >
+                    <Button variant="default" size="lg" className="flex-1 min-w-0 flex items-center justify-center gap-2 h-12 font-semibold px-6 py-3" onClick={() => setDepositDialogOpen(true)}>
                       <Wallet className="w-4 h-4" /> Deposit Funds
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="flex-1 min-w-0 flex items-center justify-center gap-2 h-12 border-2 border-primary text-primary hover:bg-primary/10 font-semibold px-6 py-3"
-                      onClick={() => setWithdrawDialogOpen(true)}
-                    >
+                    <Button variant="outline" size="lg" className="flex-1 min-w-0 flex items-center justify-center gap-2 h-12 border-2 border-primary text-primary hover:bg-primary/10 font-semibold px-6 py-3" onClick={() => setWithdrawDialogOpen(true)}>
                       <TrendingUp className="w-4 h-4" /> Withdraw
                     </Button>
                   </div>
@@ -522,10 +483,9 @@ const Dashboard = () => {
                     </div>
 
                     <div className="h-2 bg-secondary rounded-full">
-                      <div
-                        className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full transition-all duration-700 ease-out"
-                        style={{ width: `${xpProgress.percentage}%` }}
-                      />
+                      <div className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full transition-all duration-700 ease-out" style={{
+                      width: `${xpProgress.percentage}%`
+                    }} />
                     </div>
 
                     <p className="text-xs text-muted-foreground">
@@ -545,15 +505,11 @@ const Dashboard = () => {
         {/* Referral Stats */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ReferralCard userId={user.id} />
-          <PublicProfileCard
-            profile={profile}
-            avatarUrl={realtimeAvatarUrl || profile?.avatar_url}
-            stats={{
-              xp: xp,
-              totalWins: wins.length,
-              totalTickets: tickets.length,
-            }}
-          />
+          <PublicProfileCard profile={profile} avatarUrl={realtimeAvatarUrl || profile?.avatar_url} stats={{
+          xp: xp,
+          totalWins: wins.length,
+          totalTickets: tickets.length
+        }} />
         </div>
 
         <section className="space-y-4">
@@ -569,22 +525,7 @@ const Dashboard = () => {
           </div>
           
           <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
-            {activeJackpots.slice(0, 7).map((jackpot, index) => (
-              <DashboardJackpotCard
-                key={jackpot.id}
-                index={index}
-                jackpotId={jackpot.id}
-                title={jackpot.name}
-                prize={jackpot.prize_pool}
-                ticketPrice={jackpot.ticket_price}
-                endTime={jackpot.next_draw}
-                category={jackpot.category || 'daily'}
-                ticketsSold={jackpotStats[jackpot.id]?.ticketsSold || 0}
-                participants={jackpotStats[jackpot.id]?.participants || 0}
-                poolGrowth={0}
-                onBuyClick={() => handleBuyTicket(jackpot)}
-              />
-            ))}
+            {activeJackpots.slice(0, 7).map((jackpot, index) => <DashboardJackpotCard key={jackpot.id} index={index} jackpotId={jackpot.id} title={jackpot.name} prize={jackpot.prize_pool} ticketPrice={jackpot.ticket_price} endTime={jackpot.next_draw} category={jackpot.category || 'daily'} ticketsSold={jackpotStats[jackpot.id]?.ticketsSold || 0} participants={jackpotStats[jackpot.id]?.participants || 0} poolGrowth={0} onBuyClick={() => handleBuyTicket(jackpot)} />)}
           </div>
         </section>
 
@@ -597,23 +538,9 @@ const Dashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {tickets.length > 0 ? (
-                <div className="space-y-2">
-                  {tickets.slice(0, 5).map((ticket) => (
-                    <TicketCard 
-                      key={ticket.id}
-                      ticketId={ticket.id}
-                      ticketNumber={ticket.ticket_number}
-                      purchasePrice={ticket.purchase_price}
-                      purchasedAt={ticket.purchased_at}
-                      jackpotName={ticket.jackpots.name}
-                      isWinner={ticket.isWinner}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-sm">No tickets yet. Buy your first ticket above!</p>
-              )}
+              {tickets.length > 0 ? <div className="space-y-2">
+                  {tickets.slice(0, 5).map(ticket => <TicketCard key={ticket.id} ticketId={ticket.id} ticketNumber={ticket.ticket_number} purchasePrice={ticket.purchase_price} purchasedAt={ticket.purchased_at} jackpotName={ticket.jackpots.name} isWinner={ticket.isWinner} />)}
+                </div> : <p className="text-muted-foreground text-sm">No tickets yet. Buy your first ticket above!</p>}
             </CardContent>
           </Card>
 
@@ -625,17 +552,11 @@ const Dashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {wins.length > 0 ? (
-                <div className="space-y-3">
-                  {wins.slice(0, 5).map((win) => (
-                    <div 
-                      key={win.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/10 hover:bg-primary/10 transition-colors cursor-pointer"
-                      onClick={() => {
-                        setSelectedWin(win);
-                        setDrawDetailsOpen(true);
-                      }}
-                    >
+              {wins.length > 0 ? <div className="space-y-3">
+                  {wins.slice(0, 5).map(win => <div key={win.id} className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/10 hover:bg-primary/10 transition-colors cursor-pointer" onClick={() => {
+                setSelectedWin(win);
+                setDrawDetailsOpen(true);
+              }}>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm truncate">{win.jackpots.name}</p>
                         <p className="text-xs text-muted-foreground">
@@ -646,12 +567,8 @@ const Dashboard = () => {
                         <p className="font-bold text-primary">+₦{win.prize_amount.toFixed(2)}</p>
                         <p className="text-xs text-muted-foreground">+10 XP</p>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-sm">No wins yet. Keep playing!</p>
-              )}
+                    </div>)}
+                </div> : <p className="text-muted-foreground text-sm">No wins yet. Keep playing!</p>}
             </CardContent>
           </Card>
         </div>
@@ -659,11 +576,7 @@ const Dashboard = () => {
 
       <Footer />
 
-      <DepositDialog
-        open={depositDialogOpen}
-        onOpenChange={setDepositDialogOpen}
-        userEmail={user?.email || ""}
-      />
+      <DepositDialog open={depositDialogOpen} onOpenChange={setDepositDialogOpen} userEmail={user?.email || ""} />
 
       <Dialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
         <DialogContent className="sm:max-w-md">
@@ -674,87 +587,46 @@ const Dashboard = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            {withdrawalAccount ? (
-              <div className="p-4 rounded-lg bg-muted/50 border border-border">
+            {withdrawalAccount ? <div className="p-4 rounded-lg bg-muted/50 border border-border">
                 <p className="text-sm font-semibold mb-2">Withdrawal Account</p>
                 <div className="space-y-1 text-sm">
                   <p className="text-muted-foreground">Bank: <span className="text-foreground font-medium">{withdrawalAccount.bank_name}</span></p>
                   <p className="text-muted-foreground">Account: <span className="text-foreground font-medium">{withdrawalAccount.account_number}</span></p>
                   <p className="text-muted-foreground">Name: <span className="text-foreground font-medium">{withdrawalAccount.account_name}</span></p>
                 </div>
-              </div>
-            ) : (
-              <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+              </div> : <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
                 <p className="text-sm text-destructive">
                   No withdrawal account found. Please add one in Settings first.
                 </p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2"
-                  onClick={() => {
-                    setWithdrawDialogOpen(false);
-                    navigate("/settings");
-                  }}
-                >
+                <Button variant="outline" size="sm" className="mt-2" onClick={() => {
+              setWithdrawDialogOpen(false);
+              navigate("/settings");
+            }}>
                   Go to Settings
                 </Button>
-              </div>
-            )}
+              </div>}
             
             <div className="space-y-2">
               <Label htmlFor="withdraw-amount">Amount</Label>
-              <Input
-                id="withdraw-amount"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(e.target.value)}
-                disabled={!withdrawalAccount}
-              />
+              <Input id="withdraw-amount" type="number" step="0.01" placeholder="0.00" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} disabled={!withdrawalAccount} />
               <p className="text-sm text-muted-foreground">
                 Available: ₦{wallet?.balance?.toFixed(2) || "0.00"}
               </p>
             </div>
           </div>
           <DialogFooter>
-            <Button 
-              onClick={handleWithdraw}
-              disabled={!withdrawalAccount}
-            >
+            <Button onClick={handleWithdraw} disabled={!withdrawalAccount}>
               Submit Request
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <TicketPurchaseDialog
-        open={ticketDialogOpen}
-        onOpenChange={setTicketDialogOpen}
-        jackpot={selectedJackpot}
-        walletBalance={wallet?.balance || 0}
-        onSuccess={handleTicketPurchaseSuccess}
-      />
+      <TicketPurchaseDialog open={ticketDialogOpen} onOpenChange={setTicketDialogOpen} jackpot={selectedJackpot} walletBalance={wallet?.balance || 0} onSuccess={handleTicketPurchaseSuccess} />
 
-      {selectedWin && (
-        <DrawDetailsModal
-          open={drawDetailsOpen}
-          onOpenChange={setDrawDetailsOpen}
-          win={selectedWin}
-        />
-      )}
+      {selectedWin && <DrawDetailsModal open={drawDetailsOpen} onOpenChange={setDrawDetailsOpen} win={selectedWin} />}
 
-      {celebrationWin && (
-        <WinCelebrationModal
-          open={!!celebrationWin}
-          onOpenChange={(open) => !open && setCelebrationWin(null)}
-          prizeAmount={celebrationWin.prizeAmount}
-          jackpotName={celebrationWin.jackpotName}
-        />
-      )}
-    </div>
-  );
+      {celebrationWin && <WinCelebrationModal open={!!celebrationWin} onOpenChange={open => !open && setCelebrationWin(null)} prizeAmount={celebrationWin.prizeAmount} jackpotName={celebrationWin.jackpotName} />}
+    </div>;
 };
-
 export default Dashboard;
