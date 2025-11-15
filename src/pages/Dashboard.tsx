@@ -443,11 +443,11 @@ const Dashboard = () => {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                  <div className="flex flex-col sm:flex-row gap-4 pt-2 px-4 sm:px-0">
                     <Button
                       variant="default"
                       size="lg"
-                      className="flex-1 min-w-0 flex items-center justify-center gap-2 h-12 font-semibold"
+                      className="flex-1 min-w-0 flex items-center justify-center gap-2 h-12 font-semibold px-6 py-3"
                       onClick={() => setDepositDialogOpen(true)}
                     >
                       <Wallet className="w-4 h-4" /> Deposit Funds
@@ -455,7 +455,7 @@ const Dashboard = () => {
                     <Button
                       variant="outline"
                       size="lg"
-                      className="flex-1 min-w-0 flex items-center justify-center gap-2 h-12 border-2 border-primary text-primary hover:bg-primary/10 font-semibold"
+                      className="flex-1 min-w-0 flex items-center justify-center gap-2 h-12 border-2 border-primary text-primary hover:bg-primary/10 font-semibold px-6 py-3"
                       onClick={() => setWithdrawDialogOpen(true)}
                     >
                       <TrendingUp className="w-4 h-4" /> Withdraw
