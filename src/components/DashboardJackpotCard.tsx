@@ -40,15 +40,15 @@ export const DashboardJackpotCard = ({
       className="break-inside-avoid mb-3"
     >
       <Card
-        className={`rounded-xl shadow-md overflow-hidden text-white transition-all duration-300 hover:scale-[1.02] ${
+        className={`rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:scale-[1.02] ${
           isBigWin
-            ? "bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500"
-            : "bg-gradient-to-br from-[#141414] via-[#1f1f1f] to-[#0e0e0e]"
+            ? "bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 text-white"
+            : "bg-card border border-border text-foreground"
         }`}
       >
         <CardContent className="p-4 space-y-3">
           <div className="flex justify-between items-center text-[10px] font-medium uppercase tracking-wide">
-            <span className="bg-white/15 rounded px-2 py-1">{category}</span>
+            <span className={isBigWin ? "bg-white/15 rounded px-2 py-1" : "bg-secondary rounded px-2 py-1"}>{category}</span>
             {poolGrowth > 0 && (
               <span className="bg-green-400 text-black rounded px-2 py-1">+{poolGrowth}% Pool</span>
             )}
@@ -67,42 +67,42 @@ export const DashboardJackpotCard = ({
             <p className="text-[10px] text-yellow-400 font-medium">Draw ends soon</p>
           </div>
 
-          <div className="bg-white/10 rounded-lg p-3 flex flex-col items-center space-y-1">
-            <p className="text-xs opacity-70">Prize Pool</p>
+          <div className={`rounded-lg p-3 flex flex-col items-center space-y-1 ${isBigWin ? "bg-white/10" : "bg-secondary/20"}`}>
+            <p className={`text-xs ${isBigWin ? "opacity-70" : "text-muted-foreground"}`}>Prize Pool</p>
             <p className="text-xl font-extrabold">₦{prize.toLocaleString()}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-xs mt-2">
-            <div className="flex items-center gap-1 bg-white/10 rounded-lg p-2">
+            <div className={`flex items-center gap-1 rounded-lg p-2 ${isBigWin ? "bg-white/10" : "bg-secondary/20"}`}>
               <Clock size={16} />
               <div className="flex-1 min-w-0">
-                <p className="opacity-70 text-[10px]">Time</p>
+                <p className={`text-[10px] ${isBigWin ? "opacity-70" : "text-muted-foreground"}`}>Time</p>
                 <div className="font-semibold text-[10px]">
                   <CountdownTimer targetDate={new Date(endTime)} className="text-[10px]" />
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-1 bg-white/10 rounded-lg p-2">
+            <div className={`flex items-center gap-1 rounded-lg p-2 ${isBigWin ? "bg-white/10" : "bg-secondary/20"}`}>
               <Ticket size={16} />
               <div>
-                <p className="opacity-70 text-[10px]">Ticket</p>
+                <p className={`text-[10px] ${isBigWin ? "opacity-70" : "text-muted-foreground"}`}>Ticket</p>
                 <p className="font-semibold text-[10px]">₦{ticketPrice}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1 bg-white/10 rounded-lg p-2">
+            <div className={`flex items-center gap-1 rounded-lg p-2 ${isBigWin ? "bg-white/10" : "bg-secondary/20"}`}>
               <Users size={16} />
               <div>
-                <p className="opacity-70 text-[10px]">Players</p>
+                <p className={`text-[10px] ${isBigWin ? "opacity-70" : "text-muted-foreground"}`}>Players</p>
                 <p className="font-semibold text-[10px]">{participants}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1 bg-white/10 rounded-lg p-2">
+            <div className={`flex items-center gap-1 rounded-lg p-2 ${isBigWin ? "bg-white/10" : "bg-secondary/20"}`}>
               <div className="w-2 h-2 bg-yellow-300 rounded-full" />
               <div>
-                <p className="opacity-70 text-[10px]">Sold</p>
+                <p className={`text-[10px] ${isBigWin ? "opacity-70" : "text-muted-foreground"}`}>Sold</p>
                 <p className="font-semibold text-[10px]">{ticketsSold}</p>
               </div>
             </div>

@@ -24,8 +24,6 @@ import Profile from "./pages/Profile";
 import EditProfile from "./pages/EditProfile";
 import ChangePassword from "./pages/ChangePassword";
 import Withdrawal from "./pages/Withdrawal";
-import SiteSettings from "./pages/SiteSettings";
-import UserManagement from "./pages/UserManagement";
 import UserProfile from "./pages/UserProfile";
 import AboutUs from "./pages/AboutUs";
 import HowItWorksPage from "./pages/HowItWorksPage";
@@ -35,6 +33,12 @@ import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import FairPlayPolicy from "./pages/FairPlayPolicy";
 import ContactSupport from "./pages/ContactSupport";
+import AdminSliderManagementPage from "./pages/AdminSliderManagementPage";
+import AdminEmailSenderPage from "./pages/AdminEmailSenderPage";
+import AdminPaymentsPage from "./pages/AdminPaymentsPage";
+import AdminWithdrawalsPage from "./pages/AdminWithdrawalsPage";
+import SiteSettingsPage from "./pages/SiteSettingsPage";
+import UserManagementPage from "./pages/UserManagementPage";
 
 const queryClient = new QueryClient();
 
@@ -103,8 +107,12 @@ const AppContent = () => {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/payment/callback" element={<PaymentCallback />} />
       <Route path="/admin" element={<Admin />} />
-      <Route path="/site-settings" element={<SiteSettings />} />
-      <Route path="/user-management" element={<UserManagement />} />
+      <Route path="/admin/site-settings" element={<SiteSettingsPage />} />
+      <Route path="/admin/user-management" element={<UserManagementPage />} />
+      <Route path="/admin/slider-management" element={<AdminSliderManagementPage />} />
+      <Route path="/admin/email-sender" element={<AdminEmailSenderPage />} />
+      <Route path="/admin/payments" element={<AdminPaymentsPage />} />
+      <Route path="/admin/withdrawals" element={<AdminWithdrawalsPage />} />
       <Route path="/statistics" element={<ProtectedStatistics />} />
       <Route path="/leaderboard" element={<Leaderboard />} />
       <Route path="/leaderboard-xp" element={<LeaderboardPage />} />

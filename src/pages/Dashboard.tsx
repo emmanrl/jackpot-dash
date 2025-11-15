@@ -423,69 +423,89 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 md:py-8 space-y-6 md:space-y-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-          <Card className="rounded-2xl shadow-lg lg:col-span-2">
-            <CardContent className="p-6 transition-transform hover:scale-[1.02] duration-300">
-              <div className="flex flex-col lg:flex-row gap-6">
-                {/* Wallet Section */}
-                <div className="flex-1 flex flex-col justify-between">
-                  <div className="text-3xl md:text-4xl font-bold text-primary mb-4">
+        <div className="grid grid-cols-1 gap-4 md:gap-6">
+          <Card className="rounded-2xl shadow-xl transition-transform hover:scale-[1.005] duration-300 w-full">
+            <CardHeader className="p-6 pb-4">
+              <CardTitle className="text-2xl font-extrabold flex items-center gap-2">
+                <Wallet className="w-5 h-5 text-primary" /> Dashboard Overview
+              </CardTitle>
+            </CardHeader>
+            
+            <CardContent className="p-6 pt-0">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* 1. Wallet Section (Span 2 columns on large screens) */}
+                <div className="lg:col-span-2 flex flex-col space-y-6 p-4 md:p-6 rounded-xl border border-secondary/20 bg-card">
+                  <h3 className="text-base font-medium text-muted-foreground">Current Balance</h3>
+                  
+                  {/* Balance Display */}
+                  <div className="text-4xl md:text-5xl font-extrabold text-primary tracking-tight">
                     ₦{wallet?.balance?.toFixed(2) || "0.00"}
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-3">
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-col sm:flex-row gap-4 pt-2">
                     <Button
                       variant="default"
                       size="lg"
-                      className="flex-1 flex items-center justify-center gap-2 px-6"
+                      className="flex-1 min-w-0 flex items-center justify-center gap-2 h-12"
                       onClick={() => setDepositDialogOpen(true)}
                     >
-                      <Wallet className="w-4 h-4" /> Deposit
+                      <Wallet className="w-5 h-5" /> Deposit Funds
                     </Button>
                     <Button
                       variant="outline"
                       size="lg"
-                      className="flex-1 flex items-center justify-center gap-2 px-6"
+                      className="flex-1 min-w-0 flex items-center justify-center gap-2 h-12 border-primary text-primary hover:bg-primary/5"
                       onClick={() => setWithdrawDialogOpen(true)}
                     >
-                      <TrendingUp className="w-4 h-4" /> Withdraw
+                      <TrendingUp className="w-5 h-5" /> Withdraw
                     </Button>
                   </div>
                 </div>
 
-                {/* Divider */}
-                <div className="hidden lg:block w-px bg-secondary/30"></div>
-
-                {/* XP Progress Section */}
-                <div className="lg:w-64 flex flex-col justify-between space-y-4">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-primary/10 rounded-lg">
-                      <Star className="w-4 h-4 text-primary" />
+                {/* 2. XP Progress Section (1 column) */}
+                <div className="lg:col-span-1 flex flex-col space-y-4">
+                  {/* XP Stat Box */}
+                  <div className="flex flex-col space-y-3 p-4 bg-secondary/10 rounded-lg border border-secondary/20">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 bg-primary/20 rounded-full">
+                        <Star className="w-4 h-4 text-primary" />
+                      </div>
+                      <span className="text-sm font-semibold text-muted-foreground">Total Experience (XP)</span>
                     </div>
-                    <span className="text-sm font-medium">Your Progress</span>
+                    <div className="text-2xl font-bold text-foreground">
+                      {xp} XP
+                    </div>
+                    <p className="text-xs text-muted-foreground pt-1 border-t border-secondary/30">
+                      Theme: {currentTheme?.toUpperCase() || 'DEFAULT'}
+                    </p>
                   </div>
-
-                  <div className="text-2xl font-bold text-primary">{xp} XP</div>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>Theme</span>
-                      <span className="font-medium capitalize">{currentTheme}</span>
+                  
+                  {/* Progress Bar & Detail */}
+                  <div className="space-y-3 p-4 bg-card rounded-lg border border-secondary/20">
+                    <div className="flex justify-between text-sm font-medium text-foreground">
+                      <span>XP Progress to Next Theme</span>
+                      <span className="text-primary">{xpProgress.percentage}%</span>
                     </div>
 
-                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                    <div className="h-2 bg-secondary rounded-full">
                       <div
-                        className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-700 ease-out"
+                        className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full transition-all duration-700 ease-out"
                         style={{ width: `${xpProgress.percentage}%` }}
                       />
                     </div>
 
                     <p className="text-xs text-muted-foreground">
-                      {xpProgress.max - xp} XP to next theme
+                      <strong>{xpProgress.max - xp} XP</strong> remaining to unlock the next theme tier.
                     </p>
                   </div>
                 </div>
               </div>
             </CardContent>
+            
+            <CardHeader className="p-6 pt-0 text-xs text-muted-foreground border-t border-secondary/20 mt-4">
+              <p>*Data refreshed in real-time. Contact support for transaction issues.</p>
+            </CardHeader>
           </Card>
         </div>
 
