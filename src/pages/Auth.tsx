@@ -36,7 +36,7 @@ const Auth = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
+          emailRedirectTo: `https://luckywin.name.ng/dashboard`,
           data: {
             full_name: fullName,
             referral_code: referralCode,
@@ -112,36 +112,41 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background effects */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background" />
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-background via-primary/5 to-background">
+      {/* Animated background effects */}
       <div className="absolute inset-0 overflow-hidden">
-        {[...Array(15)].map((_, i) => (
+        <div className="absolute top-0 -left-4 w-96 h-96 bg-primary/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-float" />
+        <div className="absolute -bottom-8 -right-4 w-96 h-96 bg-accent/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-float" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" />
+        {[...Array(20)].map((_, i) => (
           <div
             key={i}
-            className="absolute rounded-full bg-primary/20"
+            className="absolute rounded-full bg-primary/30"
             style={{
-              width: Math.random() * 4 + 2 + "px",
-              height: Math.random() * 4 + 2 + "px",
+              width: Math.random() * 6 + 2 + "px",
+              height: Math.random() * 6 + 2 + "px",
               left: Math.random() * 100 + "%",
               top: Math.random() * 100 + "%",
-              animation: `float ${Math.random() * 3 + 2}s ease-in-out infinite`,
-              animationDelay: Math.random() * 2 + "s",
+              animation: `float ${Math.random() * 4 + 3}s ease-in-out infinite`,
+              animationDelay: Math.random() * 3 + "s",
             }}
           />
         ))}
       </div>
 
-      <Card className="w-full max-w-md relative z-10 border-border bg-card/95 backdrop-blur-sm">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
-              <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-              <span className="text-sm font-medium text-primary">JackpotWin</span>
+      <Card className="w-full max-w-md relative z-10 border-2 border-primary/20 bg-card/95 backdrop-blur-xl shadow-2xl">
+        <CardHeader className="text-center space-y-4 pb-6">
+          <div className="flex justify-center">
+            <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-primary/20 via-primary/10 to-accent/20 border-2 border-primary/30 shadow-lg">
+              <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+              <span className="text-base font-bold text-primary">JackpotWin</span>
+              <Sparkles className="w-5 h-5 text-primary animate-pulse" style={{ animationDelay: '0.5s' }} />
             </div>
           </div>
-          <CardTitle className="text-2xl">Welcome</CardTitle>
-          <CardDescription>Sign in to your account or create a new one</CardDescription>
+          <div>
+            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Welcome Back!</CardTitle>
+            <CardDescription className="text-base mt-2">Join thousands of winners today</CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">

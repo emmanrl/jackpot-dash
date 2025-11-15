@@ -113,13 +113,13 @@ const RecentWinners = () => {
             <p className="text-muted-foreground">No winners yet. Be the first!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {winners.map((winner) => (
               <Card 
                 key={winner.id}
                 className="border-2 border-border hover:border-primary/50 transition-all duration-300 hover:shadow-lg group overflow-hidden"
               >
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center gap-4">
                     <Avatar className="w-14 h-14 border-2 border-primary/20 group-hover:border-primary transition-colors">
                       <AvatarFallback className="bg-primary/10 text-primary font-bold">
