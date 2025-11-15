@@ -69,17 +69,24 @@ const Index = () => {
       // Get total prize pool from active jackpots
       const { data: jackpots } = await supabase
         .from("jackpots")
-        .select("prize_pool")
+        .select("prize_pool, created_at")
         .eq("status", "active");
       
       const totalPrizePool = jackpots?.reduce((sum, j) => sum + Number(j.prize_pool), 0) || 0;
+      
+      // Calculate today's prize pool (jackpots created today)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayPrizePool = jackpots
+        ?.filter(j => new Date(j.created_at) >= today)
+        ?.reduce((sum, j) => sum + Number(j.prize_pool), 0) || 0;
       
       // Get total winners count
       const { count: totalWinners } = await supabase
         .from("winners")
         .select("*", { count: "exact", head: true });
       
-      setStats({ totalPrizePool, totalWinners: totalWinners || 0 });
+      setStats({ totalPrizePool: todayPrizePool, totalWinners: totalWinners || 0 });
     };
     
     checkAuth();

@@ -140,7 +140,10 @@ const LeaderboardPage = () => {
                   </div>
 
                   {/* Avatar */}
-                  <Avatar className="h-12 w-12 border-2 border-primary/20">
+                   <Avatar 
+                    className="h-12 w-12 border-2 border-primary/20 cursor-pointer hover:scale-105 transition-transform"
+                    onClick={() => window.location.href = `/user/${leader.id}`}
+                  >
                     {leader.avatar_url ? (
                       <AvatarImage src={leader.avatar_url} alt={leader.full_name || leader.email} />
                     ) : null}
@@ -151,7 +154,10 @@ const LeaderboardPage = () => {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">
+                    <h3 
+                      className="font-semibold truncate cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => window.location.href = `/user/${leader.id}`}
+                    >
                       {leader.full_name || leader.email}
                     </h3>
                     <div className="flex items-center gap-3 text-sm text-muted-foreground">
