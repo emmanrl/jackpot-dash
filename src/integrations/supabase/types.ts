@@ -167,6 +167,35 @@ export type Database = {
           },
         ]
       }
+      favorite_jackpots: {
+        Row: {
+          created_at: string
+          id: string
+          jackpot_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          jackpot_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          jackpot_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorite_jackpots_jackpot_id_fkey"
+            columns: ["jackpot_id"]
+            isOneToOne: false
+            referencedRelation: "jackpots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jackpots: {
         Row: {
           background_image_url: string | null

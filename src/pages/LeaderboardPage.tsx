@@ -29,7 +29,15 @@ const LeaderboardPage = () => {
 
   const fetchLeaderboards = async () => {
     try {
-      // Fetch XP leaderboard with proper typing
+      // Get admin user IDs to exclude from leaderboard
+      const { data: adminRoles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "admin");
+      
+      const adminIds = adminRoles?.map(r => r.user_id) || [];
+
+      // Fetch XP leaderboard with proper typing, excluding admins
       const { data: xpData, error: xpError } = await supabase
         .from('profiles')
         .select('id, full_name, email, avatar_url, experience_points')
@@ -38,27 +46,29 @@ const LeaderboardPage = () => {
 
       if (xpError) throw xpError;
 
-      // Fetch winners data for each profile with proper typing
+      // Fetch winners data for each profile with proper typing, excluding admins
       const profilesWithWinnings = await Promise.all(
-        (xpData || []).map(async (profile: any) => {
-          const { data: winData } = await supabase
-            .from('winners')
-            .select('prize_amount')
-            .eq('user_id', profile.id);
+        (xpData || [])
+          .filter((profile: any) => !adminIds.includes(profile.id))
+          .map(async (profile: any) => {
+            const { data: winData } = await supabase
+              .from('winners')
+              .select('prize_amount')
+              .eq('user_id', profile.id);
 
-          const totalWinnings = winData?.reduce((sum: number, win: any) => sum + Number(win.prize_amount), 0) || 0;
-          const winCount = winData?.length || 0;
+            const totalWinnings = winData?.reduce((sum: number, win: any) => sum + Number(win.prize_amount), 0) || 0;
+            const winCount = winData?.length || 0;
 
-          return {
-            id: profile.id,
-            full_name: profile.full_name,
-            email: profile.email,
-            avatar_url: profile.avatar_url,
-            experience_points: profile.experience_points || 0,
-            total_winnings: totalWinnings,
-            win_count: winCount,
-          };
-        })
+            return {
+              id: profile.id,
+              full_name: profile.full_name,
+              email: profile.email,
+              avatar_url: profile.avatar_url,
+              experience_points: profile.experience_points || 0,
+              total_winnings: totalWinnings,
+              win_count: winCount,
+            };
+          })
       );
 
       setXpLeaders(profilesWithWinnings);
