@@ -424,77 +424,68 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-4 py-6 md:py-8 space-y-6 md:space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card shadow-lg lg:col-span-2">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Wallet className="w-5 h-5 text-primary" />
+          <Card className="rounded-2xl shadow-lg lg:col-span-2">
+            <CardContent className="p-6 transition-transform hover:scale-[1.02] duration-300">
+              <div className="flex flex-col lg:flex-row gap-6">
+                {/* Wallet Section */}
+                <div className="flex-1 flex flex-col justify-between">
+                  <div className="text-3xl md:text-4xl font-bold text-primary mb-4">
+                    ₦{wallet?.balance?.toFixed(2) || "0.00"}
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      variant="default"
+                      size="lg"
+                      className="flex-1 flex items-center justify-center gap-2 px-6"
+                      onClick={() => setDepositDialogOpen(true)}
+                    >
+                      <Wallet className="w-4 h-4" /> Deposit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="flex-1 flex items-center justify-center gap-2 px-6"
+                      onClick={() => setWithdrawDialogOpen(true)}
+                    >
+                      <TrendingUp className="w-4 h-4" /> Withdraw
+                    </Button>
+                  </div>
                 </div>
-                <CardTitle className="text-lg md:text-xl">Wallet Balance</CardTitle>
+
+                {/* Divider */}
+                <div className="hidden lg:block w-px bg-secondary/30"></div>
+
+                {/* XP Progress Section */}
+                <div className="lg:w-64 flex flex-col justify-between space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-primary/10 rounded-lg">
+                      <Star className="w-4 h-4 text-primary" />
+                    </div>
+                    <span className="text-sm font-medium">Your Progress</span>
+                  </div>
+
+                  <div className="text-2xl font-bold text-primary">{xp} XP</div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Theme</span>
+                      <span className="font-medium capitalize">{currentTheme}</span>
+                    </div>
+
+                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-700 ease-out"
+                        style={{ width: `${xpProgress.percentage}%` }}
+                      />
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      {xpProgress.max - xp} XP to next theme
+                    </p>
+                  </div>
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
-  <div className="flex flex-col lg:flex-row gap-6">
-    {/* Wallet Section */}
-    <div className="flex-1 flex flex-col justify-between">
-      <div className="text-3xl md:text-4xl font-bold text-primary mb-4">
-        ₦{wallet?.balance?.toFixed(2) || "0.00"}
-      </div>
-      <div className="flex flex-col sm:flex-row gap-3">
-        <Button
-          variant="default"
-          size="lg"
-          className="flex-1 flex items-center justify-center gap-2 px-6"
-          onClick={() => setDepositDialogOpen(true)}
-        >
-          <Wallet className="w-4 h-4" /> Deposit
-        </Button>
-        <Button
-          variant="outline"
-          size="lg"
-          className="flex-1 flex items-center justify-center gap-2 px-6"
-          onClick={() => setWithdrawDialogOpen(true)}
-        >
-          <TrendingUp className="w-4 h-4" /> Withdraw
-        </Button>
-      </div>
-    </div>
-
-    {/* Divider */}
-    <div className="hidden lg:block w-px bg-secondary/50"></div>
-
-    {/* XP Progress Section */}
-    <div className="lg:w-64 flex flex-col justify-between space-y-4">
-      <div className="flex items-center gap-2">
-        <div className="p-1.5 bg-primary/10 rounded-lg">
-          <Star className="w-4 h-4 text-primary" />
-        </div>
-        <span className="text-sm font-medium">Your Progress</span>
-      </div>
-
-      <div className="text-2xl font-bold text-primary">{xp} XP</div>
-
-      <div className="space-y-2">
-        <div className="flex justify-between text-xs text-muted-foreground">
-          <span>Theme</span>
-          <span className="font-medium capitalize">{currentTheme}</span>
-        </div>
-
-        <div className="h-2 bg-secondary rounded-full overflow-hidden">
-          <div
-            className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500"
-            style={{ width: `${xpProgress.percentage}%` }}
-          />
-        </div>
-
-        <p className="text-xs text-muted-foreground">
-          {xpProgress.max - xp} XP to next theme
-        </p>
-      </div>
-    </div>
-  </div>
-</CardContent>
-
+            </CardContent>
           </Card>
         </div>
 
