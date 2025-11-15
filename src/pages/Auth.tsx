@@ -87,10 +87,11 @@ const Auth = () => {
             title: "Success!",
             description: "Account created! Please verify your phone number.",
           });
+          // Don't navigate yet - will navigate after phone verification
         } else {
           toast({
             title: "Success!",
-            description: "Your account has been created. You can now log in.",
+            description: "Your account has been created successfully!",
           });
           
           // Navigate to tutorial after successful signup
@@ -217,11 +218,14 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <PhoneVerification userId={userId} />
+            <PhoneVerification 
+              userId={userId} 
+              onComplete={() => navigate("/tutorial")}
+            />
             <Button
               variant="outline"
               className="w-full mt-4"
-              onClick={() => navigate("/dashboard")}
+              onClick={() => navigate("/tutorial")}
             >
               Skip for now
             </Button>

@@ -9,9 +9,10 @@ import { Phone, CheckCircle, Loader2 } from "lucide-react";
 
 interface PhoneVerificationProps {
   userId: string;
+  onComplete?: () => void;
 }
 
-export function PhoneVerification({ userId }: PhoneVerificationProps) {
+export function PhoneVerification({ userId, onComplete }: PhoneVerificationProps) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
@@ -54,6 +55,10 @@ export function PhoneVerification({ userId }: PhoneVerificationProps) {
       if (verificationCode === "123456") {
         setIsVerified(true);
         toast.success("Phone number verified successfully!");
+        // Call onComplete callback after successful verification
+        setTimeout(() => {
+          onComplete?.();
+        }, 1500);
       } else {
         toast.error("Invalid verification code");
       }
