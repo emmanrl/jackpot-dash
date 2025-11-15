@@ -17,7 +17,8 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [referralCode, setReferralCode] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [authSettings, setAuthSettings] = useState<any>(null);
@@ -64,9 +65,11 @@ const Auth = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
+          emailRedirectTo: `${window.location.origin}/tutorial`,
           data: {
-            full_name: fullName,
+            first_name: firstName,
+            last_name: lastName,
+            full_name: `${firstName} ${lastName}`.trim(),
             referral_code: referralCode,
           },
         },
@@ -90,14 +93,15 @@ const Auth = () => {
             description: "Your account has been created. You can now log in.",
           });
           
-          // Navigate to dashboard after successful signup
-          navigate("/dashboard");
+          // Navigate to tutorial after successful signup
+          navigate("/tutorial");
         }
       }
       
       setEmail("");
       setPassword("");
-      setFullName("");
+      setFirstName("");
+      setLastName("");
       setReferralCode("");
     } catch (error: any) {
       toast({
@@ -169,6 +173,34 @@ const Auth = () => {
       toast({
         title: "Error",
         description: error.message || "Failed to sign in with Google",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    if (!agreedToTerms) {
+      toast({
+        title: "Agreement Required",
+        description: "Please agree to the Terms and Privacy Policy to continue",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/tutorial`,
+        },
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to sign up with Google",
         variant: "destructive",
       });
     }
@@ -328,16 +360,29 @@ const Auth = () => {
             
             <TabsContent value="signup">
               <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name</Label>
-                  <Input
-                    id="signup-name"
-                    type="text"
-                    placeholder="John Doe"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-firstname">First Name</Label>
+                    <Input
+                      id="signup-firstname"
+                      type="text"
+                      placeholder="John"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-lastname">Last Name</Label>
+                    <Input
+                      id="signup-lastname"
+                      type="text"
+                      placeholder="Doe"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
@@ -409,7 +454,8 @@ const Auth = () => {
                       type="button"
                       variant="outline"
                       className="w-full"
-                      onClick={handleGoogleSignIn}
+                      onClick={handleGoogleSignUp}
+                      disabled={!agreedToTerms}
                     >
                       <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
                         <path

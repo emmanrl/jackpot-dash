@@ -39,6 +39,7 @@ import AdminPaymentsPage from "./pages/AdminPaymentsPage";
 import AdminWithdrawalsPage from "./pages/AdminWithdrawalsPage";
 import SiteSettingsPage from "./pages/SiteSettingsPage";
 import UserManagementPage from "./pages/UserManagementPage";
+import Tutorial from "./pages/Tutorial";
 
 const queryClient = new QueryClient();
 
@@ -104,6 +105,7 @@ const AppContent = () => {
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/tutorial" element={<Tutorial />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/payment/callback" element={<PaymentCallback />} />
       <Route path="/admin" element={<Admin />} />
@@ -120,6 +122,7 @@ const AppContent = () => {
       <Route path="/settings" element={<Settings />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/profile/:userId" element={<UserProfile />} />
+      <Route path="/user/:userId" element={<UserProfile />} />
       <Route path="/edit-profile" element={<EditProfile />} />
       <Route path="/change-password" element={<ChangePassword />} />
       <Route path="/withdrawal" element={<Withdrawal />} />
