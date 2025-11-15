@@ -434,64 +434,67 @@ const Dashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
-                {/* Wallet Balance - Left */}
-                <div className="flex-1">
-                  <div className="text-3xl md:text-4xl font-bold text-primary mb-4">
-                    ₦{wallet?.balance?.toFixed(2) || "0.00"}
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button 
-                      variant="default" 
-                      size="lg"
-                      className="flex-1 px-6"
-                      onClick={() => setDepositDialogOpen(true)}
-                    >
-                      <Wallet className="w-4 h-4 mr-2" />
-                      Deposit
-                    </Button>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="lg" 
-                      className="flex-1 px-6"
-                      onClick={() => setWithdrawDialogOpen(true)}
-                    >
-                      <TrendingUp className="w-4 h-4 mr-2" />
-                      Withdraw
-                    </Button>
-                  </div>
-                </div>
+  <div className="flex flex-col lg:flex-row gap-6">
+    {/* Wallet Section */}
+    <div className="flex-1 flex flex-col justify-between">
+      <div className="text-3xl md:text-4xl font-bold text-primary mb-4">
+        ₦{wallet?.balance?.toFixed(2) || "0.00"}
+      </div>
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Button
+          variant="default"
+          size="lg"
+          className="flex-1 flex items-center justify-center gap-2 px-6"
+          onClick={() => setDepositDialogOpen(true)}
+        >
+          <Wallet className="w-4 h-4" /> Deposit
+        </Button>
+        <Button
+          variant="outline"
+          size="lg"
+          className="flex-1 flex items-center justify-center gap-2 px-6"
+          onClick={() => setWithdrawDialogOpen(true)}
+        >
+          <TrendingUp className="w-4 h-4" /> Withdraw
+        </Button>
+      </div>
+    </div>
 
-                {/* XP Progress - Right */}
-                <div className="lg:w-64 flex flex-col justify-center space-y-3 lg:border-l lg:pl-6">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 bg-primary/10 rounded-lg">
-                      <Star className="w-4 h-4 text-primary" />
-                    </div>
-                    <span className="text-sm font-medium">Your Progress</span>
-                  </div>
-                  <div className="text-2xl font-bold text-primary">
-                    {xp} XP
-                  </div>
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span className="text-[10px]">Theme</span>
-                      <span className="font-medium text-foreground capitalize text-[10px]">{currentTheme}</span>
-                    </div>
-                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500"
-                        style={{ width: `${xpProgress.percentage}%` }}
-                      />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">
-                      {xpProgress.max - xp} XP to next
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
+    {/* Divider */}
+    <div className="hidden lg:block w-px bg-secondary/50"></div>
+
+    {/* XP Progress Section */}
+    <div className="lg:w-64 flex flex-col justify-between space-y-4">
+      <div className="flex items-center gap-2">
+        <div className="p-1.5 bg-primary/10 rounded-lg">
+          <Star className="w-4 h-4 text-primary" />
+        </div>
+        <span className="text-sm font-medium">Your Progress</span>
+      </div>
+
+      <div className="text-2xl font-bold text-primary">{xp} XP</div>
+
+      <div className="space-y-2">
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>Theme</span>
+          <span className="font-medium capitalize">{currentTheme}</span>
+        </div>
+
+        <div className="h-2 bg-secondary rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500"
+            style={{ width: `${xpProgress.percentage}%` }}
+          />
+        </div>
+
+        <p className="text-xs text-muted-foreground">
+          {xpProgress.max - xp} XP to next theme
+        </p>
+      </div>
+    </div>
+  </div>
+</CardContent>
+
           </Card>
         </div>
 
