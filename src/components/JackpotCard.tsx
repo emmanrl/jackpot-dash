@@ -167,7 +167,7 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
   };
 
   return (
-    <Card className={`relative overflow-hidden border-2 border-border hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 group ${specialBadge === 'HOT' ? 'animate-pulse' : ''} md:h-auto h-[260px]`}>
+    <Card className={`relative overflow-hidden border-2 border-border hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 group ${specialBadge === 'HOT' ? 'animate-pulse' : ''} h-full flex flex-col min-h-[320px] md:min-h-[auto]`}>
       {/* Background image */}
       {backgroundImageUrl && (
         <div 
@@ -252,10 +252,10 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
         </div>
       </CardContent>
 
-      <CardFooter className="relative p-2 md:p-6">
+      <CardFooter className="relative p-2 md:p-6 mt-auto">
         <Button 
           variant="prize" 
-          className="w-full text-xs md:text-base h-7 md:h-10" 
+          className="w-full text-xs md:text-base h-9 md:h-11 font-semibold" 
           size="sm"
           onClick={async () => {
             if (isEnded && status === 'completed') {

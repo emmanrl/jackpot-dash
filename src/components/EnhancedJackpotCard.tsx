@@ -190,13 +190,20 @@ const EnhancedJackpotCard = ({
           />
         </div>
 
-        {/* Progress Bar */}
+        {/* Progress Bar - Enhanced for Mobile */}
         <div className="mb-4">
           <div className="flex justify-between text-xs text-muted-foreground mb-2">
             <span>Tickets Sold</span>
-            <span>{ticketCount}/100</span>
+            <span className="font-medium text-foreground">{ticketCount}/100</span>
           </div>
-          <Progress value={ticketProgress} className="h-2" />
+          <div className="relative">
+            <div className="h-3 sm:h-3.5 bg-secondary/50 rounded-full overflow-hidden backdrop-blur">
+              <div 
+                className="h-full bg-gradient-to-r from-primary via-accent to-primary transition-all duration-700 rounded-full shadow-inner"
+                style={{ width: `${ticketProgress}%` }}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Stats Row */}

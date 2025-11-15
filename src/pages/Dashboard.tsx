@@ -26,6 +26,7 @@ import NotificationBell from "@/components/NotificationBell";
 import { useRealtimeAvatar } from "@/hooks/useRealtimeAvatar";
 import { PublicProfileCard } from "@/components/PublicProfileCard";
 import { ReferralCard } from "@/components/ReferralCard";
+import { ImageSlider } from "@/components/ImageSlider";
 
 interface WalletData {
   balance: number;
@@ -417,38 +418,64 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 md:py-8 space-y-6 md:space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card shadow-lg col-span-1 md:col-span-2">
+      <main className="container mx-auto px-4 py-6 space-y-6">
+        {/* Active Jackpots Section - Moved to Top */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap className="w-6 h-6 text-primary" />
+              <h2 className="text-2xl md:text-3xl font-bold">Active Jackpots</h2>
+            </div>
+            <Badge variant="secondary" className="hidden md:inline-flex">
+              <TrendingUp className="w-3 h-3 mr-1" />
+              {activeJackpots.length} Live
+            </Badge>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-6">
+            {activeJackpots.map((jackpot) => (
+              <JackpotCard
+                key={jackpot.id}
+                jackpotId={jackpot.id}
+                title={jackpot.name}
+                prize={jackpot.prize_pool}
+                ticketPrice={jackpot.ticket_price}
+                endTime={jackpot.next_draw}
+                category={jackpot.category}
+                onBuyClick={() => handleBuyTicket(jackpot)}
+              />
+            ))}
+          </div>
+        </section>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+          <Card className="border-primary/20 shadow-lg">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Wallet className="w-5 h-5 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg md:text-xl">Wallet Balance</CardTitle>
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Wallet className="w-5 h-5 text-primary" />
                 </div>
+                <CardTitle className="text-lg">Wallet Balance</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="text-3xl md:text-5xl font-bold text-primary">
-                ₦{wallet?.balance?.toFixed(2) || "0.00"}
+              <div className="text-3xl md:text-4xl font-bold text-primary">
+                ₦{wallet?.balance.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <Button 
                   variant="default" 
-                  size="lg"
-                  className="flex-1"
+                  size="lg" 
+                  className="w-full"
                   onClick={() => setDepositDialogOpen(true)}
                 >
                   <Wallet className="w-4 h-4 mr-2" />
                   Deposit
                 </Button>
-                
                 <Button 
                   variant="outline" 
                   size="lg" 
-                  className="flex-1"
+                  className="w-full"
                   onClick={() => setWithdrawDialogOpen(true)}
                 >
                   <LogOut className="w-4 h-4 mr-2" />
@@ -476,10 +503,10 @@ const Dashboard = () => {
                   <span>Current Theme</span>
                   <span className="font-medium text-foreground capitalize">{currentTheme}</span>
                 </div>
-                <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                <div className="h-3 bg-secondary rounded-full overflow-hidden shadow-inner">
                   <div 
-                    className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500"
-                    style={{ width: `${xpProgress.percentage}%` }}
+                    className="h-full bg-gradient-to-r from-primary via-accent to-primary transition-all duration-500 rounded-full"
+                    style={{ width: `${Math.max(xpProgress.percentage, 5)}%` }}
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -504,33 +531,6 @@ const Dashboard = () => {
           />
         </div>
 
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Zap className="w-6 h-6 text-primary" />
-              <h2 className="text-2xl md:text-3xl font-bold">Active Jackpots</h2>
-            </div>
-            <Badge variant="secondary" className="hidden md:inline-flex">
-              <TrendingUp className="w-3 h-3 mr-1" />
-              {activeJackpots.length} Live
-            </Badge>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 lg:gap-6">
-            {activeJackpots.map((jackpot) => (
-              <JackpotCard
-                key={jackpot.id}
-                jackpotId={jackpot.id}
-                title={jackpot.name}
-                prize={jackpot.prize_pool}
-                ticketPrice={jackpot.ticket_price}
-                endTime={jackpot.next_draw}
-                category={jackpot.category}
-                onBuyClick={() => handleBuyTicket(jackpot)}
-              />
-            ))}
-          </div>
-        </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           <Card>
