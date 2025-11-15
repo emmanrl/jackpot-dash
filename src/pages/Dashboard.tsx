@@ -148,16 +148,16 @@ const Dashboard = () => {
     });
     return () => subscription.unsubscribe();
   }, [navigate]);
-  
+
   // Filter and sort jackpots when they change
   useEffect(() => {
     let filtered = [...activeJackpots];
-    
+
     // Apply category filter
     if (categoryFilter !== "all") {
       filtered = filtered.filter(j => j.category === categoryFilter || j.frequency === categoryFilter);
     }
-    
+
     // Apply sorting
     if (sortBy === "prize") {
       filtered.sort((a, b) => b.prize_pool - a.prize_pool);
@@ -166,41 +166,30 @@ const Dashboard = () => {
     } else if (sortBy === "popularity") {
       filtered.sort((a, b) => (jackpotStats[b.id]?.ticketsSold || 0) - (jackpotStats[a.id]?.ticketsSold || 0));
     }
-    
     setFilteredJackpots(filtered);
     setCurrentPage(1);
   }, [activeJackpots, categoryFilter, sortBy, jackpotStats]);
-  
+
   // Real-time updates for ticket purchases
   useEffect(() => {
     if (!user || activeJackpots.length === 0) return;
+    const channel = supabase.channel('ticket-purchases').on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'tickets'
+    }, async payload => {
+      console.log('New ticket purchased:', payload);
+      // Refresh stats when a new ticket is purchased
+      const jackpotIds = activeJackpots.map(j => j.id);
+      await fetchJackpotStats(jackpotIds);
 
-    const channel = supabase
-      .channel('ticket-purchases')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'tickets',
-        },
-        async (payload) => {
-          console.log('New ticket purchased:', payload);
-          // Refresh stats when a new ticket is purchased
-          const jackpotIds = activeJackpots.map(j => j.id);
-          await fetchJackpotStats(jackpotIds);
-          
-          // Also refresh jackpots to get updated prize pools
-          await fetchActiveJackpots();
-        }
-      )
-      .subscribe();
-
+      // Also refresh jackpots to get updated prize pools
+      await fetchActiveJackpots();
+    }).subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, [user, activeJackpots]);
-  
   const fetchUserData = async (userId: string) => {
     try {
       const {
@@ -298,13 +287,12 @@ const Dashboard = () => {
           data,
           error
         } = await supabase.from('tickets').select('user_id').eq('jackpot_id', id);
-        
+
         // Get jackpot data to calculate pool growth
         const jackpot = activeJackpots.find(j => j.id === id);
         const initialPool = Number(jackpot?.initial_prize_pool || 0);
         const currentPool = Number(jackpot?.prize_pool || 0);
-        const poolGrowth = initialPool > 0 ? Math.round(((currentPool - initialPool) / initialPool) * 100) : 0;
-        
+        const poolGrowth = initialPool > 0 ? Math.round((currentPool - initialPool) / initialPool * 100) : 0;
         if (!error && data) {
           const uniqueUsers = new Set(data.map(t => t.user_id));
           stats[id] = {
@@ -410,14 +398,15 @@ const Dashboard = () => {
       percentage: Math.min(progress, 100)
     };
   };
-  
   const scrollToJackpots = () => {
     const element = document.getElementById('jackpots-section');
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
     }
   };
-  
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -515,7 +504,12 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 gap-4 md:gap-6">
           <Card className="rounded-2xl shadow-xl transition-transform hover:scale-[1.005] duration-300 w-full">
             <CardHeader className="p-6 pb-4">
-              <CardTitle className="text-2xl font-extrabold flex items-center gap-2">Account Overview<Wallet className="w-5 h-5 text-primary" /> Dashboard Overview
+              <CardTitle className="text-2xl font-extrabold flex items-center gap-2">
+
+
+
+
+Dashboard Overview<Wallet className="w-5 h-5 text-primary" /> Dashboard Overview
               </CardTitle>
             </CardHeader>
             
@@ -540,10 +534,7 @@ const Dashboard = () => {
                     </Button>
                   </div>
                   
-                  <Button
-                    onClick={scrollToJackpots}
-                    className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-semibold py-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 mt-4"
-                  >
+                  <Button onClick={scrollToJackpots} className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-semibold py-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 mt-4">
                     <ArrowDown className="mr-2 h-5 w-5 animate-bounce" />
                     Go to Jackpots
                   </Button>
@@ -619,11 +610,7 @@ const Dashboard = () => {
           {/* Filters and Sorting */}
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground"
-              >
+              <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground">
                 <option value="all">All Categories</option>
                 <option value="hourly">Hourly</option>
                 <option value="daily">Daily</option>
@@ -632,11 +619,7 @@ const Dashboard = () => {
               </select>
             </div>
             <div className="flex-1">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground"
-              >
+              <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground">
                 <option value="prize">Sort by Prize</option>
                 <option value="endTime">Sort by End Time</option>
                 <option value="popularity">Sort by Popularity</option>
@@ -645,65 +628,27 @@ const Dashboard = () => {
           </div>
           
           <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
-            {isLoadingStats ? (
-              <>
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <JackpotCardSkeleton key={i} />
-                ))}
-              </>
-            ) : (
-              filteredJackpots.slice((currentPage - 1) * jackpotsPerPage, currentPage * jackpotsPerPage).map((jackpot, index) => (
-                <DashboardJackpotCard
-                  key={jackpot.id}
-                  index={index}
-                  jackpotId={jackpot.id}
-                  title={jackpot.name}
-                  prize={jackpot.prize_pool}
-                  ticketPrice={jackpot.ticket_price}
-                  endTime={jackpot.next_draw}
-                  category={jackpot.category || 'daily'}
-                  ticketsSold={jackpotStats[jackpot.id]?.ticketsSold || 0}
-                  participants={jackpotStats[jackpot.id]?.participants || 0}
-                  poolGrowth={jackpotStats[jackpot.id]?.poolGrowth || 0}
-                  onBuyClick={() => handleBuyTicket(jackpot)}
-                />
-              ))
-            )}
+            {isLoadingStats ? <>
+                {[1, 2, 3, 4, 5, 6].map(i => <JackpotCardSkeleton key={i} />)}
+              </> : filteredJackpots.slice((currentPage - 1) * jackpotsPerPage, currentPage * jackpotsPerPage).map((jackpot, index) => <DashboardJackpotCard key={jackpot.id} index={index} jackpotId={jackpot.id} title={jackpot.name} prize={jackpot.prize_pool} ticketPrice={jackpot.ticket_price} endTime={jackpot.next_draw} category={jackpot.category || 'daily'} ticketsSold={jackpotStats[jackpot.id]?.ticketsSold || 0} participants={jackpotStats[jackpot.id]?.participants || 0} poolGrowth={jackpotStats[jackpot.id]?.poolGrowth || 0} onBuyClick={() => handleBuyTicket(jackpot)} />)}
           </div>
           
           {/* Pagination */}
-          {filteredJackpots.length > jackpotsPerPage && (
-            <div className="flex justify-center gap-2 mt-6">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-              >
+          {filteredJackpots.length > jackpotsPerPage && <div className="flex justify-center gap-2 mt-6">
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
                 Previous
               </Button>
               <div className="flex items-center gap-2">
-                {Array.from({ length: Math.ceil(filteredJackpots.length / jackpotsPerPage) }, (_, i) => i + 1).map(page => (
-                  <Button
-                    key={page}
-                    variant={currentPage === page ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setCurrentPage(page)}
-                  >
+                {Array.from({
+              length: Math.ceil(filteredJackpots.length / jackpotsPerPage)
+            }, (_, i) => i + 1).map(page => <Button key={page} variant={currentPage === page ? "default" : "outline"} size="sm" onClick={() => setCurrentPage(page)}>
                     {page}
-                  </Button>
-                ))}
+                  </Button>)}
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredJackpots.length / jackpotsPerPage), p + 1))}
-                disabled={currentPage === Math.ceil(filteredJackpots.length / jackpotsPerPage)}
-              >
+              <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredJackpots.length / jackpotsPerPage), p + 1))} disabled={currentPage === Math.ceil(filteredJackpots.length / jackpotsPerPage)}>
                 Next
               </Button>
-            </div>
-          )}
+            </div>}
         </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
