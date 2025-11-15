@@ -447,18 +447,18 @@ const Dashboard = () => {
                     <Button
                       variant="default"
                       size="lg"
-                      className="flex-1 min-w-0 flex items-center justify-center gap-2 h-12"
+                      className="flex-1 min-w-0 flex items-center justify-center gap-2 h-12 font-semibold"
                       onClick={() => setDepositDialogOpen(true)}
                     >
-                      <Wallet className="w-5 h-5" /> Deposit Funds
+                      <Wallet className="w-4 h-4" /> Deposit Funds
                     </Button>
                     <Button
                       variant="outline"
                       size="lg"
-                      className="flex-1 min-w-0 flex items-center justify-center gap-2 h-12 border-primary text-primary hover:bg-primary/5"
+                      className="flex-1 min-w-0 flex items-center justify-center gap-2 h-12 border-2 border-primary text-primary hover:bg-primary/10 font-semibold"
                       onClick={() => setWithdrawDialogOpen(true)}
                     >
-                      <TrendingUp className="w-5 h-5" /> Withdraw
+                      <TrendingUp className="w-4 h-4" /> Withdraw
                     </Button>
                   </div>
                 </div>
