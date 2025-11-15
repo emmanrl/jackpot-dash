@@ -39,7 +39,9 @@ const EnhancedJackpotCard = ({
 
   useEffect(() => {
     fetchCardData();
-    const channel = supabase
+
+    // Listen for real-time updates to prize pool
+    const jackpotChannel = supabase
       .channel(`jackpot-${jackpotId}`)
       .on(
         "postgres_changes",
@@ -49,18 +51,41 @@ const EnhancedJackpotCard = ({
           table: "jackpots",
           filter: `id=eq.${jackpotId}`,
         },
-        (payload) => {
-          if (payload.new.prize_pool) {
-            setCurrentPrize(`₦${Number(payload.new.prize_pool).toLocaleString()}`);
-          }
+        (payload: any) => {
+          console.log("Jackpot updated:", payload);
+          const newPrize = `₦${Number(payload.new.prize_pool).toLocaleString()}`;
+          setCurrentPrize(newPrize);
+
+          // Refresh card data to get latest stats
+          fetchCardData();
+        }
+      )
+      .subscribe();
+
+    // Listen for real-time ticket purchases
+    const ticketChannel = supabase
+      .channel(`tickets-${jackpotId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "tickets",
+          filter: `jackpot_id=eq.${jackpotId}`,
+        },
+        () => {
+          console.log("New ticket purchased for jackpot:", jackpotId);
+          // Refresh card data to get latest stats
+          fetchCardData();
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(jackpotChannel);
+      supabase.removeChannel(ticketChannel);
     };
-  }, [jackpotId]);
+  }, [jackpotId, prize]);
 
   const fetchCardData = async () => {
     const { data: tickets } = await supabase
@@ -72,7 +97,6 @@ const EnhancedJackpotCard = ({
       setTicketCount(tickets.length);
       const uniqueUsers = new Set(tickets.map((t) => t.user_id)).size;
       setParticipantCount(uniqueUsers);
-      setPoolGrowth(tickets.length * 10);
       
       // Determine if "hot" (>20 tickets or >10 participants)
       setIsHot(tickets.length > 20 || uniqueUsers > 10);
@@ -81,6 +105,20 @@ const EnhancedJackpotCard = ({
     // Check if ending soon (less than 1 hour)
     const timeUntilEnd = endTime.getTime() - Date.now();
     setIsEndingSoon(timeUntilEnd < 3600000 && timeUntilEnd > 0);
+    
+    // Calculate actual pool growth from initial prize pool
+    const { data: jackpotData } = await supabase
+      .from("jackpots")
+      .select("initial_prize_pool, prize_pool")
+      .eq("id", jackpotId)
+      .single();
+
+    if (jackpotData) {
+      const initialPool = Number(jackpotData.initial_prize_pool || 0);
+      const currentPool = Number(jackpotData.prize_pool || 0);
+      const growth = initialPool > 0 ? Math.round(((currentPool - initialPool) / initialPool) * 100) : 0;
+      setPoolGrowth(growth);
+    }
   };
 
   const categoryConfig = {

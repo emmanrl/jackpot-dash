@@ -19,11 +19,13 @@ import DrawDetailsModal from "@/components/DrawDetailsModal";
 import TicketCard from "@/components/TicketCard";
 import WinCelebrationModal from "@/components/WinCelebrationModal";
 import { DashboardJackpotCard } from "@/components/DashboardJackpotCard";
+import { JackpotCardSkeleton } from "@/components/JackpotCardSkeleton";
 import { useDrawNotifications } from "@/hooks/useDrawNotifications";
 import { useWinNotification } from "@/hooks/useWinNotification";
 import { useTheme } from "@/hooks/useTheme";
 import NotificationBell from "@/components/NotificationBell";
 import { useRealtimeAvatar } from "@/hooks/useRealtimeAvatar";
+import { ArrowDown } from "lucide-react";
 import { PublicProfileCard } from "@/components/PublicProfileCard";
 import { ReferralCard } from "@/components/ReferralCard";
 interface WalletData {
@@ -100,7 +102,9 @@ const Dashboard = () => {
   const [jackpotStats, setJackpotStats] = useState<Record<string, {
     ticketsSold: number;
     participants: number;
+    poolGrowth: number;
   }>>({});
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [selectedWin, setSelectedWin] = useState<WinnerData | null>(null);
   const [drawDetailsOpen, setDrawDetailsOpen] = useState(false);
   const [celebrationWin, setCelebrationWin] = useState<{
@@ -138,6 +142,37 @@ const Dashboard = () => {
     });
     return () => subscription.unsubscribe();
   }, [navigate]);
+  
+  // Real-time updates for ticket purchases
+  useEffect(() => {
+    if (!user || activeJackpots.length === 0) return;
+
+    const channel = supabase
+      .channel('ticket-purchases')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'tickets',
+        },
+        async (payload) => {
+          console.log('New ticket purchased:', payload);
+          // Refresh stats when a new ticket is purchased
+          const jackpotIds = activeJackpots.map(j => j.id);
+          await fetchJackpotStats(jackpotIds);
+          
+          // Also refresh jackpots to get updated prize pools
+          await fetchActiveJackpots();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, activeJackpots]);
+  
   const fetchUserData = async (userId: string) => {
     try {
       const {
@@ -224,31 +259,44 @@ const Dashboard = () => {
   };
   const fetchJackpotStats = async (jackpotIds: string[]) => {
     try {
+      setIsLoadingStats(true);
       const stats: Record<string, {
         ticketsSold: number;
         participants: number;
+        poolGrowth: number;
       }> = {};
       for (const id of jackpotIds) {
         const {
           data,
           error
         } = await supabase.from('tickets').select('user_id').eq('jackpot_id', id);
+        
+        // Get jackpot data to calculate pool growth
+        const jackpot = activeJackpots.find(j => j.id === id);
+        const initialPool = Number(jackpot?.initial_prize_pool || 0);
+        const currentPool = Number(jackpot?.prize_pool || 0);
+        const poolGrowth = initialPool > 0 ? Math.round(((currentPool - initialPool) / initialPool) * 100) : 0;
+        
         if (!error && data) {
           const uniqueUsers = new Set(data.map(t => t.user_id));
           stats[id] = {
             ticketsSold: data.length,
-            participants: uniqueUsers.size
+            participants: uniqueUsers.size,
+            poolGrowth
           };
         } else {
           stats[id] = {
             ticketsSold: 0,
-            participants: 0
+            participants: 0,
+            poolGrowth
           };
         }
       }
       setJackpotStats(stats);
+      setIsLoadingStats(false);
     } catch (error) {
       console.error("Error fetching jackpot stats:", error);
+      setIsLoadingStats(false);
     }
   };
   const handleBuyTicket = (jackpot: any) => {
@@ -334,6 +382,14 @@ const Dashboard = () => {
       percentage: Math.min(progress, 100)
     };
   };
+  
+  const scrollToJackpots = () => {
+    const element = document.getElementById('jackpots-section');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+  
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -455,6 +511,14 @@ const Dashboard = () => {
                       <TrendingUp className="w-4 h-4" /> Withdraw
                     </Button>
                   </div>
+                  
+                  <Button
+                    onClick={scrollToJackpots}
+                    className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-semibold py-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 mt-4"
+                  >
+                    <ArrowDown className="mr-2 h-5 w-5 animate-bounce" />
+                    Go to Jackpots
+                  </Button>
                 </div>
 
                 {/* 2. XP Progress Section (1 column) */}
@@ -512,7 +576,7 @@ const Dashboard = () => {
         }} />
         </div>
 
-        <section className="space-y-4">
+        <section id="jackpots-section" className="space-y-4 scroll-mt-20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Zap className="w-6 h-6 text-primary" />
@@ -525,7 +589,30 @@ const Dashboard = () => {
           </div>
           
           <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
-            {activeJackpots.slice(0, 7).map((jackpot, index) => <DashboardJackpotCard key={jackpot.id} index={index} jackpotId={jackpot.id} title={jackpot.name} prize={jackpot.prize_pool} ticketPrice={jackpot.ticket_price} endTime={jackpot.next_draw} category={jackpot.category || 'daily'} ticketsSold={jackpotStats[jackpot.id]?.ticketsSold || 0} participants={jackpotStats[jackpot.id]?.participants || 0} poolGrowth={0} onBuyClick={() => handleBuyTicket(jackpot)} />)}
+            {isLoadingStats ? (
+              <>
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <JackpotCardSkeleton key={i} />
+                ))}
+              </>
+            ) : (
+              activeJackpots.slice(0, 7).map((jackpot, index) => (
+                <DashboardJackpotCard
+                  key={jackpot.id}
+                  index={index}
+                  jackpotId={jackpot.id}
+                  title={jackpot.name}
+                  prize={jackpot.prize_pool}
+                  ticketPrice={jackpot.ticket_price}
+                  endTime={jackpot.next_draw}
+                  category={jackpot.category || 'daily'}
+                  ticketsSold={jackpotStats[jackpot.id]?.ticketsSold || 0}
+                  participants={jackpotStats[jackpot.id]?.participants || 0}
+                  poolGrowth={jackpotStats[jackpot.id]?.poolGrowth || 0}
+                  onBuyClick={() => handleBuyTicket(jackpot)}
+                />
+              ))
+            )}
           </div>
         </section>
 
