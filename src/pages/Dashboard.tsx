@@ -95,6 +95,7 @@ const Dashboard = () => {
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
   const [selectedJackpot, setSelectedJackpot] = useState<any>(null);
   const [activeJackpots, setActiveJackpots] = useState<any[]>([]);
+  const [jackpotStats, setJackpotStats] = useState<Record<string, { ticketsSold: number, participants: number }>>({});
   const [selectedWin, setSelectedWin] = useState<WinnerData | null>(null);
   const [drawDetailsOpen, setDrawDetailsOpen] = useState(false);
   const [celebrationWin, setCelebrationWin] = useState<{
@@ -225,8 +226,40 @@ const Dashboard = () => {
 
       if (error) throw error;
       setActiveJackpots(data || []);
+      
+      // Fetch statistics for each jackpot
+      if (data && data.length > 0) {
+        await fetchJackpotStats(data.map(j => j.id));
+      }
     } catch (error: any) {
       console.error('Error fetching jackpots:', error);
+    }
+  };
+
+  const fetchJackpotStats = async (jackpotIds: string[]) => {
+    try {
+      const stats: Record<string, { ticketsSold: number, participants: number }> = {};
+      
+      for (const id of jackpotIds) {
+        const { data, error } = await supabase
+          .from('tickets')
+          .select('user_id')
+          .eq('jackpot_id', id);
+        
+        if (!error && data) {
+          const uniqueUsers = new Set(data.map(t => t.user_id));
+          stats[id] = {
+            ticketsSold: data.length,
+            participants: uniqueUsers.size
+          };
+        } else {
+          stats[id] = { ticketsSold: 0, participants: 0 };
+        }
+      }
+      
+      setJackpotStats(stats);
+    } catch (error) {
+      console.error("Error fetching jackpot stats:", error);
     }
   };
 
@@ -546,9 +579,9 @@ const Dashboard = () => {
                 ticketPrice={jackpot.ticket_price}
                 endTime={jackpot.next_draw}
                 category={jackpot.category || 'daily'}
-                ticketsSold={Math.floor(Math.random() * 30) + 5}
-                participants={Math.floor(Math.random() * 15) + 1}
-                poolGrowth={Math.floor(Math.random() * 50) + 10}
+                ticketsSold={jackpotStats[jackpot.id]?.ticketsSold || 0}
+                participants={jackpotStats[jackpot.id]?.participants || 0}
+                poolGrowth={0}
                 onBuyClick={() => handleBuyTicket(jackpot)}
               />
             ))}
