@@ -18,6 +18,14 @@ const Leaderboard = () => {
   useEffect(() => {
     const fetchTopWinners = async () => {
       try {
+        // Get admin user IDs to exclude from leaderboard
+        const { data: adminRoles } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "admin");
+        
+        const adminIds = adminRoles?.map(r => r.user_id) || [];
+        
         const { data: winnersData, error } = await supabase
           .from('winners')
           .select('user_id, prize_amount');
@@ -30,11 +38,13 @@ const Leaderboard = () => {
           return;
         }
 
-        // Aggregate winnings by user
+        // Aggregate winnings by user, excluding admins
         const userWinnings = new Map<string, number>();
         
         winnersData.forEach((winner: any) => {
           const userId = winner.user_id;
+          if (adminIds.includes(userId)) return; // Skip admin users
+          
           const amount = Number(winner.prize_amount) || 0;
           
           if (userWinnings.has(userId)) {
