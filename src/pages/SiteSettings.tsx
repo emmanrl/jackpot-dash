@@ -25,11 +25,20 @@ interface SiteSettings {
   resend_api_key: string | null;
 }
 
+interface AuthSettings {
+  id: string;
+  phone_verification_enabled: boolean;
+  google_auth_enabled: boolean;
+  google_client_id: string | null;
+  google_client_secret: string | null;
+}
+
 const SiteSettings = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<SiteSettings | null>(null);
+  const [authSettings, setAuthSettings] = useState<AuthSettings | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
@@ -82,6 +91,24 @@ const SiteSettings = () => {
           resend_api_key: null
         });
       }
+
+      // Fetch auth settings
+      const { data: authData, error: authError } = await supabase
+        .from("auth_settings")
+        .select("*")
+        .maybeSingle();
+
+      if (!authError && authData) {
+        setAuthSettings(authData as AuthSettings);
+      } else {
+        setAuthSettings({
+          id: '',
+          phone_verification_enabled: false,
+          google_auth_enabled: false,
+          google_client_id: null,
+          google_client_secret: null
+        });
+      }
     } catch (error) {
       console.error("Error:", error);
       toast.error("Failed to load settings");
@@ -103,6 +130,30 @@ const SiteSettings = () => {
       }
       setLogoFile(file);
       setLogoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!authSettings) return;
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("auth_settings")
+        .upsert({
+          ...authSettings,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      toast.success("Auth settings saved successfully");
+    } catch (error) {
+      console.error("Error saving auth settings:", error);
+      toast.error("Failed to save auth settings");
+    } finally {
+      setSaving(false);
     }
   };
 

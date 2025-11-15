@@ -59,6 +59,36 @@ export type Database = {
         }
         Relationships: []
       }
+      auth_settings: {
+        Row: {
+          created_at: string | null
+          google_auth_enabled: boolean | null
+          google_client_id: string | null
+          google_client_secret: string | null
+          id: string
+          phone_verification_enabled: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          google_auth_enabled?: boolean | null
+          google_client_id?: string | null
+          google_client_secret?: string | null
+          id?: string
+          phone_verification_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          google_auth_enabled?: boolean | null
+          google_client_id?: string | null
+          google_client_secret?: string | null
+          id?: string
+          phone_verification_enabled?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       bonus_settings: {
         Row: {
           bonus_type: string
