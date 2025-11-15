@@ -110,6 +110,19 @@ export default function Withdrawal() {
 
   const handleWithdrawal = async () => {
     try {
+      // Check email and phone verification
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
+      if (!currentUser?.email_confirmed_at) {
+        toast.error("Please verify your email before withdrawing. Go to Settings to verify.");
+        return;
+      }
+
+      if (!currentUser?.phone_confirmed_at) {
+        toast.error("Please verify your phone number before withdrawing. Go to Settings to verify.");
+        return;
+      }
+
       const withdrawalAmount = parseFloat(amount);
       if (isNaN(withdrawalAmount) || withdrawalAmount <= 0) {
         toast.error("Please enter a valid amount");
