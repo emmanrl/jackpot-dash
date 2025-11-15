@@ -192,11 +192,11 @@ const EnhancedJackpotCard = ({
 
         {/* Progress Bar */}
         <div className="mb-4">
-          <div className="flex justify-between text-xs text-muted-foreground mb-2">
+          <div className="flex justify-between text-xs sm:text-sm text-muted-foreground mb-2">
             <span>Tickets Sold</span>
-            <span>{ticketCount}/100</span>
+            <span className="font-medium">{ticketCount}/100</span>
           </div>
-          <Progress value={ticketProgress} className="h-2" />
+          <Progress value={ticketProgress} className="h-2.5 sm:h-2" />
         </div>
 
         {/* Stats Row */}

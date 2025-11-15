@@ -43,7 +43,7 @@ export const ImageSlider = () => {
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 py-8">
+    <div className="w-full">
       <Carousel
         opts={{
           align: "start",
@@ -55,7 +55,7 @@ export const ImageSlider = () => {
         <CarouselContent>
           {images.map((image) => (
             <CarouselItem key={image.id}>
-              <div className="relative aspect-video md:aspect-[21/9] overflow-hidden rounded-lg shadow-lg">
+              <div className="relative aspect-video md:aspect-[21/9] overflow-hidden">
                 <img
                   src={image.image_url}
                   alt={image.title || "Slider image"}

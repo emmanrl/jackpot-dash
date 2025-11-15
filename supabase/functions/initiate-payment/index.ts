@@ -104,7 +104,7 @@ serve(async (req) => {
           email: email,
           amount: amount * 100, // Paystack expects amount in kobo
           reference: reference,
-          callback_url: `${supabaseUrl.replace('.supabase.co', '.lovableproject.com')}/payment/callback`,
+          callback_url: `https://luckywin.name.ng/payment/callback`,
           metadata: {
             user_id: user.id,
             transaction_id: transaction.id,

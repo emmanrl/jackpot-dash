@@ -382,7 +382,7 @@ const Dashboard = () => {
                         {xp} XP
                       </Badge>
                     </div>
-                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                    <div className="h-3 bg-secondary rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500"
                         style={{ width: `${xpProgress.percentage}%` }}
@@ -434,11 +434,11 @@ const Dashboard = () => {
               <div className="text-3xl md:text-5xl font-bold text-primary">
                 ₦{wallet?.balance?.toFixed(2) || "0.00"}
               </div>
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <Button 
                   variant="default" 
                   size="lg"
-                  className="flex-1"
+                  className="flex-1 h-12 sm:h-11"
                   onClick={() => setDepositDialogOpen(true)}
                 >
                   <Wallet className="w-4 h-4 mr-2" />
@@ -448,10 +448,10 @@ const Dashboard = () => {
                 <Button 
                   variant="outline" 
                   size="lg" 
-                  className="flex-1"
+                  className="flex-1 h-12 sm:h-11"
                   onClick={() => setWithdrawDialogOpen(true)}
                 >
-                  <LogOut className="w-4 h-4 mr-2" />
+                  <TrendingUp className="w-4 h-4 mr-2" />
                   Withdraw
                 </Button>
               </div>
@@ -516,8 +516,8 @@ const Dashboard = () => {
             </Badge>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-4 lg:gap-6">
-            {activeJackpots.map((jackpot) => (
+          <div className="grid grid-cols-2 gap-2 md:gap-4">
+            {activeJackpots.slice(0, 4).map((jackpot) => (
               <JackpotCard
                 key={jackpot.id}
                 jackpotId={jackpot.id}
