@@ -17,6 +17,7 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [referralCode, setReferralCode] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -29,6 +30,16 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!agreedToTerms) {
+      toast({
+        title: "Agreement Required",
+        description: "Please agree to the Terms and Privacy Policy to continue",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -225,7 +236,26 @@ const Auth = () => {
                   value={referralCode}
                   onChange={setReferralCode}
                 />
-                <Button type="submit" className="w-full" disabled={loading}>
+                <div className="flex items-start space-x-2">
+                  <input
+                    type="checkbox"
+                    id="terms-agreement"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                  />
+                  <label htmlFor="terms-agreement" className="text-sm text-muted-foreground">
+                    I agree to the{" "}
+                    <a href="/terms" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+                      Terms of Service
+                    </a>{" "}
+                    and{" "}
+                    <a href="/privacy" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+                      Privacy Policy
+                    </a>
+                  </label>
+                </div>
+                <Button type="submit" className="w-full" disabled={loading || !agreedToTerms}>
                   {loading ? "Creating account..." : "Sign Up"}
                 </Button>
               </form>

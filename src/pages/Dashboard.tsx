@@ -28,6 +28,7 @@ import { useRealtimeAvatar } from "@/hooks/useRealtimeAvatar";
 import { ArrowDown } from "lucide-react";
 import { PublicProfileCard } from "@/components/PublicProfileCard";
 import { ReferralCard } from "@/components/ReferralCard";
+import { FloatingActionButton } from "@/components/FloatingActionButton";
 interface WalletData {
   balance: number;
 }
@@ -99,6 +100,11 @@ const Dashboard = () => {
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
   const [selectedJackpot, setSelectedJackpot] = useState<any>(null);
   const [activeJackpots, setActiveJackpots] = useState<any[]>([]);
+  const [filteredJackpots, setFilteredJackpots] = useState<any[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("prize");
+  const [currentPage, setCurrentPage] = useState(1);
+  const jackpotsPerPage = 7;
   const [jackpotStats, setJackpotStats] = useState<Record<string, {
     ticketsSold: number;
     participants: number;
@@ -142,6 +148,28 @@ const Dashboard = () => {
     });
     return () => subscription.unsubscribe();
   }, [navigate]);
+  
+  // Filter and sort jackpots when they change
+  useEffect(() => {
+    let filtered = [...activeJackpots];
+    
+    // Apply category filter
+    if (categoryFilter !== "all") {
+      filtered = filtered.filter(j => j.category === categoryFilter || j.frequency === categoryFilter);
+    }
+    
+    // Apply sorting
+    if (sortBy === "prize") {
+      filtered.sort((a, b) => b.prize_pool - a.prize_pool);
+    } else if (sortBy === "endTime") {
+      filtered.sort((a, b) => new Date(a.next_draw).getTime() - new Date(b.next_draw).getTime());
+    } else if (sortBy === "popularity") {
+      filtered.sort((a, b) => (jackpotStats[b.id]?.ticketsSold || 0) - (jackpotStats[a.id]?.ticketsSold || 0));
+    }
+    
+    setFilteredJackpots(filtered);
+    setCurrentPage(1);
+  }, [activeJackpots, categoryFilter, sortBy, jackpotStats]);
   
   // Real-time updates for ticket purchases
   useEffect(() => {
@@ -577,15 +605,43 @@ const Dashboard = () => {
         </div>
 
         <section id="jackpots-section" className="space-y-4 scroll-mt-20">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Zap className="w-6 h-6 text-primary" />
               <h2 className="text-2xl md:text-3xl font-bold">Active Jackpots</h2>
             </div>
             <Badge variant="secondary" className="hidden md:inline-flex">
               <TrendingUp className="w-3 h-3 mr-1" />
-              {activeJackpots.length} Live
+              {filteredJackpots.length} Live
             </Badge>
+          </div>
+          
+          {/* Filters and Sorting */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground"
+              >
+                <option value="all">All Categories</option>
+                <option value="hourly">Hourly</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+            <div className="flex-1">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground"
+              >
+                <option value="prize">Sort by Prize</option>
+                <option value="endTime">Sort by End Time</option>
+                <option value="popularity">Sort by Popularity</option>
+              </select>
+            </div>
           </div>
           
           <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
@@ -596,7 +652,7 @@ const Dashboard = () => {
                 ))}
               </>
             ) : (
-              activeJackpots.slice(0, 7).map((jackpot, index) => (
+              filteredJackpots.slice((currentPage - 1) * jackpotsPerPage, currentPage * jackpotsPerPage).map((jackpot, index) => (
                 <DashboardJackpotCard
                   key={jackpot.id}
                   index={index}
@@ -614,6 +670,40 @@ const Dashboard = () => {
               ))
             )}
           </div>
+          
+          {/* Pagination */}
+          {filteredJackpots.length > jackpotsPerPage && (
+            <div className="flex justify-center gap-2 mt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+              <div className="flex items-center gap-2">
+                {Array.from({ length: Math.ceil(filteredJackpots.length / jackpotsPerPage) }, (_, i) => i + 1).map(page => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredJackpots.length / jackpotsPerPage), p + 1))}
+                disabled={currentPage === Math.ceil(filteredJackpots.length / jackpotsPerPage)}
+              >
+                Next
+              </Button>
+            </div>
+          )}
         </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
@@ -662,6 +752,7 @@ const Dashboard = () => {
       </main>
 
       <Footer />
+      <FloatingActionButton />
 
       <DepositDialog open={depositDialogOpen} onOpenChange={setDepositDialogOpen} userEmail={user?.email || ""} />
 

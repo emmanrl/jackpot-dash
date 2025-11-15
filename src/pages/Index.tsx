@@ -13,6 +13,7 @@ import TicketPurchaseDialog from "@/components/TicketPurchaseDialog";
 import WinCelebrationModal from "@/components/WinCelebrationModal";
 import { useWinNotification } from "@/hooks/useWinNotification";
 import { ImageSlider } from "@/components/ImageSlider";
+import { FloatingActionButton } from "@/components/FloatingActionButton";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -22,6 +23,7 @@ const Index = () => {
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
   const [selectedJackpot, setSelectedJackpot] = useState<any>(null);
   const [walletBalance, setWalletBalance] = useState(0);
+  const [stats, setStats] = useState({ totalPrizePool: 0, totalWinners: 0 });
   const { winData, showWinModal, setShowWinModal } = useWinNotification();
 
   useEffect(() => {
@@ -63,7 +65,25 @@ const Index = () => {
       }
     };
     
+    const fetchStats = async () => {
+      // Get total prize pool from active jackpots
+      const { data: jackpots } = await supabase
+        .from("jackpots")
+        .select("prize_pool")
+        .eq("status", "active");
+      
+      const totalPrizePool = jackpots?.reduce((sum, j) => sum + Number(j.prize_pool), 0) || 0;
+      
+      // Get total winners count
+      const { count: totalWinners } = await supabase
+        .from("winners")
+        .select("*", { count: "exact", head: true });
+      
+      setStats({ totalPrizePool, totalWinners: totalWinners || 0 });
+    };
+    
     checkAuth();
+    fetchStats();
 
     const receipt = searchParams.get("receipt");
     const reference = searchParams.get("reference");
@@ -108,9 +128,10 @@ const Index = () => {
       <Hero />
       <JackpotCarouselSection onBuyTicket={isLoggedIn ? handleBuyTicket : undefined} />
       <HowItWorks />
-      <Leaderboard />
-      <RecentWinners />
+      {stats.totalPrizePool >= 10000 && <Leaderboard />}
+      {stats.totalWinners >= 10 && <RecentWinners />}
       <Footer />
+      <FloatingActionButton />
       
       <ReceiptModal
         open={receiptOpen}
