@@ -35,7 +35,19 @@ export default function TicketPurchaseDialog({
 
   const ticketPrice = Number(jackpot.ticket_price);
   const quantityNum = parseInt(quantity) || 1;
-  const totalCost = ticketPrice * quantityNum;
+  
+  // Calculate discount based on bundle size
+  const getDiscount = (qty: number) => {
+    if (qty >= 20) return 0.20; // 20% off for 20+
+    if (qty >= 10) return 0.15; // 15% off for 10+
+    if (qty >= 5) return 0.10;  // 10% off for 5+
+    return 0;
+  };
+
+  const discount = getDiscount(quantityNum);
+  const subtotal = ticketPrice * quantityNum;
+  const discountAmount = subtotal * discount;
+  const totalCost = subtotal - discountAmount;
   const canAfford = walletBalance >= totalCost;
 
   const handlePurchase = async () => {
@@ -110,14 +122,47 @@ export default function TicketPurchaseDialog({
             <p className="text-xs md:text-sm text-muted-foreground">
               Maximum 100 tickets per purchase
             </p>
+            
+            {/* Bundle Discount Info */}
+            {discount > 0 && (
+              <div className="p-3 rounded-lg bg-accent/20 border border-accent">
+                <p className="text-sm font-semibold text-accent-foreground flex items-center gap-2">
+                  <Ticket className="w-4 h-4" />
+                  Bundle Discount: {(discount * 100).toFixed(0)}% OFF!
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Save ₦{discountAmount.toFixed(2)} on this purchase
+                </p>
+              </div>
+            )}
+            
+            {/* Show available discounts */}
+            {quantityNum < 5 && (
+              <div className="p-3 rounded-lg bg-muted/50 text-xs space-y-1">
+                <p className="font-medium text-foreground">Available Discounts:</p>
+                <p className="text-muted-foreground">• Buy 5+ tickets: Get 10% off</p>
+                <p className="text-muted-foreground">• Buy 10+ tickets: Get 15% off</p>
+                <p className="text-muted-foreground">• Buy 20+ tickets: Get 20% off</p>
+              </div>
+            )}
           </div>
 
           {/* Total Amount - Prominent Display */}
           <div className="rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 border-2 border-primary/40 p-3 md:p-6 text-center">
+            {discount > 0 && (
+              <div className="mb-2">
+                <p className="text-xs text-muted-foreground line-through">₦{subtotal.toFixed(2)}</p>
+              </div>
+            )}
             <p className="text-xs md:text-sm text-muted-foreground mb-1 md:mb-2">Total Amount</p>
             <p className="text-3xl md:text-5xl font-bold text-primary gold-glow">
               ₦{totalCost.toFixed(2)}
             </p>
+            {discount > 0 && (
+              <p className="text-sm text-accent font-medium mt-2">
+                You save ₦{discountAmount.toFixed(2)}!
+              </p>
+            )}
             <p className="text-[10px] md:text-xs text-muted-foreground mt-1 md:mt-2">
               {quantityNum} ticket{quantityNum > 1 ? 's' : ''} × ₦{ticketPrice.toFixed(2)}
             </p>

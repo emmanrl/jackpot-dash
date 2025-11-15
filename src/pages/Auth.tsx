@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { Sparkles } from "lucide-react";
+import { Sparkles, LogIn, UserPlus } from "lucide-react";
 import { ReferralSignupField } from "@/components/ReferralSignupField";
 
 const Auth = () => {
@@ -155,15 +156,21 @@ const Auth = () => {
             </div>
           </div>
           <div>
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Welcome Back!</CardTitle>
-            <CardDescription className="text-base mt-2">Join thousands of winners today</CardDescription>
+            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Welcome!</CardTitle>
+            <CardDescription className="text-base mt-2">Sign in or create your account</CardDescription>
           </div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsTrigger value="signin" className="gap-2">
+                <LogIn className="w-4 h-4" />
+                Sign In
+              </TabsTrigger>
+              <TabsTrigger value="signup" className="gap-2">
+                <UserPlus className="w-4 h-4" />
+                Sign Up
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="signin">
@@ -236,21 +243,19 @@ const Auth = () => {
                   value={referralCode}
                   onChange={setReferralCode}
                 />
-                <div className="flex items-start space-x-2">
-                  <input
-                    type="checkbox"
+                <div className="flex items-start space-x-3 p-4 rounded-lg bg-muted/30 border border-border">
+                  <Checkbox
                     id="terms-agreement"
                     checked={agreedToTerms}
-                    onChange={(e) => setAgreedToTerms(e.target.checked)}
-                    className="mt-1 h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                    onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
                   />
-                  <label htmlFor="terms-agreement" className="text-sm text-muted-foreground">
+                  <label htmlFor="terms-agreement" className="text-sm text-foreground leading-relaxed cursor-pointer">
                     I agree to the{" "}
-                    <a href="/terms" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+                    <a href="/terms" className="text-primary hover:underline font-medium" target="_blank" rel="noopener noreferrer">
                       Terms of Service
                     </a>{" "}
                     and{" "}
-                    <a href="/privacy" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+                    <a href="/privacy" className="text-primary hover:underline font-medium" target="_blank" rel="noopener noreferrer">
                       Privacy Policy
                     </a>
                   </label>

@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { CountdownTimer } from "@/components/CountdownTimer";
-import { Flame, TrendingUp, Users, Ticket } from "lucide-react";
+import { Flame, TrendingUp, Users, Ticket, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useFavoriteJackpots } from "@/hooks/useFavoriteJackpots";
 
 interface EnhancedJackpotCardProps {
   jackpotId: string;
@@ -36,6 +37,16 @@ const EnhancedJackpotCard = ({
   const [currentPrize, setCurrentPrize] = useState(prize);
   const [isHot, setIsHot] = useState(false);
   const [isEndingSoon, setIsEndingSoon] = useState(false);
+  
+  // Get user session for favorites
+  const [userId, setUserId] = useState<string | undefined>();
+  const { isFavorite, toggleFavorite } = useFavoriteJackpots(userId);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUserId(session?.user?.id);
+    });
+  }, []);
 
   useEffect(() => {
     fetchCardData();
@@ -177,10 +188,10 @@ const EnhancedJackpotCard = ({
       <div className="relative z-10 flex flex-col h-full p-4 sm:p-6">
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
-          <Badge variant="outline" className={cn("text-xs sm:text-sm font-bold border-2", config.badge)}>
-            {category.toUpperCase()}
-          </Badge>
           <div className="flex gap-2">
+            <Badge variant="outline" className={cn("text-xs sm:text-sm font-bold border-2", config.badge)}>
+              {category.toUpperCase()}
+            </Badge>
             {isHot && (
               <Badge variant="outline" className="bg-red-500/20 text-red-300 border-red-500/30 text-xs sm:text-sm animate-pulse">
                 <Flame className="w-3 h-3 mr-1" />
@@ -189,10 +200,33 @@ const EnhancedJackpotCard = ({
             )}
             {isEndingSoon && (
               <Badge variant="outline" className="bg-yellow-500/20 text-yellow-300 border-yellow-500/30 text-xs sm:text-sm animate-pulse">
-                ENDING SOON
+                ⏰ Soon
               </Badge>
             )}
           </div>
+          
+          {/* Favorite Button */}
+          <Button
+            size="sm"
+            variant="ghost"
+            className={cn(
+              "h-8 w-8 rounded-full p-0 backdrop-blur-sm shadow-lg transition-all",
+              isFavorite(jackpotId) 
+                ? "bg-red-500/90 hover:bg-red-600/90 text-white" 
+                : "bg-background/80 hover:bg-background/90"
+            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFavorite(jackpotId);
+            }}
+          >
+            <Heart 
+              className={cn(
+                "w-4 h-4",
+                isFavorite(jackpotId) && "fill-current"
+              )} 
+            />
+          </Button>
         </div>
 
         {/* Title */}
