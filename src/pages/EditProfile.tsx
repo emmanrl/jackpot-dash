@@ -18,6 +18,7 @@ const EditProfile = () => {
   const [uploading, setUploading] = useState(false);
   const [userId, setUserId] = useState("");
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
 
   useEffect(() => {
@@ -38,6 +39,7 @@ const EditProfile = () => {
 
       if (data) {
         setFullName(data.full_name || "");
+        setUsername(data.username || "");
         setAvatarUrl(data.avatar_url || "");
       }
 
@@ -58,15 +60,30 @@ const EditProfile = () => {
     setSaving(true);
 
     try {
+      // Validate username format if provided
+      if (username && !/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+        toast.error("Username must be 3-20 characters and contain only letters, numbers, and underscores");
+        setSaving(false);
+        return;
+      }
+
       const { error } = await supabase
         .from("profiles")
         .update({
           full_name: fullName,
+          username: username || null,
           avatar_url: avatarUrl,
         })
         .eq("id", userId);
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') {
+          toast.error("Username already taken. Please choose another.");
+        } else {
+          throw error;
+        }
+        return;
+      }
 
       toast.success("Profile updated successfully!");
       navigate("/profile");
@@ -152,6 +169,25 @@ const EditProfile = () => {
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Enter your full name"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">@</span>
+                  <Input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                    placeholder="username"
+                    pattern="[a-zA-Z0-9_]{3,20}"
+                    title="3-20 characters, letters, numbers, and underscores only"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Your unique username for profile sharing (3-20 characters)
+                </p>
               </div>
 
               <div className="space-y-2">
