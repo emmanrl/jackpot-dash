@@ -70,7 +70,10 @@ const Profile = () => {
               </Avatar>
               <div>
                 <h3 className="text-xl font-semibold">{profile?.full_name || "User"}</h3>
-                <p className="text-sm text-muted-foreground">{email}</p>
+                {profile?.username && (
+                  <p className="text-sm text-primary font-medium">@{profile.username}</p>
+                )}
+                <p className="text-xs text-muted-foreground">{email}</p>
               </div>
             </div>
 
@@ -90,6 +93,16 @@ const Profile = () => {
                   <p className="text-sm text-muted-foreground">{profile?.full_name || "Not set"}</p>
                 </div>
               </div>
+
+              {profile?.username && (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                  <span className="w-5 h-5 text-primary flex items-center justify-center font-bold">@</span>
+                  <div>
+                    <p className="text-sm font-medium">Username</p>
+                    <p className="text-sm text-muted-foreground">@{profile.username}</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="pt-4">

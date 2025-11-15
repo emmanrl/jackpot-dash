@@ -18,7 +18,7 @@ import TicketPurchaseDialog from "@/components/TicketPurchaseDialog";
 import DrawDetailsModal from "@/components/DrawDetailsModal";
 import TicketCard from "@/components/TicketCard";
 import WinCelebrationModal from "@/components/WinCelebrationModal";
-import JackpotCard from "@/components/JackpotCard";
+import { DashboardJackpotCard } from "@/components/DashboardJackpotCard";
 import { useDrawNotifications } from "@/hooks/useDrawNotifications";
 import { useWinNotification } from "@/hooks/useWinNotification";
 import { useTheme } from "@/hooks/useTheme";
@@ -135,7 +135,7 @@ const Dashboard = () => {
     try {
       const { data: profileData } = await supabase
         .from("profiles")
-        .select("full_name, email, avatar_url, experience_points, theme")
+        .select("full_name, email, avatar_url, experience_points, theme, username")
         .eq("id", userId)
         .single();
       
@@ -156,7 +156,7 @@ const Dashboard = () => {
         .from('tickets')
         .select(`
           *,
-          jackpots(name)
+          jackpots(name, status)
         `)
         .eq('user_id', userId)
         .order('purchased_at', { ascending: false })
@@ -170,10 +170,15 @@ const Dashboard = () => {
         .eq('user_id', userId);
 
       const winningTicketIds = new Set(winnerRecords?.map(w => w.ticket_id));
-      const ticketsWithStatus = ticketsData?.map(ticket => ({
-        ...ticket,
-        isWinner: winningTicketIds.has(ticket.id)
-      })) || [];
+      const ticketsWithStatus = ticketsData?.map(ticket => {
+        const jackpotCompleted = ticket.jackpots.status === 'completed';
+        const isWinner = winningTicketIds.has(ticket.id);
+        
+        return {
+          ...ticket,
+          isWinner: jackpotCompleted ? isWinner : undefined
+        };
+      }) || [];
 
       setTickets(ticketsWithStatus);
 
@@ -418,73 +423,73 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 md:py-8 space-y-6 md:space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card shadow-lg col-span-1 md:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-card to-card shadow-lg lg:col-span-2">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Wallet className="w-5 h-5 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg md:text-xl">Wallet Balance</CardTitle>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-3xl md:text-5xl font-bold text-primary">
-                ₦{wallet?.balance?.toFixed(2) || "0.00"}
-              </div>
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                <Button 
-                  variant="default" 
-                  size="lg"
-                  className="flex-1 h-12 sm:h-11"
-                  onClick={() => setDepositDialogOpen(true)}
-                >
-                  <Wallet className="w-4 h-4 mr-2" />
-                  Deposit
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  size="lg" 
-                  className="flex-1 h-12 sm:h-11"
-                  onClick={() => setWithdrawDialogOpen(true)}
-                >
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  Withdraw
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-primary/20 shadow-lg">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <div className="p-2 bg-primary/10 rounded-lg">
-                  <Star className="w-5 h-5 text-primary" />
+                  <Wallet className="w-5 h-5 text-primary" />
                 </div>
-                <CardTitle className="text-lg">Your Progress</CardTitle>
+                <CardTitle className="text-lg md:text-xl">Wallet Balance</CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-3xl font-bold text-primary">
-                {xp} XP
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Current Theme</span>
-                  <span className="font-medium text-foreground capitalize">{currentTheme}</span>
+            <CardContent>
+              <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+                {/* Wallet Balance - Left */}
+                <div className="flex-1">
+                  <div className="text-3xl md:text-4xl font-bold text-primary mb-4">
+                    ₦{wallet?.balance?.toFixed(2) || "0.00"}
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button 
+                      variant="default" 
+                      size="lg"
+                      className="flex-1 px-6"
+                      onClick={() => setDepositDialogOpen(true)}
+                    >
+                      <Wallet className="w-4 h-4 mr-2" />
+                      Deposit
+                    </Button>
+                    
+                    <Button 
+                      variant="outline" 
+                      size="lg" 
+                      className="flex-1 px-6"
+                      onClick={() => setWithdrawDialogOpen(true)}
+                    >
+                      <TrendingUp className="w-4 h-4 mr-2" />
+                      Withdraw
+                    </Button>
+                  </div>
                 </div>
-                <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500"
-                    style={{ width: `${xpProgress.percentage}%` }}
-                  />
+
+                {/* XP Progress - Right */}
+                <div className="lg:w-64 flex flex-col justify-center space-y-3 lg:border-l lg:pl-6">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 bg-primary/10 rounded-lg">
+                      <Star className="w-4 h-4 text-primary" />
+                    </div>
+                    <span className="text-sm font-medium">Your Progress</span>
+                  </div>
+                  <div className="text-2xl font-bold text-primary">
+                    {xp} XP
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span className="text-[10px]">Theme</span>
+                      <span className="font-medium text-foreground capitalize text-[10px]">{currentTheme}</span>
+                    </div>
+                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500"
+                        style={{ width: `${xpProgress.percentage}%` }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      {xpProgress.max - xp} XP to next
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {xpProgress.max - xp} XP to unlock next theme
-                </p>
               </div>
             </CardContent>
           </Card>
@@ -516,16 +521,20 @@ const Dashboard = () => {
             </Badge>
           </div>
           
-          <div className="grid grid-cols-2 gap-2 md:gap-4">
-            {activeJackpots.slice(0, 4).map((jackpot) => (
-              <JackpotCard
+          <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
+            {activeJackpots.slice(0, 7).map((jackpot, index) => (
+              <DashboardJackpotCard
                 key={jackpot.id}
+                index={index}
                 jackpotId={jackpot.id}
                 title={jackpot.name}
                 prize={jackpot.prize_pool}
                 ticketPrice={jackpot.ticket_price}
                 endTime={jackpot.next_draw}
-                category={jackpot.category}
+                category={jackpot.category || 'daily'}
+                ticketsSold={Math.floor(Math.random() * 30) + 5}
+                participants={Math.floor(Math.random() * 15) + 1}
+                poolGrowth={Math.floor(Math.random() * 50) + 10}
                 onBuyClick={() => handleBuyTicket(jackpot)}
               />
             ))}

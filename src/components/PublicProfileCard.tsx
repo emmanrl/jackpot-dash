@@ -20,7 +20,8 @@ export const PublicProfileCard = ({ profile, avatarUrl, stats }: PublicProfileCa
   const [copied, setCopied] = useState(false);
 
   const handleShareProfile = async () => {
-    const profileUrl = `https://luckywin.name.ng/profile/${profile.id}`;
+    const username = profile.username || profile.id;
+    const profileUrl = `https://luckywin.name.ng/profile/${username}`;
     
     try {
       await navigator.clipboard.writeText(profileUrl);
@@ -71,7 +72,10 @@ export const PublicProfileCard = ({ profile, avatarUrl, stats }: PublicProfileCa
           </Avatar>
           <div className="flex-1">
             <h3 className="text-xl font-bold">{profile.full_name || 'Anonymous User'}</h3>
-            <p className="text-sm text-muted-foreground">{profile.email}</p>
+            {profile.username && (
+              <p className="text-sm text-primary font-medium">@{profile.username}</p>
+            )}
+            <p className="text-xs text-muted-foreground">{profile.email}</p>
           </div>
         </div>
 
@@ -95,7 +99,7 @@ export const PublicProfileCard = ({ profile, avatarUrl, stats }: PublicProfileCa
         <div className="p-3 bg-muted/50 rounded-lg">
           <p className="text-xs text-muted-foreground mb-1">Your Public Profile URL</p>
           <code className="text-xs break-all text-primary">
-            https://luckywin.name.ng/profile/{profile.id}
+            https://luckywin.name.ng/profile/{profile.username || profile.id}
           </code>
         </div>
 
