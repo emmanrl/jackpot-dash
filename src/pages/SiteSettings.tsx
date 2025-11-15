@@ -308,6 +308,126 @@ const SiteSettings = () => {
               />
             </div>
 
+            {/* Authentication Settings Section */}
+            <div className="col-span-2 mt-6 pt-6 border-t">
+              <h3 className="text-lg font-semibold mb-4">Authentication Settings</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Configure authentication methods for your platform
+              </p>
+              
+              <form onSubmit={handleAuthSubmit}>
+                <div className="grid gap-6">
+                  {/* Phone Verification */}
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex-1">
+                      <Label className="text-base font-medium">Phone Verification</Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Require users to verify their phone number during signup
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Label htmlFor="phone_verification" className="text-sm">
+                        {authSettings?.phone_verification_enabled ? "Enabled" : "Disabled"}
+                      </Label>
+                      <input
+                        id="phone_verification"
+                        type="checkbox"
+                        checked={authSettings?.phone_verification_enabled || false}
+                        onChange={(e) => setAuthSettings({ 
+                          ...authSettings, 
+                          phone_verification_enabled: e.target.checked 
+                        })}
+                        className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Google Authentication */}
+                  <div className="space-y-4 p-4 border rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <Label className="text-base font-medium">Google Authentication</Label>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Allow users to sign in/up with Google
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Label htmlFor="google_auth" className="text-sm">
+                          {authSettings?.google_auth_enabled ? "Enabled" : "Disabled"}
+                        </Label>
+                        <input
+                          id="google_auth"
+                          type="checkbox"
+                          checked={authSettings?.google_auth_enabled || false}
+                          onChange={(e) => setAuthSettings({ 
+                            ...authSettings, 
+                            google_auth_enabled: e.target.checked 
+                          })}
+                          className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                      </div>
+                    </div>
+
+                    {authSettings?.google_auth_enabled && (
+                      <div className="grid gap-4 mt-4 pl-4 border-l-2 border-primary/20">
+                        <div>
+                          <Label htmlFor="google_client_id">Google Client ID</Label>
+                          <Input
+                            id="google_client_id"
+                            type="text"
+                            value={authSettings?.google_client_id || ''}
+                            onChange={(e) => setAuthSettings({ 
+                              ...authSettings, 
+                              google_client_id: e.target.value 
+                            })}
+                            placeholder="Your Google OAuth Client ID"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Get this from <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Google Cloud Console</a>
+                          </p>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="google_client_secret">Google Client Secret</Label>
+                          <Input
+                            id="google_client_secret"
+                            type="password"
+                            value={authSettings?.google_client_secret || ''}
+                            onChange={(e) => setAuthSettings({ 
+                              ...authSettings, 
+                              google_client_secret: e.target.value 
+                            })}
+                            placeholder="Your Google OAuth Client Secret"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Keep this secret secure
+                          </p>
+                        </div>
+
+                        <div className="bg-muted/50 p-3 rounded-lg">
+                          <h4 className="font-medium text-sm mb-2">Setup Instructions:</h4>
+                          <ol className="text-xs space-y-1 list-decimal list-inside text-muted-foreground">
+                            <li>Go to Google Cloud Console and create/select a project</li>
+                            <li>Enable Google+ API</li>
+                            <li>Create OAuth 2.0 credentials</li>
+                            <li>Add authorized redirect URIs</li>
+                            <li>Copy Client ID and Client Secret here</li>
+                          </ol>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button type="submit" disabled={saving}>
+                      {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                      Save Authentication Settings
+                    </Button>
+                  </div>
+                </div>
+              </form>
+            </div>
+
             {/* Email Configuration Section */}
             <div className="col-span-2 mt-6 pt-6 border-t">
               <h3 className="text-lg font-semibold mb-4">Email Configuration</h3>
