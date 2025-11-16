@@ -14,8 +14,10 @@ const ChangePassword = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
     const checkUser = async () => {
@@ -24,6 +26,7 @@ const ChangePassword = () => {
         navigate("/auth");
         return;
       }
+      setUserEmail(session.user.email || "");
       setLoading(false);
     };
     checkUser();
@@ -32,19 +35,42 @@ const ChangePassword = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!currentPassword) {
+      toast.error("Please enter your current password");
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match");
+      toast.error("New passwords do not match");
       return;
     }
 
     if (newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
+      toast.error("New password must be at least 6 characters");
+      return;
+    }
+
+    if (currentPassword === newPassword) {
+      toast.error("New password must be different from current password");
       return;
     }
 
     setSaving(true);
 
     try {
+      // First, verify the current password by attempting to sign in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: userEmail,
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        toast.error("Current password is incorrect");
+        setSaving(false);
+        return;
+      }
+
+      // If sign in successful, update the password
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
@@ -52,6 +78,7 @@ const ChangePassword = () => {
       if (error) throw error;
 
       toast.success("Password updated successfully!");
+      setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       navigate("/settings");
@@ -82,6 +109,18 @@ const ChangePassword = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="currentPassword">Current Password</Label>
+                <Input
+                  id="currentPassword"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="newPassword">New Password</Label>
                 <Input
                   id="newPassword"
@@ -94,7 +133,7 @@ const ChangePassword = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label htmlFor="confirmPassword">Confirm New Password</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
