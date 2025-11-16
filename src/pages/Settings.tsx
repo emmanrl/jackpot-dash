@@ -51,6 +51,7 @@ const Settings = () => {
   const [phoneVerified, setPhoneVerified] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [sendingVerification, setSendingVerification] = useState(false);
+  const [phoneVerificationEnabled, setPhoneVerificationEnabled] = useState(false);
 
   useEffect(() => {
     const checkUser = async () => {
@@ -61,8 +62,20 @@ const Settings = () => {
       }
       setUserId(session.user.id);
       setUserEmail(session.user.email || "");
-      setEmailVerified(session.user.email_confirmed_at !== null);
-      setPhoneVerified(session.user.phone_confirmed_at !== null);
+      
+      // Check actual verification status from auth metadata
+      setEmailVerified(!!session.user.email_confirmed_at);
+      setPhoneVerified(!!session.user.phone_confirmed_at);
+      
+      // Fetch auth settings to check if phone verification is enabled
+      const { data: authSettings } = await supabase
+        .from('auth_settings')
+        .select('phone_verification_enabled')
+        .single();
+      
+      if (authSettings) {
+        setPhoneVerificationEnabled(authSettings.phone_verification_enabled || false);
+      }
       
       // Fetch user's dark mode preference from database
       const { data: profile } = await supabase
@@ -268,17 +281,13 @@ const Settings = () => {
   const sendEmailVerification = async () => {
     setSendingVerification(true);
     try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: userEmail,
-        options: {
-          emailRedirectTo: `${window.location.origin}/settings`
-        }
+      const { error } = await supabase.functions.invoke('send-email-verification', {
+        body: { email: userEmail }
       });
 
       if (error) throw error;
 
-      toast.success("Verification email sent! Please check your inbox.");
+      toast.success("Verification email sent! Please check your inbox and spam folder.");
     } catch (error: any) {
       toast.error(error.message || "Failed to send verification email");
     } finally {
@@ -376,7 +385,7 @@ const Settings = () => {
                 <div className="space-y-3">
                   <Alert>
                     <AlertDescription className="text-amber-700">
-                      Please verify your email to withdraw winnings
+                      Email not verified. Please verify your email to withdraw winnings.
                     </AlertDescription>
                   </Alert>
                   <Button 
@@ -385,36 +394,41 @@ const Settings = () => {
                     variant="outline"
                     className="w-full"
                   >
-                    {sendingVerification ? "Sending..." : "Send Verification Email"}
+                    {sendingVerification ? "Sending..." : "Verify Email"}
                   </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Check your spam folder if you don't see the email
+                  </p>
                 </div>
               )}
             </div>
 
-            {/* Phone Verification Section */}
-            <div className="border-t pt-6 space-y-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Phone className="w-5 h-5 text-primary" />
-                <Label className="text-base">Phone Verification</Label>
-              </div>
-              {phoneVerified ? (
-                <Alert>
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  <AlertDescription className="text-green-700">
-                    Your phone number is verified ✓
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <div className="space-y-3">
+            {/* Phone Verification Section - Only show if enabled in admin settings */}
+            {phoneVerificationEnabled && (
+              <div className="border-t pt-6 space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Phone className="w-5 h-5 text-primary" />
+                  <Label className="text-base">Phone Verification</Label>
+                </div>
+                {phoneVerified ? (
                   <Alert>
-                    <AlertDescription className="text-amber-700">
-                      Please verify your phone number to withdraw winnings
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <AlertDescription className="text-green-700">
+                      Your phone number is verified ✓
                     </AlertDescription>
                   </Alert>
-                  {userId && <PhoneVerification userId={userId} />}
-                </div>
-              )}
-            </div>
+                ) : (
+                  <div className="space-y-3">
+                    <Alert>
+                      <AlertDescription className="text-amber-700">
+                        Phone not verified. Please verify your phone number to withdraw winnings.
+                      </AlertDescription>
+                    </Alert>
+                    {userId && <PhoneVerification userId={userId} />}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="border-t pt-6 space-y-4">
               <div className="flex items-center justify-between">
