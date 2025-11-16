@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,26 +8,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { Sparkles, LogIn, UserPlus, Loader2 } from "lucide-react";
+import { Sparkles, LogIn, UserPlus, Loader2, ArrowRight, Trophy } from "lucide-react";
 import { ReferralSignupField } from "@/components/ReferralSignupField";
-import { PhoneVerification } from "@/components/PhoneVerification";
-import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
   const [referralCode, setReferralCode] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [authSettings, setAuthSettings] = useState<any>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [showPhoneVerification, setShowPhoneVerification] = useState(false);
-  const [showEmailOTP, setShowEmailOTP] = useState(false);
-  const [emailOTP, setEmailOTP] = useState("");
-  const [userEmail, setUserEmail] = useState("");
+  
+  // Signup flow states
+  const [signupStep, setSignupStep] = useState<'email' | 'password'>('email');
+  const [emailChecking, setEmailChecking] = useState(false);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -36,18 +31,99 @@ const Auth = () => {
         navigate("/dashboard");
       }
     });
-    
-    // Fetch auth settings
-    fetchAuthSettings();
-  }, [navigate]);
 
-  const fetchAuthSettings = async () => {
-    const { data } = await supabase
-      .from("auth_settings")
-      .select("*")
-      .maybeSingle();
+    // Handle email verification callback
+    const tokenHash = searchParams.get('token_hash');
+    const type = searchParams.get('type');
     
-    setAuthSettings(data);
+    if (tokenHash && type === 'signup') {
+      handleEmailVerification(tokenHash);
+    }
+  }, [navigate, searchParams]);
+
+  const handleEmailVerification = async (tokenHash: string) => {
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: 'signup'
+      });
+
+      if (error) throw error;
+
+      // Redirect to complete profile
+      navigate('/complete-profile');
+    } catch (error: any) {
+      toast({
+        title: "Verification Failed",
+        description: error.message || "Failed to verify email",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const checkEmailAvailability = async () => {
+    if (!email) {
+      toast({
+        title: "Email Required",
+        description: "Please enter your email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setEmailChecking(true);
+
+    try {
+      // Check if email exists by trying to sign in with a dummy password
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password: 'dummy-check-password-12345',
+      });
+
+      // If we get "Invalid login credentials", email doesn't exist
+      // If we get "Email not confirmed", email exists
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          // Email doesn't exist, proceed to password step
+          setSignupStep('password');
+        } else {
+          // Email exists or other error
+          toast({
+            title: "Email Already Registered",
+            description: "This email is already taken. Please use a different email or log in.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        // Successfully logged in, which means email exists
+        toast({
+          title: "Email Already Registered",
+          description: "This email is already taken. Please use a different email or log in.",
+          variant: "destructive",
+        });
+        // Sign out immediately
+        await supabase.auth.signOut();
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to check email availability",
+        variant: "destructive",
+      });
+    } finally {
+      setEmailChecking(false);
+    }
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -61,6 +137,15 @@ const Auth = () => {
       });
       return;
     }
+
+    if (!password || password.length < 6) {
+      toast({
+        title: "Invalid Password",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setLoading(true);
 
@@ -69,11 +154,8 @@ const Auth = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/tutorial`,
+          emailRedirectTo: `${window.location.origin}/auth`,
           data: {
-            first_name: firstName,
-            last_name: lastName,
-            full_name: `${firstName} ${lastName}`.trim(),
             referral_code: referralCode,
           },
         },
@@ -82,36 +164,9 @@ const Auth = () => {
       if (error) throw error;
 
       if (data.user) {
-        setUserId(data.user.id);
-        setUserEmail(email);
-        
-        // Send OTP to email
-        const { error: otpError } = await supabase.auth.signInWithOtp({
-          email,
-          options: {
-            shouldCreateUser: false,
-          }
-        });
-
-        if (otpError) {
-          console.error('Failed to send OTP:', otpError);
-          toast({
-            title: "Account Created",
-            description: "Account created but failed to send verification code. You can verify later from Settings.",
-          });
-          navigate("/tutorial");
-          return;
-        }
-
-        toast({
-          title: "Success!",
-          description: "Verification code sent to your email!",
-        });
-        
-        setShowEmailOTP(true);
+        // Navigate to the "check your email" page
+        navigate('/verify-email', { state: { email } });
       }
-      
-      setPassword("");
     } catch (error: any) {
       toast({
         title: "Error",
@@ -123,72 +178,7 @@ const Auth = () => {
     }
   };
 
-  const handleVerifyEmailOTP = async () => {
-    if (emailOTP.length !== 6) {
-      toast({
-        title: "Invalid Code",
-        description: "Please enter a valid 6-digit code",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.verifyOtp({
-        email: userEmail,
-        token: emailOTP,
-        type: 'email'
-      });
-
-      if (error) {
-        toast({
-          title: "Verification Failed",
-          description: "Invalid code. Please try again.",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
-      toast({
-        title: "Email Verified!",
-        description: "Your email has been verified successfully.",
-      });
-      
-      if (authSettings?.phone_verification_enabled && userId) {
-        setShowEmailOTP(false);
-        setShowPhoneVerification(true);
-      } else {
-        navigate('/tutorial');
-      }
-    } catch (error: any) {
-      console.error('OTP verification error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to verify code. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSkipEmailVerification = () => {
-    toast({
-      title: "Verification Skipped",
-      description: "You can verify your email later from Settings",
-    });
-    
-    if (authSettings?.phone_verification_enabled && userId) {
-      setShowEmailOTP(false);
-      setShowPhoneVerification(true);
-    } else {
-      navigate('/tutorial');
-    }
-  };
-
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
@@ -198,34 +188,30 @@ const Auth = () => {
         password,
       });
 
-      if (error) throw error;
-
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
-      });
-      
-      // Check if user is admin
-      if (data.user) {
-        const { data: roleData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', data.user.id)
-          .eq('role', 'admin')
-          .maybeSingle();
-        
-        if (roleData) {
-          navigate("/admin");
+      if (error) {
+        if (error.message.includes('Invalid login credentials')) {
+          toast({
+            title: "Account Not Found",
+            description: "No account found with this email. Please sign up first.",
+            variant: "destructive",
+          });
         } else {
-          navigate("/dashboard");
+          throw error;
         }
-      } else {
+        return;
+      }
+
+      if (data.session) {
+        toast({
+          title: "Welcome back!",
+          description: "Successfully logged in",
+        });
         navigate("/dashboard");
       }
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Invalid email or password",
+        description: error.message || "Failed to log in",
         variant: "destructive",
       });
     } finally {
@@ -233,394 +219,227 @@ const Auth = () => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/dashboard`,
-        },
-      });
-
-      if (error) throw error;
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to sign in with Google",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleGoogleSignUp = async () => {
-    if (!agreedToTerms) {
-      toast({
-        title: "Agreement Required",
-        description: "Please agree to the Terms and Privacy Policy to continue",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/tutorial`,
-        },
-      });
-
-      if (error) throw error;
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to sign up with Google",
-        variant: "destructive",
-      });
-    }
-  };
-
-  if (showEmailOTP) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-primary/5 to-background">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <CardTitle>Verify Your Email</CardTitle>
-            <CardDescription>
-              Enter the 6-digit code sent to {userEmail}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-center">
-              <InputOTP
-                maxLength={6}
-                value={emailOTP}
-                onChange={setEmailOTP}
-              >
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                </InputOTPGroup>
-                <InputOTPSeparator />
-                <InputOTPGroup>
-                  <InputOTPSlot index={3} />
-                  <InputOTPSlot index={4} />
-                  <InputOTPSlot index={5} />
-                </InputOTPGroup>
-              </InputOTP>
-            </div>
-            
-            <Button
-              onClick={handleVerifyEmailOTP}
-              disabled={loading || emailOTP.length !== 6}
-              className="w-full"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Verifying...
-                </>
-              ) : (
-                "Verify Email"
-              )}
-            </Button>
-
-            <Button
-              variant="ghost"
-              className="w-full"
-              onClick={handleSkipEmailVerification}
-              disabled={loading}
-            >
-              Skip for now
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (showPhoneVerification && userId) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-primary/5 to-background">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Phone Verification Required</CardTitle>
-            <CardDescription>
-              Please verify your phone number to complete registration
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PhoneVerification 
-              userId={userId} 
-              onComplete={() => navigate("/tutorial")}
-            />
-            <Button
-              variant="outline"
-              className="w-full mt-4"
-              onClick={() => navigate("/tutorial")}
-            >
-              Skip for now
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-background via-primary/5 to-background">
-      {/* Animated background effects */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 -left-4 w-96 h-96 bg-primary/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-float" />
-        <div className="absolute -bottom-8 -right-4 w-96 h-96 bg-accent/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-float" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" />
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full bg-primary/30"
-            style={{
-              width: Math.random() * 6 + 2 + "px",
-              height: Math.random() * 6 + 2 + "px",
-              left: Math.random() * 100 + "%",
-              top: Math.random() * 100 + "%",
-              animation: `float ${Math.random() * 4 + 3}s ease-in-out infinite`,
-              animationDelay: Math.random() * 3 + "s",
-            }}
-          />
-        ))}
-      </div>
-
-      <Card className="w-full max-w-md relative z-10 border-2 border-primary/20 bg-card/95 backdrop-blur-xl shadow-2xl">
-        <CardHeader className="text-center space-y-4 pb-6">
+    <div className="min-h-screen grid lg:grid-cols-2">
+      {/* Left Column - Animation/Graphics */}
+      <div className="hidden lg:flex bg-gradient-to-br from-primary via-purple-600 to-pink-500 items-center justify-center p-12 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00em0wLTEwYzAtMi4yMS0xLjc5LTQtNC00cy00IDEuNzktNCA0IDEuNzkgNCA0IDQgNC0xLjc5IDQtNHptMC0xMGMwLTIuMjEtMS43OS00LTQtNHMtNCAxLjc5LTQgNCAxLjc5IDQgNCA0IDQtMS43OSA0LTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30"></div>
+        
+        <div className="relative z-10 text-center text-white space-y-8 animate-fade-in">
           <div className="flex justify-center">
-            <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-primary/20 via-primary/10 to-accent/20 border-2 border-primary/30 shadow-lg">
-              <Sparkles className="w-5 h-5 text-primary animate-pulse" />
-              <span className="text-base font-bold text-primary">JackpotWin</span>
-              <Sparkles className="w-5 h-5 text-primary animate-pulse" style={{ animationDelay: '0.5s' }} />
+            <div className="p-4 bg-white/10 backdrop-blur-sm rounded-full">
+              <Trophy className="w-24 h-24" />
             </div>
           </div>
-          <div>
-            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Welcome!</CardTitle>
-            <CardDescription className="text-base mt-2">Sign in or create your account</CardDescription>
+          <h1 className="text-5xl font-bold">LuckyWin</h1>
+          <p className="text-2xl font-light max-w-md mx-auto">
+            Your chance to win big starts here
+          </p>
+          <div className="flex gap-6 justify-center pt-4">
+            <div className="text-center">
+              <div className="text-4xl font-bold">₦10M+</div>
+              <div className="text-sm opacity-90">Total Prizes</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold">50K+</div>
+              <div className="text-sm opacity-90">Winners</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold">24/7</div>
+              <div className="text-sm opacity-90">Jackpots</div>
+            </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="signin" className="gap-2">
+        </div>
+      </div>
+
+      {/* Right Column - Form */}
+      <div className="flex items-center justify-center p-6 bg-background">
+        <Card className="w-full max-w-md border-0 shadow-2xl">
+          <CardHeader className="space-y-2 text-center lg:hidden">
+            <div className="flex justify-center mb-4">
+              <Sparkles className="w-12 h-12 text-primary" />
+            </div>
+            <CardTitle className="text-3xl font-bold">LuckyWin</CardTitle>
+          </CardHeader>
+
+          <Tabs defaultValue="login" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="login" className="flex items-center gap-2">
                 <LogIn className="w-4 h-4" />
-                Sign In
+                Log In
               </TabsTrigger>
-              <TabsTrigger value="signup" className="gap-2">
+              <TabsTrigger value="signup" className="flex items-center gap-2">
                 <UserPlus className="w-4 h-4" />
                 Sign Up
               </TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signin-email">Email</Label>
-                  <Input
-                    id="signin-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signin-password">Password</Label>
-                  <Input
-                    id="signin-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Signing in...
-                    </>
-                  ) : (
-                    "Sign In"
-                  )}
-                </Button>
 
-                {authSettings?.google_auth_enabled && (
-                  <>
-                    <div className="relative my-4">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-                      </div>
-                    </div>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      onClick={handleGoogleSignIn}
-                    >
-                      <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                        <path
-                          fill="currentColor"
-                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                        />
-                        <path
-                          fill="currentColor"
-                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                        />
-                        <path
-                          fill="currentColor"
-                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                        />
-                        <path
-                          fill="currentColor"
-                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                        />
-                      </svg>
-                      Sign in with Google
-                    </Button>
-                  </>
-                )}
-              </form>
+            {/* Login Tab */}
+            <TabsContent value="login">
+              <CardHeader>
+                <CardTitle>Welcome Back</CardTitle>
+                <CardDescription>
+                  Enter your credentials to access your account
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email">Email</Label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      placeholder="name@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="login-password">Password</Label>
+                    <Input
+                      id="login-password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Logging in...
+                      </>
+                    ) : (
+                      "Log In"
+                    )}
+                  </Button>
+                </form>
+              </CardContent>
             </TabsContent>
-            
+
+            {/* Signup Tab */}
             <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-firstname">First Name</Label>
-                    <Input
-                      id="signup-firstname"
-                      type="text"
-                      placeholder="John"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-lastname">Last Name</Label>
-                    <Input
-                      id="signup-lastname"
-                      type="text"
-                      placeholder="Doe"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    minLength={6}
-                  />
-                </div>
-                <ReferralSignupField
-                  value={referralCode}
-                  onChange={setReferralCode}
-                />
-                <div className="flex items-start space-x-3 p-4 rounded-lg bg-muted/30 border border-border">
-                  <Checkbox
-                    id="terms-agreement"
-                    checked={agreedToTerms}
-                    onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
-                  />
-                  <label htmlFor="terms-agreement" className="text-sm text-foreground leading-relaxed cursor-pointer">
-                    I agree to the{" "}
-                    <a href="/terms" className="text-primary hover:underline font-medium" target="_blank" rel="noopener noreferrer">
-                      Terms of Service
-                    </a>{" "}
-                    and{" "}
-                    <a href="/privacy" className="text-primary hover:underline font-medium" target="_blank" rel="noopener noreferrer">
-                      Privacy Policy
-                    </a>
-                  </label>
-                </div>
-                <Button type="submit" className="w-full" disabled={loading || !agreedToTerms}>
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Creating account...
-                    </>
-                  ) : (
-                    "Sign Up"
-                  )}
-                </Button>
-
-                {authSettings?.google_auth_enabled && (
-                  <>
-                    <div className="relative my-4">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-                      </div>
+              <CardHeader>
+                <CardTitle>Create Account</CardTitle>
+                <CardDescription>
+                  {signupStep === 'email' 
+                    ? 'Enter your email to get started' 
+                    : 'Complete your registration'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {signupStep === 'email' ? (
+                  <form onSubmit={(e) => { e.preventDefault(); checkEmailAvailability(); }} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-email">Email</Label>
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        placeholder="name@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        disabled={emailChecking}
+                        autoFocus
+                      />
                     </div>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      onClick={handleGoogleSignUp}
-                      disabled={!agreedToTerms}
-                    >
-                      <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                        <path
-                          fill="currentColor"
-                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                        />
-                        <path
-                          fill="currentColor"
-                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                        />
-                        <path
-                          fill="currentColor"
-                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                        />
-                        <path
-                          fill="currentColor"
-                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                        />
-                      </svg>
-                      Sign up with Google
+                    <Button type="submit" className="w-full" disabled={emailChecking}>
+                      {emailChecking ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Checking...
+                        </>
+                      ) : (
+                        <>
+                          Continue
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </>
+                      )}
                     </Button>
-                  </>
+                  </form>
+                ) : (
+                  <form onSubmit={handleSignUp} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-email-display">Email</Label>
+                      <Input
+                        id="signup-email-display"
+                        type="email"
+                        value={email}
+                        disabled
+                        className="bg-muted"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSignupStep('email');
+                          setPassword('');
+                        }}
+                        className="text-xs"
+                      >
+                        Change email
+                      </Button>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-password">Password</Label>
+                      <Input
+                        id="signup-password"
+                        type="password"
+                        placeholder="At least 6 characters"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        disabled={loading}
+                        autoFocus
+                      />
+                    </div>
+                    <ReferralSignupField
+                      value={referralCode}
+                      onChange={setReferralCode}
+                    />
+                    <div className="flex items-start space-x-2">
+                      <Checkbox
+                        id="terms"
+                        checked={agreedToTerms}
+                        onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+                        disabled={loading}
+                      />
+                      <label
+                        htmlFor="terms"
+                        className="text-sm text-muted-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      >
+                        I agree to the{" "}
+                        <a href="/terms-of-service" className="text-primary hover:underline">
+                          Terms of Service
+                        </a>{" "}
+                        and{" "}
+                        <a href="/privacy-policy" className="text-primary hover:underline">
+                          Privacy Policy
+                        </a>
+                      </label>
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading || !agreedToTerms}>
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating account...
+                        </>
+                      ) : (
+                        "Sign Up"
+                      )}
+                    </Button>
+                  </form>
                 )}
-              </form>
+              </CardContent>
             </TabsContent>
           </Tabs>
-        </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 };
