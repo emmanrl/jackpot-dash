@@ -80,18 +80,27 @@ const Auth = () => {
       if (data.user) {
         setUserId(data.user.id);
         
+        // Send verification email
+        try {
+          await supabase.functions.invoke('send-email-verification', {
+            body: { email: data.user.email }
+          });
+        } catch (emailError) {
+          console.error('Failed to send verification email:', emailError);
+        }
+        
         // Check if phone verification is enabled
         if (authSettings?.phone_verification_enabled) {
           setShowPhoneVerification(true);
           toast({
             title: "Success!",
-            description: "Account created! Please verify your phone number.",
+            description: "Account created! Please check your email (including spam folder) to verify your account.",
           });
           // Don't navigate yet - will navigate after phone verification
         } else {
           toast({
             title: "Success!",
-            description: "Your account has been created successfully!",
+            description: "Account created! Please check your email (including spam folder) to verify your account.",
           });
           
           // Navigate to tutorial after successful signup

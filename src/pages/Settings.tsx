@@ -17,6 +17,7 @@ import { ThemeSelector } from "@/components/ThemeSelector";
 import { AchievementBadge } from "@/components/AchievementBadge";
 import { PhoneVerification } from "@/components/PhoneVerification";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ProfileCompletionProgress } from "@/components/ProfileCompletionProgress";
 
 interface WithdrawalAccount {
   id: string;
@@ -307,6 +308,9 @@ const Settings = () => {
     <div className="min-h-screen">
       <TopNav />
       <main className="container mx-auto px-4 py-8 space-y-6">
+        {/* Profile Completion Progress */}
+        {userId && <ProfileCompletionProgress userId={userId} />}
+        
         {/* Theme Selector */}
         <ThemeSelector userId={userId || undefined} />
 
