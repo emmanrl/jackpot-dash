@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { Sparkles, LogIn, UserPlus, Loader2 } from "lucide-react";
 import { ReferralSignupField } from "@/components/ReferralSignupField";
 import { PhoneVerification } from "@/components/PhoneVerification";
+import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -24,6 +25,9 @@ const Auth = () => {
   const [authSettings, setAuthSettings] = useState<any>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
+  const [showEmailOTP, setShowEmailOTP] = useState(false);
+  const [emailOTP, setEmailOTP] = useState("");
+  const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
     // Check if user is already logged in
@@ -79,40 +83,35 @@ const Auth = () => {
 
       if (data.user) {
         setUserId(data.user.id);
+        setUserEmail(email);
         
-        // Send verification email
-        try {
-          await supabase.functions.invoke('send-email-verification', {
-            body: { email: data.user.email }
-          });
-        } catch (emailError) {
-          console.error('Failed to send verification email:', emailError);
-        }
-        
-        // Check if phone verification is enabled
-        if (authSettings?.phone_verification_enabled) {
-          setShowPhoneVerification(true);
+        // Send OTP to email
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            shouldCreateUser: false,
+          }
+        });
+
+        if (otpError) {
+          console.error('Failed to send OTP:', otpError);
           toast({
-            title: "Success!",
-            description: "Account created! Please check your email (including spam folder) to verify your account.",
+            title: "Account Created",
+            description: "Account created but failed to send verification code. You can verify later from Settings.",
           });
-          // Don't navigate yet - will navigate after phone verification
-        } else {
-          toast({
-            title: "Success!",
-            description: "Account created! Please check your email (including spam folder) to verify your account.",
-          });
-          
-          // Navigate to tutorial after successful signup
           navigate("/tutorial");
+          return;
         }
+
+        toast({
+          title: "Success!",
+          description: "Verification code sent to your email!",
+        });
+        
+        setShowEmailOTP(true);
       }
       
-      setEmail("");
       setPassword("");
-      setFirstName("");
-      setLastName("");
-      setReferralCode("");
     } catch (error: any) {
       toast({
         title: "Error",
@@ -121,6 +120,71 @@ const Auth = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerifyEmailOTP = async () => {
+    if (emailOTP.length !== 6) {
+      toast({
+        title: "Invalid Code",
+        description: "Please enter a valid 6-digit code",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email: userEmail,
+        token: emailOTP,
+        type: 'email'
+      });
+
+      if (error) {
+        toast({
+          title: "Verification Failed",
+          description: "Invalid code. Please try again.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      toast({
+        title: "Email Verified!",
+        description: "Your email has been verified successfully.",
+      });
+      
+      if (authSettings?.phone_verification_enabled && userId) {
+        setShowEmailOTP(false);
+        setShowPhoneVerification(true);
+      } else {
+        navigate('/tutorial');
+      }
+    } catch (error: any) {
+      console.error('OTP verification error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to verify code. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSkipEmailVerification = () => {
+    toast({
+      title: "Verification Skipped",
+      description: "You can verify your email later from Settings",
+    });
+    
+    if (authSettings?.phone_verification_enabled && userId) {
+      setShowEmailOTP(false);
+      setShowPhoneVerification(true);
+    } else {
+      navigate('/tutorial');
     }
   };
 
@@ -215,6 +279,66 @@ const Auth = () => {
       });
     }
   };
+
+  if (showEmailOTP) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-primary/5 to-background">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle>Verify Your Email</CardTitle>
+            <CardDescription>
+              Enter the 6-digit code sent to {userEmail}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-center">
+              <InputOTP
+                maxLength={6}
+                value={emailOTP}
+                onChange={setEmailOTP}
+              >
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                </InputOTPGroup>
+                <InputOTPSeparator />
+                <InputOTPGroup>
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+            
+            <Button
+              onClick={handleVerifyEmailOTP}
+              disabled={loading || emailOTP.length !== 6}
+              className="w-full"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Verifying...
+                </>
+              ) : (
+                "Verify Email"
+              )}
+            </Button>
+
+            <Button
+              variant="ghost"
+              className="w-full"
+              onClick={handleSkipEmailVerification}
+              disabled={loading}
+            >
+              Skip for now
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (showPhoneVerification && userId) {
     return (

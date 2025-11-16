@@ -35,26 +35,37 @@ export const ProfileCompletionProgress = ({ userId }: ProfileCompletionProps) =>
         .eq('id', userId)
         .single();
 
+      // Fetch withdrawal accounts
+      const { data: withdrawalAccounts } = await supabase
+        .from('withdrawal_accounts')
+        .select('id')
+        .eq('user_id', userId);
+
       const items: CompletionItem[] = [
         {
           label: "Email verified",
           completed: !!session?.user?.email_confirmed_at,
-          weight: 25
+          weight: 20
         },
         {
           label: "Phone verified",
           completed: !!session?.user?.phone_confirmed_at,
-          weight: 25
+          weight: 20
         },
         {
           label: "Profile picture uploaded",
           completed: !!profile?.avatar_url,
-          weight: 25
+          weight: 20
         },
         {
           label: "Full name provided",
           completed: !!profile?.full_name && profile.full_name.trim().length > 0,
-          weight: 25
+          weight: 20
+        },
+        {
+          label: "Withdrawal account added",
+          completed: !!withdrawalAccounts && withdrawalAccounts.length > 0,
+          weight: 20
         }
       ];
 
