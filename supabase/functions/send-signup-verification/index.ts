@@ -36,7 +36,7 @@ serve(async (req) => {
     const siteName = settings.site_name || 'LuckyWin';
 
     // Construct verification URL
-    const verificationUrl = `https://luckywin.name.ng/auth?token_hash=${token_hash}&type=${email_action_type}`;
+    const verificationUrl = `${supabaseUrl.replace('https://', 'https://').split('.supabase.co')[0]}.lovable.app/auth?token_hash=${token_hash}&type=${email_action_type}`;
 
     // Send email using Resend
     const emailResponse = await fetch('https://api.resend.com/emails', {
