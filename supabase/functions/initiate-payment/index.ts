@@ -156,6 +156,8 @@ serve(async (req) => {
       
     } else if (provider === 'flutterwave') {
       // Flutterwave payment initialization using v3 API
+      const callbackUrl = `https://luckywin.name.ng/payment/callback`;
+      
       const flutterwaveResponse = await fetch('https://api.flutterwave.com/v3/payments', {
         method: 'POST',
         headers: {
@@ -166,7 +168,7 @@ serve(async (req) => {
           tx_ref: reference,
           amount: amount,
           currency: 'NGN',
-          redirect_url: `${supabaseUrl.replace('.supabase.co', '.lovableproject.com')}/payment/callback`,
+          redirect_url: callbackUrl,
           payment_options: 'card,banktransfer,ussd',
           customer: {
             email: email,
