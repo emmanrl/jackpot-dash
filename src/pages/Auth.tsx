@@ -17,11 +17,14 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [referralCode, setReferralCode] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
   
   // Signup flow states
-  const [signupStep, setSignupStep] = useState<'email' | 'password'>('email');
+  const [signupStep, setSignupStep] = useState<'email' | 'details'>('email');
   const [emailChecking, setEmailChecking] = useState(false);
 
   useEffect(() => {
@@ -50,77 +53,61 @@ const Auth = () => {
 
       if (error) throw error;
 
-      // Redirect to complete profile
-      navigate('/complete-profile');
+      toast({
+        title: "Email Verified!",
+        description: "Your account has been verified successfully.",
+      });
+
+      // Redirect to tutorial
+      navigate('/tutorial');
     } catch (error: any) {
       toast({
         title: "Verification Failed",
-        description: error.message || "Failed to verify email",
+        description: error.message || "Failed to verify email. The link may have expired.",
         variant: "destructive",
       });
+      navigate('/auth');
     }
   };
 
   const checkEmailAvailability = async () => {
+    setErrors({});
+    
     if (!email) {
-      toast({
-        title: "Email Required",
-        description: "Please enter your email address",
-        variant: "destructive",
-      });
+      setErrors({ email: "Email address is required" });
       return;
     }
 
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address",
-        variant: "destructive",
-      });
+      setErrors({ email: "Please enter a valid email address" });
       return;
     }
 
     setEmailChecking(true);
 
     try {
-      // Check if email exists by trying to sign in with a dummy password
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password: 'dummy-check-password-12345',
-      });
+      // Check if email exists in profiles table
+      const { data: existingProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', email.toLowerCase())
+        .maybeSingle();
 
-      // If we get "Invalid login credentials", email doesn't exist
-      // If we get "Email not confirmed", email exists
-      if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          // Email doesn't exist, proceed to password step
-          setSignupStep('password');
-        } else {
-          // Email exists or other error
-          toast({
-            title: "Email Already Registered",
-            description: "This email is already taken. Please use a different email or log in.",
-            variant: "destructive",
-          });
-        }
+      if (profileError && profileError.code !== 'PGRST116') {
+        throw profileError;
+      }
+
+      if (existingProfile) {
+        setErrors({ email: "This email is already registered. Please log in instead." });
       } else {
-        // Successfully logged in, which means email exists
-        toast({
-          title: "Email Already Registered",
-          description: "This email is already taken. Please use a different email or log in.",
-          variant: "destructive",
-        });
-        // Sign out immediately
-        await supabase.auth.signOut();
+        // Email doesn't exist, proceed to details step
+        setSignupStep('details');
       }
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to check email availability",
-        variant: "destructive",
-      });
+      console.error('Email check error:', error);
+      setErrors({ email: "Failed to check email availability. Please try again." });
     } finally {
       setEmailChecking(false);
     }
@@ -128,51 +115,86 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
+    
+    // Validate all fields
+    const newErrors: {[key: string]: string} = {};
+    
+    if (!firstName.trim()) {
+      newErrors.firstName = "First name is required";
+    }
+    
+    if (!lastName.trim()) {
+      newErrors.lastName = "Last name is required";
+    }
+    
+    if (!password) {
+      newErrors.password = "Password is required";
+    } else if (password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters long";
+    }
     
     if (!agreedToTerms) {
-      toast({
-        title: "Agreement Required",
-        description: "Please agree to the Terms and Privacy Policy to continue",
-        variant: "destructive",
-      });
+      newErrors.terms = "You must agree to the Terms of Service and Privacy Policy";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
-    if (!password || password.length < 6) {
-      toast({
-        title: "Invalid Password",
-        description: "Password must be at least 6 characters long",
-        variant: "destructive",
-      });
-      return;
-    }
-    
     setLoading(true);
 
     try {
+      const redirectUrl = `${window.location.origin}/auth`;
+      const fullName = `${firstName.trim()} ${lastName.trim()}`;
+      
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: email.toLowerCase(),
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth`,
+          emailRedirectTo: redirectUrl,
           data: {
-            referral_code: referralCode,
-          },
-        },
+            full_name: fullName,
+            referral_code: referralCode || null,
+          }
+        }
       });
 
       if (error) throw error;
 
       if (data.user) {
-        // Navigate to the "check your email" page
-        navigate('/verify-email', { state: { email } });
+        // Update profile with full name
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ full_name: fullName })
+          .eq('id', data.user.id);
+
+        if (profileError) {
+          console.error('Profile update error:', profileError);
+        }
       }
-    } catch (error: any) {
+
       toast({
-        title: "Error",
-        description: error.message || "Failed to sign up",
-        variant: "destructive",
+        title: "Account Created!",
+        description: "Please check your email to verify your account.",
       });
+
+      // Navigate to verify email page
+      navigate('/verify-email', { state: { email } });
+    } catch (error: any) {
+      console.error('Signup error:', error);
+      let errorMessage = "Failed to create account. Please try again.";
+      
+      if (error.message?.includes('already registered')) {
+        errorMessage = "This email is already registered. Please log in instead.";
+      } else if (error.message?.includes('Invalid email')) {
+        errorMessage = "Please enter a valid email address.";
+      } else if (error.message?.includes('Password')) {
+        errorMessage = error.message;
+      }
+      
+      setErrors({ submit: errorMessage });
     } finally {
       setLoading(false);
     }
@@ -180,264 +202,324 @@ const Auth = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+      // First check if email exists
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', email.toLowerCase())
+        .maybeSingle();
+
+      if (!profile) {
+        setErrors({ 
+          email: "This email is not registered. Please sign up first." 
+        });
+        setLoading(false);
+        return;
+      }
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.toLowerCase(),
         password,
       });
 
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
-          toast({
-            title: "Account Not Found",
-            description: "No account found with this email. Please sign up first.",
-            variant: "destructive",
-          });
+          setErrors({ password: "Incorrect password. Please try again." });
+        } else if (error.message.includes('Email not confirmed')) {
+          setErrors({ submit: "Please verify your email before logging in. Check your inbox for the verification link." });
         } else {
-          throw error;
+          setErrors({ submit: error.message || "Login failed. Please try again." });
         }
+        setLoading(false);
         return;
       }
 
-      if (data.session) {
-        toast({
-          title: "Welcome back!",
-          description: "Successfully logged in",
-        });
-        navigate("/dashboard");
-      }
-    } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "Failed to log in",
-        variant: "destructive",
+        title: "Welcome back!",
+        description: "You have successfully logged in.",
       });
+
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error('Login error:', error);
+      setErrors({ submit: "An unexpected error occurred. Please try again." });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
-      {/* Left Column - Animation/Graphics */}
-      <div className="hidden lg:flex bg-gradient-to-br from-primary via-purple-600 to-pink-500 items-center justify-center p-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00em0wLTEwYzAtMi4yMS0xLjc5LTQtNC00cy00IDEuNzktNCA0IDEuNzkgNCA0IDQgNC0xLjc5IDQtNHptMC0xMGMwLTIuMjEtMS43OS00LTQtNHMtNCAxLjc5LTQgNCAxLjc5IDQgNCA0IDQtMS43OSA0LTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30"></div>
-        
-        <div className="relative z-10 text-center text-white space-y-8 animate-fade-in">
-          <div className="flex justify-center">
-            <div className="p-4 bg-white/10 backdrop-blur-sm rounded-full">
-              <Trophy className="w-24 h-24" />
-            </div>
+    <div className="min-h-screen flex">
+      {/* Left side - Animation/Branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-primary/90 to-primary/80 items-center justify-center p-12">
+        <div className="max-w-md text-center space-y-6">
+          <div className="flex items-center justify-center mb-8">
+            <Trophy className="h-16 w-16 text-primary-foreground animate-pulse" />
           </div>
-          <h1 className="text-5xl font-bold">LuckyWin</h1>
-          <p className="text-2xl font-light max-w-md mx-auto">
-            Your chance to win big starts here
+          <h1 className="text-4xl font-bold text-primary-foreground">
+            Welcome to LuckyWin
+          </h1>
+          <p className="text-xl text-primary-foreground/90">
+            Your chance to win big starts here! Join thousands of winners today.
           </p>
-          <div className="flex gap-6 justify-center pt-4">
-            <div className="text-center">
-              <div className="text-4xl font-bold">₦10M+</div>
-              <div className="text-sm opacity-90">Total Prizes</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold">50K+</div>
-              <div className="text-sm opacity-90">Winners</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold">24/7</div>
-              <div className="text-sm opacity-90">Jackpots</div>
-            </div>
+          <div className="flex items-center justify-center gap-2 pt-4">
+            <Sparkles className="h-5 w-5 text-yellow-300 animate-pulse" />
+            <span className="text-primary-foreground/80">Trusted by thousands of players</span>
+            <Sparkles className="h-5 w-5 text-yellow-300 animate-pulse" />
           </div>
         </div>
       </div>
 
-      {/* Right Column - Form */}
-      <div className="flex items-center justify-center p-6 bg-background">
-        <Card className="w-full max-w-md border-0 shadow-2xl">
-          <CardHeader className="space-y-2 text-center lg:hidden">
-            <div className="flex justify-center mb-4">
-              <Sparkles className="w-12 h-12 text-primary" />
-            </div>
-            <CardTitle className="text-3xl font-bold">LuckyWin</CardTitle>
+      {/* Right side - Auth Forms */}
+      <div className="flex-1 flex items-center justify-center p-6 bg-background">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-3xl font-bold text-center">LuckyWin</CardTitle>
+            <CardDescription className="text-center">
+              Sign in or create an account to get started
+            </CardDescription>
           </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="login">Login</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              </TabsList>
 
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login" className="flex items-center gap-2">
-                <LogIn className="w-4 h-4" />
-                Log In
-              </TabsTrigger>
-              <TabsTrigger value="signup" className="flex items-center gap-2">
-                <UserPlus className="w-4 h-4" />
-                Sign Up
-              </TabsTrigger>
-            </TabsList>
+              <TabsContent value="login">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="login-email">Email</Label>
+                  <Input
+                    id="login-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setErrors({ ...errors, email: '' });
+                    }}
+                    disabled={loading}
+                    required
+                    className={errors.email ? "border-destructive" : ""}
+                  />
+                  {errors.email && (
+                    <p className="text-sm text-destructive animate-fade-in">{errors.email}</p>
+                  )}
+                </div>
 
-            {/* Login Tab */}
-            <TabsContent value="login">
-              <CardHeader>
-                <CardTitle>Welcome Back</CardTitle>
-                <CardDescription>
-                  Enter your credentials to access your account
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
-                    <Input
-                      id="login-email"
-                      type="email"
-                      placeholder="name@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      disabled={loading}
-                    />
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">Password</Label>
+                  <Input
+                    id="login-password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setErrors({ ...errors, password: '' });
+                    }}
+                    disabled={loading}
+                    required
+                    className={errors.password ? "border-destructive" : ""}
+                  />
+                  {errors.password && (
+                    <p className="text-sm text-destructive animate-fade-in">{errors.password}</p>
+                  )}
+                </div>
+
+                {errors.submit && (
+                  <div className="p-3 bg-destructive/10 border border-destructive rounded-md">
+                    <p className="text-sm text-destructive animate-fade-in">{errors.submit}</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Password</Label>
-                    <Input
-                      id="login-password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      disabled={loading}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Logging in...
-                      </>
-                    ) : (
-                      "Log In"
-                    )}
-                  </Button>
-                </form>
-              </CardContent>
-            </TabsContent>
+                )}
 
-            {/* Signup Tab */}
-            <TabsContent value="signup">
-              <CardHeader>
-                <CardTitle>Create Account</CardTitle>
-                <CardDescription>
-                  {signupStep === 'email' 
-                    ? 'Enter your email to get started' 
-                    : 'Complete your registration'}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {signupStep === 'email' ? (
-                  <form onSubmit={(e) => { e.preventDefault(); checkEmailAvailability(); }} className="space-y-4">
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Logging in...
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="mr-2 h-4 w-4" />
+                      Login
+                    </>
+                  )}
+                </Button>
+              </form>
+              </TabsContent>
+
+              <TabsContent value="signup">
+              <form onSubmit={signupStep === 'email' ? (e) => { e.preventDefault(); checkEmailAvailability(); } : handleSignUp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">Email</Label>
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setErrors({ ...errors, email: '' });
+                    }}
+                    disabled={loading || signupStep === 'details'}
+                    required
+                    className={errors.email ? "border-destructive" : ""}
+                  />
+                  {errors.email && (
+                    <p className="text-sm text-destructive animate-fade-in">{errors.email}</p>
+                  )}
+                </div>
+
+                {signupStep === 'details' && (
+                  <>
                     <div className="space-y-2">
-                      <Label htmlFor="signup-email">Email</Label>
+                      <Label htmlFor="signup-firstname">First Name</Label>
                       <Input
-                        id="signup-email"
-                        type="email"
-                        placeholder="name@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        disabled={emailChecking}
-                        autoFocus
-                      />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={emailChecking}>
-                      {emailChecking ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Checking...
-                        </>
-                      ) : (
-                        <>
-                          Continue
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </>
-                      )}
-                    </Button>
-                  </form>
-                ) : (
-                  <form onSubmit={handleSignUp} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email-display">Email</Label>
-                      <Input
-                        id="signup-email-display"
-                        type="email"
-                        value={email}
-                        disabled
-                        className="bg-muted"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSignupStep('email');
-                          setPassword('');
+                        id="signup-firstname"
+                        type="text"
+                        placeholder="John"
+                        value={firstName}
+                        onChange={(e) => {
+                          setFirstName(e.target.value);
+                          setErrors({ ...errors, firstName: '' });
                         }}
-                        className="text-xs"
-                      >
-                        Change email
-                      </Button>
+                        disabled={loading}
+                        required
+                        className={errors.firstName ? "border-destructive" : ""}
+                      />
+                      {errors.firstName && (
+                        <p className="text-sm text-destructive animate-fade-in">{errors.firstName}</p>
+                      )}
                     </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-lastname">Last Name</Label>
+                      <Input
+                        id="signup-lastname"
+                        type="text"
+                        placeholder="Doe"
+                        value={lastName}
+                        onChange={(e) => {
+                          setLastName(e.target.value);
+                          setErrors({ ...errors, lastName: '' });
+                        }}
+                        disabled={loading}
+                        required
+                        className={errors.lastName ? "border-destructive" : ""}
+                      />
+                      {errors.lastName && (
+                        <p className="text-sm text-destructive animate-fade-in">{errors.lastName}</p>
+                      )}
+                    </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="signup-password">Password</Label>
                       <Input
                         id="signup-password"
                         type="password"
-                        placeholder="At least 6 characters"
+                        placeholder="••••••••"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          setErrors({ ...errors, password: '' });
+                        }}
                         disabled={loading}
-                        autoFocus
+                        required
+                        className={errors.password ? "border-destructive" : ""}
                       />
+                      {errors.password && (
+                        <p className="text-sm text-destructive animate-fade-in">{errors.password}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Must be at least 6 characters long
+                      </p>
                     </div>
+
                     <ReferralSignupField
                       value={referralCode}
                       onChange={setReferralCode}
                     />
-                    <div className="flex items-start space-x-2">
-                      <Checkbox
-                        id="terms"
-                        checked={agreedToTerms}
-                        onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
-                        disabled={loading}
-                      />
-                      <label
-                        htmlFor="terms"
-                        className="text-sm text-muted-foreground leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        I agree to the{" "}
-                        <a href="/terms-of-service" className="text-primary hover:underline">
-                          Terms of Service
-                        </a>{" "}
-                        and{" "}
-                        <a href="/privacy-policy" className="text-primary hover:underline">
-                          Privacy Policy
-                        </a>
-                      </label>
-                    </div>
-                    <Button type="submit" className="w-full" disabled={loading || !agreedToTerms}>
-                      {loading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Creating account...
-                        </>
-                      ) : (
-                        "Sign Up"
+
+                    <div className="space-y-2">
+                      <div className="flex items-start space-x-2">
+                        <Checkbox
+                          id="terms"
+                          checked={agreedToTerms}
+                          onCheckedChange={(checked) => {
+                            setAgreedToTerms(checked === true);
+                            setErrors({ ...errors, terms: '' });
+                          }}
+                          disabled={loading}
+                          className={errors.terms ? "border-destructive" : ""}
+                        />
+                        <label htmlFor="terms" className="text-sm text-muted-foreground">
+                          I agree to the Terms of Service and Privacy Policy
+                        </label>
+                      </div>
+                      {errors.terms && (
+                        <p className="text-sm text-destructive animate-fade-in">{errors.terms}</p>
                       )}
-                    </Button>
-                  </form>
+                    </div>
+
+                    {errors.submit && (
+                      <div className="p-3 bg-destructive/10 border border-destructive rounded-md">
+                        <p className="text-sm text-destructive animate-fade-in">{errors.submit}</p>
+                      </div>
+                    )}
+                  </>
                 )}
-              </CardContent>
-            </TabsContent>
-          </Tabs>
+
+                <Button type="submit" className="w-full" disabled={loading || emailChecking}>
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating account...
+                    </>
+                  ) : emailChecking ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Checking email...
+                    </>
+                  ) : signupStep === 'email' ? (
+                    <>
+                      Continue
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Create Account
+                    </>
+                  )}
+                </Button>
+
+                {signupStep === 'details' && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      setSignupStep('email');
+                      setFirstName('');
+                      setLastName('');
+                      setPassword('');
+                      setErrors({});
+                    }}
+                    disabled={loading}
+                  >
+                    Back to Email
+                  </Button>
+                )}
+              </form>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
         </Card>
       </div>
     </div>
