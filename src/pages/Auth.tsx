@@ -88,26 +88,33 @@ const Auth = () => {
     setEmailChecking(true);
 
     try {
-      // Check if email exists in profiles table
-      const { data: existingProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('email', email.toLowerCase())
-        .maybeSingle();
+      // Try to sign up with a temporary password to check if email exists
+      // Supabase will reject if email is already registered
+      const { data, error } = await supabase.auth.signUp({
+        email: email.toLowerCase(),
+        password: 'temporary_check_12345', // This won't be used
+        options: {
+          data: { check_only: true }
+        }
+      });
 
-      if (profileError && profileError.code !== 'PGRST116') {
-        throw profileError;
-      }
-
-      if (existingProfile) {
-        setErrors({ email: "This email is already registered. Please log in instead." });
+      if (error) {
+        if (error.message.includes('already registered') || error.message.includes('already been registered')) {
+          setErrors({ email: "This email is already registered. Please log in instead." });
+        } else {
+          throw error;
+        }
       } else {
         // Email doesn't exist, proceed to details step
         setSignupStep('details');
       }
     } catch (error: any) {
       console.error('Email check error:', error);
-      setErrors({ email: "Failed to check email availability. Please try again." });
+      if (error.message.includes('already registered')) {
+        setErrors({ email: "This email is already registered. Please log in instead." });
+      } else {
+        setErrors({ email: "Failed to check email availability. Please try again." });
+      }
     } finally {
       setEmailChecking(false);
     }
@@ -337,6 +344,15 @@ const Auth = () => {
                       Login
                     </>
                   )}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="link"
+                  className="text-sm"
+                  onClick={() => navigate('/forgot-password')}
+                >
+                  Forgot password?
                 </Button>
               </form>
               </TabsContent>

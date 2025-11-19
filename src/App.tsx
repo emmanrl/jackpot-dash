@@ -42,6 +42,8 @@ import UserManagementPage from "./pages/UserManagementPage";
 import Tutorial from "./pages/Tutorial";
 import VerifyEmail from "./pages/VerifyEmail";
 import CompleteProfile from "./pages/CompleteProfile";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -109,9 +111,12 @@ const AppContent = () => {
       <Route path="/auth" element={<Auth />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/complete-profile" element={<CompleteProfile />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/tutorial" element={<Tutorial />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/payment/callback" element={<PaymentCallback />} />
+      <Route path="/payment-callback" element={<PaymentCallback />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="/admin/site-settings" element={<SiteSettingsPage />} />
       <Route path="/admin/user-management" element={<UserManagementPage />} />
