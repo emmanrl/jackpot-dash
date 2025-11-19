@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://cdn.skypack.dev/@supabase/supabase-js@2?dts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -156,8 +156,6 @@ serve(async (req) => {
       
     } else if (provider === 'flutterwave') {
       // Flutterwave payment initialization using v3 API
-      const callbackUrl = `https://luckywin.name.ng/payment/callback`;
-      
       const flutterwaveResponse = await fetch('https://api.flutterwave.com/v3/payments', {
         method: 'POST',
         headers: {
@@ -168,7 +166,7 @@ serve(async (req) => {
           tx_ref: reference,
           amount: amount,
           currency: 'NGN',
-          redirect_url: callbackUrl,
+          redirect_url: `${supabaseUrl.replace('.supabase.co', '.lovableproject.com')}/payment/callback`,
           payment_options: 'card,banktransfer,ussd',
           customer: {
             email: email,
