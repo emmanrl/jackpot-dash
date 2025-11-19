@@ -325,33 +325,39 @@ export type Database = {
           created_at: string
           id: string
           is_enabled: boolean
+          is_withdrawal_enabled: boolean | null
           merchant_id: string | null
           provider: string
           public_key: string | null
           secret_key: string | null
           updated_at: string
+          withdrawal_fee_percentage: number | null
         }
         Insert: {
           api_key?: string | null
           created_at?: string
           id?: string
           is_enabled?: boolean
+          is_withdrawal_enabled?: boolean | null
           merchant_id?: string | null
           provider: string
           public_key?: string | null
           secret_key?: string | null
           updated_at?: string
+          withdrawal_fee_percentage?: number | null
         }
         Update: {
           api_key?: string | null
           created_at?: string
           id?: string
           is_enabled?: boolean
+          is_withdrawal_enabled?: boolean | null
           merchant_id?: string | null
           provider?: string
           public_key?: string | null
           secret_key?: string | null
           updated_at?: string
+          withdrawal_fee_percentage?: number | null
         }
         Relationships: []
       }

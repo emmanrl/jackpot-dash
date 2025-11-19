@@ -104,7 +104,7 @@ serve(async (req) => {
           email: email,
           amount: amount * 100, // Paystack expects amount in kobo
           reference: reference,
-          callback_url: `https://luckywin.name.ng/payment/callback`,
+          callback_url: `https://luckywin.name.ng/payment-callback`,
           metadata: {
             user_id: user.id,
             transaction_id: transaction.id,
@@ -156,7 +156,7 @@ serve(async (req) => {
       
     } else if (provider === 'flutterwave') {
       // Flutterwave payment initialization using v3 API
-      const redirectUrl = `${supabaseUrl.replace('.supabase.co', '.lovableproject.com')}/payment-callback?provider=flutterwave`;
+      const redirectUrl = `https://luckywin.name.ng/payment-callback?provider=flutterwave`;
       
       const flutterwaveResponse = await fetch('https://api.flutterwave.com/v3/payments', {
         method: 'POST',

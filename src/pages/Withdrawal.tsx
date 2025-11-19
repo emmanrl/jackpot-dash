@@ -183,7 +183,7 @@ export default function Withdrawal() {
       }
 
       // Create withdrawal transaction
-      const { error: insertError } = await supabase
+      const { data: transaction, error: insertError } = await supabase
         .from("transactions")
         .insert({
           user_id: user.id,
@@ -196,11 +196,26 @@ export default function Withdrawal() {
             account_number: account.account_number,
             account_name: account.account_name,
           }),
-        });
+        })
+        .select()
+        .single();
 
       if (insertError) throw insertError;
 
-      toast.success("Withdrawal request submitted successfully");
+      toast.success("Withdrawal request submitted! Processing automatically...");
+
+      // Automatically process withdrawal
+      const { error: processError } = await supabase.functions.invoke('process-withdrawal', {
+        body: { transactionId: transaction.id }
+      });
+
+      if (processError) {
+        console.error('Withdrawal processing error:', processError);
+        toast.error('Withdrawal created but auto-processing failed. Admin will process manually.');
+      } else {
+        toast.success("Withdrawal processed successfully!");
+      }
+
       setAmount("");
       fetchWithdrawals();
       fetchWalletBalance();
