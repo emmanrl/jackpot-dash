@@ -156,6 +156,8 @@ serve(async (req) => {
       
     } else if (provider === 'flutterwave') {
       // Flutterwave payment initialization using v3 API
+      const redirectUrl = `${supabaseUrl.replace('.supabase.co', '.lovableproject.com')}/payment-callback?provider=flutterwave`;
+      
       const flutterwaveResponse = await fetch('https://api.flutterwave.com/v3/payments', {
         method: 'POST',
         headers: {
@@ -166,7 +168,7 @@ serve(async (req) => {
           tx_ref: reference,
           amount: amount,
           currency: 'NGN',
-          redirect_url: `${supabaseUrl.replace('.supabase.co', '.lovable.app')}/payment-callback?provider=flutterwave`,
+          redirect_url: redirectUrl,
           payment_options: 'card,banktransfer,ussd',
           customer: {
             email: email,
