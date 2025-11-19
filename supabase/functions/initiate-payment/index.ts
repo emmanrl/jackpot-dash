@@ -166,14 +166,14 @@ serve(async (req) => {
           tx_ref: reference,
           amount: amount,
           currency: 'NGN',
-          redirect_url: `${supabaseUrl.replace('.supabase.co', '.lovableproject.com')}/payment/callback`,
+          redirect_url: `${supabaseUrl.replace('.supabase.co', '.lovable.app')}/payment-callback?provider=flutterwave`,
           payment_options: 'card,banktransfer,ussd',
           customer: {
             email: email,
             name: email.split('@')[0],
           },
           customizations: {
-            title: 'Wallet Deposit',
+            title: 'LuckyWin Wallet Deposit',
             description: 'Add funds to your wallet',
             logo: ''
           },

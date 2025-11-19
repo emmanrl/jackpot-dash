@@ -68,7 +68,8 @@ serve(async (req) => {
       }
       
     } else if (provider === 'flutterwave') {
-      const verifyResponse = await fetch(`https://api.flutterwave.com/v3/transactions/${reference}/verify`, {
+      // Verify using tx_ref (reference) instead of transaction ID
+      const verifyResponse = await fetch(`https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${reference}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${settings.secret_key}`,
@@ -76,6 +77,8 @@ serve(async (req) => {
       });
 
       const verifyData = await verifyResponse.json();
+      
+      console.log('Flutterwave verification response:', verifyData);
       
       if (verifyData.status === 'success' && verifyData.data.status === 'successful') {
         paymentVerified = true;

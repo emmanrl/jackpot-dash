@@ -12,8 +12,11 @@ export default function PaymentCallback() {
 
   useEffect(() => {
     const verify = async () => {
-      const reference = searchParams.get("reference") || searchParams.get("trxref");
-      const provider = "paystack"; // Currently only Paystack uses callback
+      // Get provider from URL or default to paystack
+      const provider = searchParams.get("provider") || "paystack";
+      
+      // Get reference - Flutterwave uses 'tx_ref', Paystack uses 'reference' or 'trxref'
+      const reference = searchParams.get("tx_ref") || searchParams.get("reference") || searchParams.get("trxref");
       const urlStatus = (searchParams.get("status") || "").toLowerCase();
 
       if (!reference) {
@@ -23,6 +26,8 @@ export default function PaymentCallback() {
         setTimeout(() => navigate("/"), 2000);
         return;
       }
+
+      console.log('Payment callback:', { provider, reference });
 
       try {
         const { data: { session } } = await supabase.auth.getSession();
