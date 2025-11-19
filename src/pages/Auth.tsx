@@ -206,21 +206,6 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      // First check if email exists
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('email', email.toLowerCase())
-        .maybeSingle();
-
-      if (!profile) {
-        setErrors({ 
-          email: "This email is not registered. Please sign up first." 
-        });
-        setLoading(false);
-        return;
-      }
-
       const { error } = await supabase.auth.signInWithPassword({
         email: email.toLowerCase(),
         password,
@@ -228,7 +213,9 @@ const Auth = () => {
 
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
-          setErrors({ password: "Incorrect password. Please try again." });
+          setErrors({ 
+            email: "This email is not registered or the password is incorrect. Please check your credentials or sign up first." 
+          });
         } else if (error.message.includes('Email not confirmed')) {
           setErrors({ submit: "Please verify your email before logging in. Check your inbox for the verification link." });
         } else {
@@ -378,44 +365,46 @@ const Auth = () => {
 
                 {signupStep === 'details' && (
                   <>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-firstname">First Name</Label>
-                      <Input
-                        id="signup-firstname"
-                        type="text"
-                        placeholder="John"
-                        value={firstName}
-                        onChange={(e) => {
-                          setFirstName(e.target.value);
-                          setErrors({ ...errors, firstName: '' });
-                        }}
-                        disabled={loading}
-                        required
-                        className={errors.firstName ? "border-destructive" : ""}
-                      />
-                      {errors.firstName && (
-                        <p className="text-sm text-destructive animate-fade-in">{errors.firstName}</p>
-                      )}
-                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-firstname">First Name</Label>
+                        <Input
+                          id="signup-firstname"
+                          type="text"
+                          placeholder="John"
+                          value={firstName}
+                          onChange={(e) => {
+                            setFirstName(e.target.value);
+                            setErrors({ ...errors, firstName: '' });
+                          }}
+                          disabled={loading}
+                          required
+                          className={errors.firstName ? "border-destructive" : ""}
+                        />
+                        {errors.firstName && (
+                          <p className="text-sm text-destructive animate-fade-in">{errors.firstName}</p>
+                        )}
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-lastname">Last Name</Label>
-                      <Input
-                        id="signup-lastname"
-                        type="text"
-                        placeholder="Doe"
-                        value={lastName}
-                        onChange={(e) => {
-                          setLastName(e.target.value);
-                          setErrors({ ...errors, lastName: '' });
-                        }}
-                        disabled={loading}
-                        required
-                        className={errors.lastName ? "border-destructive" : ""}
-                      />
-                      {errors.lastName && (
-                        <p className="text-sm text-destructive animate-fade-in">{errors.lastName}</p>
-                      )}
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-lastname">Last Name</Label>
+                        <Input
+                          id="signup-lastname"
+                          type="text"
+                          placeholder="Doe"
+                          value={lastName}
+                          onChange={(e) => {
+                            setLastName(e.target.value);
+                            setErrors({ ...errors, lastName: '' });
+                          }}
+                          disabled={loading}
+                          required
+                          className={errors.lastName ? "border-destructive" : ""}
+                        />
+                        {errors.lastName && (
+                          <p className="text-sm text-destructive animate-fade-in">{errors.lastName}</p>
+                        )}
+                      </div>
                     </div>
 
                     <div className="space-y-2">

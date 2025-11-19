@@ -35,8 +35,8 @@ serve(async (req) => {
     const fromEmail = settings.email_from_address || 'noreply@luckywin.name.ng';
     const siteName = settings.site_name || 'LuckyWin';
 
-    // Construct verification URL
-    const verificationUrl = `${supabaseUrl.replace('https://', 'https://').split('.supabase.co')[0]}.lovable.app/auth?token_hash=${token_hash}&type=${email_action_type}`;
+    // Construct verification URL - use the current domain
+    const verificationUrl = `${supabaseUrl.replace('.supabase.co', '.lovable.app')}/auth?token_hash=${token_hash}&type=${email_action_type}`;
 
     // Send email using Resend
     const emailResponse = await fetch('https://api.resend.com/emails', {
