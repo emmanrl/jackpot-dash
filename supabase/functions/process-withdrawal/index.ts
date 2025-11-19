@@ -136,7 +136,18 @@ serve(async (req) => {
       console.log('Paystack transfer response:', transferResponse);
 
       if (!transferResponse.status) {
-        throw new Error(transferResponse.message || 'Failed to initiate transfer');
+        let errorMessage = transferResponse.message || 'Failed to initiate transfer';
+        
+        // Update transaction with error details
+        await supabase
+          .from('transactions')
+          .update({ 
+            status: 'rejected',
+            admin_note: JSON.stringify({ error: errorMessage, provider: 'paystack' })
+          })
+          .eq('id', transaction.id);
+        
+        throw new Error(errorMessage);
       }
 
     } else if (settings.provider === 'flutterwave') {
@@ -166,7 +177,23 @@ serve(async (req) => {
       console.log('Flutterwave transfer response:', transferResponse);
 
       if (transferResponse.status !== 'success') {
-        throw new Error(transferResponse.message || 'Failed to initiate transfer');
+        let errorMessage = transferResponse.message || 'Failed to initiate transfer';
+        
+        // Handle IP whitelisting error specifically
+        if (errorMessage.includes('IP Whitelisting')) {
+          errorMessage = 'Flutterwave requires IP whitelisting. Please go to your Flutterwave dashboard → Settings → API → Enable IP Whitelisting and add these IPs: 0.0.0.0/0 (for all IPs) or contact Flutterwave support for Supabase edge function IPs.';
+        }
+        
+        // Update transaction with error details
+        await supabase
+          .from('transactions')
+          .update({ 
+            status: 'rejected',
+            admin_note: JSON.stringify({ error: errorMessage, provider: 'flutterwave' })
+          })
+          .eq('id', transaction.id);
+        
+        throw new Error(errorMessage);
       }
     }
 
