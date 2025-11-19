@@ -1,4 +1,4 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js@2?dts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
