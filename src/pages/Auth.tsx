@@ -222,32 +222,21 @@ const Auth = () => {
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       {/* Left Column - Animation/Graphics */}
-      <div className="hidden lg:flex bg-gradient-to-br from-primary via-purple-600 to-pink-500 items-center justify-center p-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00em0wLTEwYzAtMi4yMS0xLjc5LTQtNC00cy00IDEuNzktNCA0IDEuNzkgNCA0IDQgNC0xLjc5IDQtNHptMC0xMGMwLTIuMjEtMS43OS00LTQtNHMtNCAxLjc5LTQgNCAxLjc5IDQgNCA0IDQtMS43OSA0LTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30"></div>
-        
-        <div className="relative z-10 text-center text-white space-y-8 animate-fade-in">
-          <div className="flex justify-center">
-            <div className="p-4 bg-white/10 backdrop-blur-sm rounded-full">
-              <Trophy className="w-24 h-24" />
-            </div>
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-primary/90 to-primary/80 items-center justify-center p-12">
+        <div className="max-w-md text-center space-y-6">
+          <div className="flex items-center justify-center mb-8">
+            <Trophy className="h-16 w-16 text-primary-foreground animate-pulse" />
           </div>
-          <h1 className="text-5xl font-bold">LuckyWin</h1>
-          <p className="text-2xl font-light max-w-md mx-auto">
-            Your chance to win big starts here
+          <h1 className="text-4xl font-bold text-primary-foreground">
+            Welcome to LuckyWin
+          </h1>
+          <p className="text-xl text-primary-foreground/90">
+            Your chance to win big starts here! Join thousands of winners today.
           </p>
-          <div className="flex gap-6 justify-center pt-4">
-            <div className="text-center">
-              <div className="text-4xl font-bold">₦10M+</div>
-              <div className="text-sm opacity-90">Total Prizes</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold">50K+</div>
-              <div className="text-sm opacity-90">Winners</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold">24/7</div>
-              <div className="text-sm opacity-90">Jackpots</div>
-            </div>
+          <div className="flex items-center justify-center gap-2 pt-4">
+            <Sparkles className="h-5 w-5 text-yellow-300 animate-pulse" />
+            <span className="text-primary-foreground/80">Trusted by thousands of players</span>
+            <Sparkles className="h-5 w-5 text-yellow-300 animate-pulse" />
           </div>
         </div>
       </div>
@@ -255,11 +244,11 @@ const Auth = () => {
       {/* Right Column - Form */}
       <div className="flex items-center justify-center p-6 bg-background">
         <Card className="w-full max-w-md border-0 shadow-2xl">
-          <CardHeader className="space-y-2 text-center lg:hidden">
-            <div className="flex justify-center mb-4">
-              <Sparkles className="w-12 h-12 text-primary" />
-            </div>
-            <CardTitle className="text-3xl font-bold">LuckyWin</CardTitle>
+          <CardHeader>
+            <CardTitle className="text-3xl font-bold text-center">LuckyWin</CardTitle>
+            <CardDescription className="text-center">
+              Sign in or create an account to get started
+            </CardDescription>
           </CardHeader>
 
           <Tabs defaultValue="login" className="w-full">
