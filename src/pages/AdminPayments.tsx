@@ -15,6 +15,8 @@ interface PaymentSetting {
   id: string;
   provider: string;
   is_enabled: boolean;
+  is_withdrawal_enabled: boolean;
+  withdrawal_fee_percentage: number;
   public_key: string | null;
   secret_key: string | null;
   merchant_id: string | null;
@@ -97,15 +99,29 @@ function PaystackSettingCard({ setting, onUpdate, onToggle }: {
               Configure Paystack payment integration for deposits and withdrawals
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <Label htmlFor="paystack-enabled" className="text-sm">
-              {setting.is_enabled ? "Enabled" : "Disabled"}
-            </Label>
-            <Switch
-              id="paystack-enabled"
-              checked={setting.is_enabled}
-              onCheckedChange={() => onToggle(setting.id, setting.is_enabled)}
-            />
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="paystack-enabled" className="text-sm">
+                Deposits {setting.is_enabled ? "Enabled" : "Disabled"}
+              </Label>
+              <Switch
+                id="paystack-enabled"
+                checked={setting.is_enabled}
+                onCheckedChange={() => onToggle(setting.id, setting.is_enabled)}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="paystack-withdrawal" className="text-sm">
+                Withdrawals {setting.is_withdrawal_enabled ? "Enabled" : "Disabled"}
+              </Label>
+              <Switch
+                id="paystack-withdrawal"
+                checked={setting.is_withdrawal_enabled}
+                onCheckedChange={async (checked) => {
+                  await onUpdate(setting.id, { is_withdrawal_enabled: checked });
+                }}
+              />
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -333,15 +349,29 @@ function FlutterwaveSettingCard({ setting, onUpdate, onToggle }: {
               Configure Flutterwave payment integration for deposits and withdrawals
             </CardDescription>
           </div>
-          <div className="flex items-center gap-2">
-            <Label htmlFor="flutterwave-enabled" className="text-sm">
-              {setting.is_enabled ? "Enabled" : "Disabled"}
-            </Label>
-            <Switch
-              id="flutterwave-enabled"
-              checked={setting.is_enabled}
-              onCheckedChange={() => onToggle(setting.id, setting.is_enabled)}
-            />
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="flutterwave-enabled" className="text-sm">
+                Deposits {setting.is_enabled ? "Enabled" : "Disabled"}
+              </Label>
+              <Switch
+                id="flutterwave-enabled"
+                checked={setting.is_enabled}
+                onCheckedChange={() => onToggle(setting.id, setting.is_enabled)}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="flutterwave-withdrawal" className="text-sm">
+                Withdrawals {setting.is_withdrawal_enabled ? "Enabled" : "Disabled"}
+              </Label>
+              <Switch
+                id="flutterwave-withdrawal"
+                checked={setting.is_withdrawal_enabled}
+                onCheckedChange={async (checked) => {
+                  await onUpdate(setting.id, { is_withdrawal_enabled: checked });
+                }}
+              />
+            </div>
           </div>
         </div>
       </CardHeader>

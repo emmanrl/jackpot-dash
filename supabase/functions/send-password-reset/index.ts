@@ -28,7 +28,7 @@ serve(async (req) => {
 
     // Generate password reset link
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${supabaseUrl.replace('.supabase.co', '.lovableproject.com')}/reset-password`
+      redirectTo: `https://luckywin.name.ng/reset-password`
     });
 
     if (error) throw error;

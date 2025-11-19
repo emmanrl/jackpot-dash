@@ -46,7 +46,6 @@ serve(async (req) => {
     if (!bankDetails?.account_number || !bankDetails?.bank_name || !bankDetails?.account_name) {
       console.log('Bank details not in admin_note, fetching from withdrawal_accounts...');
       
-      // Fetch from withdrawal_accounts table
       const { data: account, error: accountError } = await supabase
         .from('withdrawal_accounts')
         .select('*')
@@ -67,145 +66,147 @@ serve(async (req) => {
       console.log('Retrieved bank details from withdrawal_accounts:', bankDetails);
     }
 
-    // Get Paystack settings
+    // Get enabled withdrawal provider (Paystack or Flutterwave)
     const { data: settings, error: settingsError } = await supabase
       .from('payment_settings')
       .select('*')
-      .eq('provider', 'paystack')
-      .eq('is_enabled', true)
+      .eq('is_withdrawal_enabled', true)
+      .in('provider', ['paystack', 'flutterwave'])
       .single();
 
     if (settingsError || !settings || !settings.secret_key) {
-      throw new Error('Paystack is not configured or enabled. Please configure payment settings in admin panel.');
+      throw new Error('No withdrawal provider is configured or enabled. Please configure payment settings in admin panel.');
     }
 
-    // Get bank code from bank name
-    const bankCode = await getBankCode(bankDetails.bank_name, settings.secret_key);
+    console.log('Using withdrawal provider:', settings.provider);
 
-    // Step 1: Create Transfer Recipient
-    console.log('Creating transfer recipient...');
-    const recipientResponse = await fetch('https://api.paystack.co/transferrecipient', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${settings.secret_key}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        type: 'nuban',
-        name: bankDetails.account_name,
-        account_number: bankDetails.account_number,
-        bank_code: bankCode,
-        currency: 'NGN',
-      }),
-    });
-
-    const recipientData = await recipientResponse.json();
-    console.log('Recipient response:', recipientData);
-
-    if (!recipientData.status) {
-      throw new Error(recipientData.message || 'Failed to create transfer recipient');
-    }
-
-    const recipientCode = recipientData.data.recipient_code;
-
-    // Step 2: Calculate withdrawal fee (1%)
-    const withdrawalFee = parseFloat(transaction.amount) * 0.01;
+    let transferResponse;
+    const withdrawalFee = parseFloat(transaction.amount) * (settings.withdrawal_fee_percentage || 0.01);
     const netAmount = parseFloat(transaction.amount) - withdrawalFee;
-    
-    console.log('Withdrawal fee calculated:', { 
-      originalAmount: transaction.amount, 
-      fee: withdrawalFee, 
-      netAmount 
-    });
 
-    // Step 3: Initiate Transfer
-    console.log('Initiating transfer...');
-    const transferReference = `WTH-${Date.now()}-${transactionId.substring(0, 8)}`;
-    
-    // Convert net amount to kobo (smallest currency unit)
-    const amountInKobo = Math.round(netAmount * 100);
+    if (settings.provider === 'paystack') {
+      // Paystack withdrawal
+      const bankCode = await getPaystackBankCode(bankDetails.bank_name, settings.secret_key);
 
-    const transferResponse = await fetch('https://api.paystack.co/transfer', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${settings.secret_key}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        source: 'balance',
-        amount: amountInKobo,
-        recipient: recipientCode,
-        reason: `Withdrawal - ${transaction.reference}`,
-        reference: transferReference,
-      }),
-    });
-
-    const transferData = await transferResponse.json();
-    console.log('Transfer response:', transferData);
-
-    if (!transferData.status) {
-      // Check for Paystack account limitation error
-      if (transferData.message?.includes('starter business') || transferData.code === 'transfer_unavailable') {
-        throw new Error('Your Paystack account needs to be upgraded to a Registered Business to enable withdrawals. Please upgrade your Paystack account at https://dashboard.paystack.com/#/settings/business');
-      }
-      throw new Error(transferData.message || 'Failed to initiate transfer');
-    }
-
-    // Update transaction with transfer details
-    const { error: updateError } = await supabase
-      .from('transactions')
-      .update({
-        status: 'approved',
-        reference: transferReference,
-        processed_at: new Date().toISOString(),
-        admin_note: JSON.stringify({
-          ...bankDetails,
-          transfer_code: transferData.data.transfer_code,
-          recipient_code: recipientCode,
-          withdrawal_fee: withdrawalFee,
+      // Create Transfer Recipient
+      console.log('Creating Paystack transfer recipient...');
+      const recipientResponse = await fetch('https://api.paystack.co/transferrecipient', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${settings.secret_key}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'nuban',
+          name: bankDetails.account_name,
+          account_number: bankDetails.account_number,
+          bank_code: bankCode,
+          currency: 'NGN',
         }),
+      });
+
+      const recipientData = await recipientResponse.json();
+      console.log('Paystack recipient response:', recipientData);
+
+      if (!recipientData.status) {
+        throw new Error(recipientData.message || 'Failed to create transfer recipient');
+      }
+
+      const recipientCode = recipientData.data.recipient_code;
+      const amountInKobo = Math.round(netAmount * 100);
+
+      // Initiate Transfer
+      console.log('Initiating Paystack transfer...');
+      const transferResp = await fetch('https://api.paystack.co/transfer', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${settings.secret_key}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          source: 'balance',
+          amount: amountInKobo,
+          recipient: recipientCode,
+          reason: `Withdrawal - ${transaction.reference}`,
+          reference: `WTH-${Date.now()}-${transaction.id.substring(0, 8)}`,
+        }),
+      });
+
+      transferResponse = await transferResp.json();
+      console.log('Paystack transfer response:', transferResponse);
+
+      if (!transferResponse.status) {
+        throw new Error(transferResponse.message || 'Failed to initiate transfer');
+      }
+
+    } else if (settings.provider === 'flutterwave') {
+      // Flutterwave withdrawal
+      const bankCode = await getFlutterwaveBankCode(bankDetails.bank_name, settings.secret_key);
+
+      console.log('Initiating Flutterwave transfer...');
+      const transferResp = await fetch('https://api.flutterwave.com/v3/transfers', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${settings.secret_key}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          account_bank: bankCode,
+          account_number: bankDetails.account_number,
+          amount: netAmount,
+          narration: `Withdrawal - ${transaction.reference}`,
+          currency: 'NGN',
+          reference: `WTH-${Date.now()}-${transaction.id.substring(0, 8)}`,
+          callback_url: `https://luckywin.name.ng/api/flutterwave-transfer-webhook`,
+          debit_currency: 'NGN',
+        }),
+      });
+
+      transferResponse = await transferResp.json();
+      console.log('Flutterwave transfer response:', transferResponse);
+
+      if (transferResponse.status !== 'success') {
+        throw new Error(transferResponse.message || 'Failed to initiate transfer');
+      }
+    }
+
+    // Update transaction status
+    await supabase
+      .from('transactions')
+      .update({ 
+        status: 'approved', 
+        processed_at: new Date().toISOString(),
+        reference: transferResponse.data?.reference || transaction.reference
       })
-      .eq('id', transactionId);
+      .eq('id', transaction.id);
 
-    if (updateError) throw updateError;
-
-    // Deduct from user wallet
-    const { error: walletError } = await supabase.rpc('increment_wallet_balance', {
+    // Deduct from user wallet and add fee to admin wallet
+    await supabase.rpc('increment_wallet_balance', {
       p_user_id: transaction.user_id,
-      p_amount: -parseFloat(transaction.amount),
+      p_amount: -parseFloat(transaction.amount)
     });
 
-    if (walletError) {
-      console.error('Failed to update wallet:', walletError);
-      throw new Error('Failed to update wallet balance');
-    }
-
-    // Add withdrawal fee to admin wallet
-    const { error: adminWalletError } = await supabase.rpc('increment_admin_wallet', {
-      p_amount: withdrawalFee,
+    await supabase.rpc('increment_admin_wallet', {
+      p_amount: withdrawalFee
     });
-
-    if (adminWalletError) {
-      console.error('Failed to update admin wallet:', adminWalletError);
-      // Don't fail the withdrawal if admin wallet update fails
-    }
 
     // Send notification
     await supabase.functions.invoke('send-notification', {
       body: {
         userId: transaction.user_id,
-        type: 'withdrawal_processed',
-        amount: parseFloat(transaction.amount),
+        type: 'withdrawal_approved',
+        amount: netAmount
       }
     });
 
-    console.log('Withdrawal processed successfully:', { transferReference });
+    console.log('Withdrawal processed successfully');
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        transferCode: transferData.data.transfer_code,
-        reference: transferReference 
+        message: 'Withdrawal processed successfully',
+        provider: settings.provider,
+        transfer: transferResponse.data
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -225,11 +226,9 @@ serve(async (req) => {
   }
 });
 
-// Helper function to get bank code
-async function getBankCode(bankName: string, secretKey: string): Promise<string> {
+async function getPaystackBankCode(bankName: string, secretKey: string): Promise<string> {
   try {
     const response = await fetch('https://api.paystack.co/bank', {
-      method: 'GET',
       headers: {
         'Authorization': `Bearer ${secretKey}`,
       },
@@ -237,11 +236,10 @@ async function getBankCode(bankName: string, secretKey: string): Promise<string>
 
     const data = await response.json();
     
-    if (!data.status || !data.data) {
-      throw new Error('Failed to fetch banks');
+    if (!data.status) {
+      throw new Error('Failed to fetch Paystack banks');
     }
 
-    // Try to match bank name
     const bank = data.data.find((b: any) => 
       b.name.toLowerCase().includes(bankName.toLowerCase()) ||
       bankName.toLowerCase().includes(b.name.toLowerCase())
@@ -253,7 +251,37 @@ async function getBankCode(bankName: string, secretKey: string): Promise<string>
 
     return bank.code;
   } catch (error) {
-    console.error('Error fetching bank code:', error);
-    throw new Error(`Failed to resolve bank code for ${bankName}`);
+    console.error('Error fetching Paystack bank code:', error);
+    throw error;
+  }
+}
+
+async function getFlutterwaveBankCode(bankName: string, secretKey: string): Promise<string> {
+  try {
+    const response = await fetch('https://api.flutterwave.com/v3/banks/NG', {
+      headers: {
+        'Authorization': `Bearer ${secretKey}`,
+      },
+    });
+
+    const data = await response.json();
+    
+    if (data.status !== 'success') {
+      throw new Error('Failed to fetch Flutterwave banks');
+    }
+
+    const bank = data.data.find((b: any) => 
+      b.name.toLowerCase().includes(bankName.toLowerCase()) ||
+      bankName.toLowerCase().includes(b.name.toLowerCase())
+    );
+
+    if (!bank) {
+      throw new Error(`Bank not found: ${bankName}`);
+    }
+
+    return bank.code;
+  } catch (error) {
+    console.error('Error fetching Flutterwave bank code:', error);
+    throw error;
   }
 }

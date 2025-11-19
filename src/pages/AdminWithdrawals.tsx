@@ -266,7 +266,7 @@ export default function AdminWithdrawals() {
             )}
           </CardTitle>
           <CardDescription>
-            Process user withdrawal requests via Paystack Transfer API (1% fee applied)
+            Monitor withdrawal requests - automatically processed via Paystack or Flutterwave (configured in Payment Settings)
           </CardDescription>
         </CardHeader>
         <CardContent>
