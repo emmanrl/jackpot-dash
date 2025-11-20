@@ -4,99 +4,79 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, AlertCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface WithdrawalTransaction {
   id: string;
   user_id: string;
   amount: number;
   status: string;
+  processing_stage: string | null;
+  error_message: string | null;
   reference: string | null;
   created_at: string;
   processed_at: string | null;
   admin_note: string | null;
-  profiles: {
-    email: string;
-    full_name: string;
-  } | null;
 }
 
 export default function AdminWithdrawals() {
   const [withdrawals, setWithdrawals] = useState<WithdrawalTransaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState<string | null>(null);
-  const [selectedWithdrawal, setSelectedWithdrawal] = useState<WithdrawalTransaction | null>(null);
-  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [batchProcessing, setBatchProcessing] = useState(false);
+  const [userEmailMap, setUserEmailMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchWithdrawals();
+    
+    // Set up real-time subscription for withdrawal updates
+    const channel = supabase
+      .channel('admin-withdrawals')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'transactions',
+          filter: 'type=eq.withdrawal'
+        },
+        () => {
+          fetchWithdrawals();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchWithdrawals = async () => {
     try {
       const { data, error } = await supabase
         .from("transactions")
-        .select(`
-          *
-        `)
+        .select("*")
         .eq("type", "withdrawal")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(100);
 
       if (error) throw error;
 
-      // Fetch user profiles separately
+      // Fetch user emails
       const userIds = Array.from(new Set((data || []).map(t => t.user_id)));
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, email, full_name")
+        .select("id, email")
         .in("id", userIds);
 
-      // Fetch withdrawal accounts for users who don't have bank details in admin_note
-      const { data: withdrawalAccounts } = await supabase
-        .from("withdrawal_accounts")
-        .select("*")
-        .in("user_id", userIds)
-        .eq("is_default", true);
-
-      // Map profiles and withdrawal accounts to transactions
-      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
-      const accountMap = new Map(withdrawalAccounts?.map(a => [a.user_id, a]) || []);
-      
-      const enrichedData = (data || []).map(tx => {
-        let adminNote = tx.admin_note;
-        
-        // If admin_note is missing or empty, try to get from withdrawal_accounts
-        if (!adminNote) {
-          const account = accountMap.get(tx.user_id);
-          if (account) {
-            adminNote = JSON.stringify({
-              account_number: account.account_number,
-              bank_name: account.bank_name,
-              account_name: account.account_name
-            });
-          }
-        }
-        
-        return {
-          ...tx,
-          admin_note: adminNote,
-          profiles: profileMap.get(tx.user_id) || null
-        };
+      const emailMap: Record<string, string> = {};
+      (profiles || []).forEach(p => {
+        emailMap[p.id] = p.email;
       });
 
-      setWithdrawals(enrichedData);
+      setUserEmailMap(emailMap);
+      setWithdrawals(data || []);
     } catch (error: any) {
       console.error("Failed to fetch withdrawals:", error);
       toast.error("Failed to load withdrawal requests");
@@ -105,337 +85,277 @@ export default function AdminWithdrawals() {
     }
   };
 
-  const handleProcessWithdrawal = async (withdrawal: WithdrawalTransaction) => {
-    setSelectedWithdrawal(withdrawal);
-    setShowConfirmDialog(true);
-  };
-
-  const confirmProcessWithdrawal = async () => {
-    if (!selectedWithdrawal) return;
-
-    setProcessing(selectedWithdrawal.id);
-    setShowConfirmDialog(false);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('process-withdrawal', {
-        body: {
-          transactionId: selectedWithdrawal.id,
-        }
-      });
-
-      if (error) throw error;
-
-      toast.success("Withdrawal processed successfully via Paystack!");
-      await fetchWithdrawals();
-    } catch (error: any) {
-      console.error("Failed to process withdrawal:", error);
-      toast.error(`Failed to process withdrawal: ${error.message}`);
-    } finally {
-      setProcessing(null);
-      setSelectedWithdrawal(null);
+  const getStatusBadge = (status: string, processingStage: string | null) => {
+    if (processingStage === 'failed') {
+      return <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" />Failed</Badge>;
     }
-  };
-
-  const handleBatchProcess = async () => {
-    if (selectedIds.length === 0) {
-      toast.error("Please select withdrawals to process");
-      return;
-    }
-
-    if (!confirm(`Process ${selectedIds.length} withdrawal(s) via Paystack bulk transfer?`)) return;
-
-    setBatchProcessing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('process-batch-withdrawal', {
-        body: {
-          transactionIds: selectedIds,
-        }
-      });
-
-      if (error) throw error;
-
-      toast.success(`Successfully processed ${data.processed} withdrawal(s)`);
-      if (data.failed > 0) {
-        toast.warning(`Failed to process ${data.failed} withdrawal(s)`);
-      }
-      
-      setSelectedIds([]);
-      await fetchWithdrawals();
-    } catch (error: any) {
-      console.error("Batch processing failed:", error);
-      toast.error(`Failed to process withdrawals: ${error.message}`);
-    } finally {
-      setBatchProcessing(false);
-    }
-  };
-
-  const handleRejectWithdrawal = async (id: string) => {
-    if (!confirm("Are you sure you want to reject this withdrawal request?")) return;
-
-    setProcessing(id);
-    try {
-      const { error } = await supabase
-        .from("transactions")
-        .update({ 
-          status: "rejected",
-          processed_at: new Date().toISOString(),
-        })
-        .eq("id", id);
-
-      if (error) throw error;
-
-      toast.success("Withdrawal request rejected");
-      await fetchWithdrawals();
-    } catch (error: any) {
-      console.error("Failed to reject withdrawal:", error);
-      toast.error("Failed to reject withdrawal request");
-    } finally {
-      setProcessing(null);
-    }
-  };
-
-  const toggleSelection = (id: string) => {
-    setSelectedIds(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
-  };
-
-  const toggleSelectAll = () => {
-    const pendingIds = withdrawals.filter(w => w.status === "pending").map(w => w.id);
-    setSelectedIds(prev => 
-      prev.length === pendingIds.length ? [] : pendingIds
-    );
-  };
-
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, { color: string; label: string }> = {
-      pending: { color: "bg-yellow-500", label: "Pending" },
-      approved: { color: "bg-green-500", label: "Approved" },
-      rejected: { color: "bg-red-500", label: "Rejected" },
-    };
-
-    const variant = variants[status] || { color: "bg-gray-500", label: status };
     
-    return (
-      <Badge className={`${variant.color} text-white`}>
-        {variant.label}
-      </Badge>
-    );
+    if (processingStage === 'completed' || status === 'approved') {
+      return <Badge variant="default" className="gap-1 bg-green-600"><CheckCircle className="w-3 h-3" />Completed</Badge>;
+    }
+    
+    if (processingStage === 'transferring') {
+      return <Badge variant="secondary" className="gap-1"><Loader2 className="w-3 h-3 animate-spin" />Transferring</Badge>;
+    }
+    
+    if (processingStage === 'verifying') {
+      return <Badge variant="secondary" className="gap-1"><Loader2 className="w-3 h-3 animate-spin" />Verifying</Badge>;
+    }
+    
+    if (status === 'pending') {
+      return <Badge variant="secondary" className="gap-1"><Loader2 className="w-3 h-3 animate-spin" />Processing</Badge>;
+    }
+    
+    if (status === 'rejected') {
+      return <Badge variant="destructive" className="gap-1"><XCircle className="w-3 h-3" />Rejected</Badge>;
+    }
+    
+    return <Badge variant="secondary">{status}</Badge>;
   };
 
   const parseBankDetails = (adminNote: string | null) => {
+    if (!adminNote) return null;
     try {
-      return JSON.parse(adminNote || '{}');
+      return JSON.parse(adminNote);
     } catch {
-      return {};
+      return null;
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const pendingWithdrawals = withdrawals.filter(w => 
+    w.status === 'pending' || 
+    (w.processing_stage && !['completed', 'failed'].includes(w.processing_stage))
+  );
+  const completedWithdrawals = withdrawals.filter(w => 
+    w.processing_stage === 'completed' || w.status === 'approved'
+  );
+  const failedWithdrawals = withdrawals.filter(w => 
+    w.processing_stage === 'failed' || w.status === 'rejected'
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Withdrawal Management</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            All withdrawals are processed automatically. Monitor status here.
+          </p>
+        </div>
+        <Button onClick={fetchWithdrawals} variant="outline" size="sm" className="gap-2">
+          <RefreshCw className="w-4 h-4" />
+          Refresh
+        </Button>
+      </div>
+
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Processing</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-foreground">{pendingWithdrawals.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">Currently being processed</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Completed</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{completedWithdrawals.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">Successfully transferred</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Failed</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">{failedWithdrawals.length}</div>
+            <p className="text-xs text-muted-foreground mt-1">Need attention</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Withdrawal Tabs */}
+      <Tabs defaultValue="all" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="all">All ({withdrawals.length})</TabsTrigger>
+          <TabsTrigger value="processing">Processing ({pendingWithdrawals.length})</TabsTrigger>
+          <TabsTrigger value="completed">Completed ({completedWithdrawals.length})</TabsTrigger>
+          <TabsTrigger value="failed">Failed ({failedWithdrawals.length})</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="all" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>All Withdrawals</CardTitle>
+              <CardDescription>Complete withdrawal history</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <WithdrawalTable 
+                withdrawals={withdrawals} 
+                userEmailMap={userEmailMap}
+                getStatusBadge={getStatusBadge}
+                parseBankDetails={parseBankDetails}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="processing" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Processing Withdrawals</CardTitle>
+              <CardDescription>Withdrawals currently being processed automatically</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <WithdrawalTable 
+                withdrawals={pendingWithdrawals} 
+                userEmailMap={userEmailMap}
+                getStatusBadge={getStatusBadge}
+                parseBankDetails={parseBankDetails}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="completed" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Completed Withdrawals</CardTitle>
+              <CardDescription>Successfully processed withdrawals</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <WithdrawalTable 
+                withdrawals={completedWithdrawals} 
+                userEmailMap={userEmailMap}
+                getStatusBadge={getStatusBadge}
+                parseBankDetails={parseBankDetails}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="failed" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Failed Withdrawals</CardTitle>
+              <CardDescription>Withdrawals that failed and need attention</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <WithdrawalTable 
+                withdrawals={failedWithdrawals} 
+                userEmailMap={userEmailMap}
+                getStatusBadge={getStatusBadge}
+                parseBankDetails={parseBankDetails}
+                showErrors
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+interface WithdrawalTableProps {
+  withdrawals: WithdrawalTransaction[];
+  userEmailMap: Record<string, string>;
+  getStatusBadge: (status: string, processingStage: string | null) => JSX.Element;
+  parseBankDetails: (adminNote: string | null) => any;
+  showErrors?: boolean;
+}
+
+function WithdrawalTable({ 
+  withdrawals, 
+  userEmailMap, 
+  getStatusBadge, 
+  parseBankDetails,
+  showErrors = false 
+}: WithdrawalTableProps) {
+  if (withdrawals.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        No withdrawals found
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Withdrawal Requests</span>
-            {selectedIds.length > 0 && (
-              <Button 
-                onClick={handleBatchProcess}
-                disabled={batchProcessing}
-                className="ml-auto"
-              >
-                {batchProcessing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processing {selectedIds.length} withdrawal(s)...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Process {selectedIds.length} Selected
-                  </>
-                )}
-              </Button>
-            )}
-          </CardTitle>
-          <CardDescription>
-            Monitor withdrawal requests - automatically processed via Paystack or Flutterwave (configured in Payment Settings)
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.length === withdrawals.filter(w => w.status === "pending").length && withdrawals.filter(w => w.status === "pending").length > 0}
-                      onChange={toggleSelectAll}
-                      className="cursor-pointer"
-                    />
-                  </TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Bank Details</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Reference</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {withdrawals.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground">
-                      No withdrawal requests found
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  withdrawals.map((withdrawal) => {
-                    const bankDetails = parseBankDetails(withdrawal.admin_note);
-                    return (
-                      <TableRow key={withdrawal.id}>
-                        <TableCell>
-                          {withdrawal.status === "pending" && (
-                            <input
-                              type="checkbox"
-                              checked={selectedIds.includes(withdrawal.id)}
-                              onChange={() => toggleSelection(withdrawal.id)}
-                              className="cursor-pointer"
-                            />
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(withdrawal.created_at), "MMM dd, yyyy HH:mm")}
-                        </TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{withdrawal.profiles?.full_name || "N/A"}</p>
-                            <p className="text-sm text-muted-foreground">{withdrawal.profiles?.email}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-bold">₦{Number(withdrawal.amount).toFixed(2)}</TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            <p className="font-medium">{bankDetails.bank_name}</p>
-                            <p className="text-muted-foreground">{bankDetails.account_number}</p>
-                            <p className="text-muted-foreground">{bankDetails.account_name}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(withdrawal.status)}</TableCell>
-                        <TableCell>
-                          <span className="text-sm font-mono">{withdrawal.reference || "N/A"}</span>
-                        </TableCell>
-                        <TableCell>
-                          {withdrawal.status === "pending" ? (
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                onClick={() => handleProcessWithdrawal(withdrawal)}
-                                disabled={processing === withdrawal.id}
-                              >
-                                {processing === withdrawal.id ? (
-                                  <>
-                                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                                    Processing...
-                                  </>
-                                ) : (
-                                  <>
-                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                    Approve
-                                  </>
-                                )}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleRejectWithdrawal(withdrawal.id)}
-                                disabled={processing === withdrawal.id}
-                              >
-                                <XCircle className="h-4 w-4 mr-1" />
-                                Reject
-                              </Button>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-muted-foreground">
-                              {withdrawal.processed_at
-                                ? `Processed on ${format(new Date(withdrawal.processed_at), "MMM dd, yyyy")}`
-                                : "N/A"}
-                            </span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Confirmation Dialog */}
-      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-yellow-500" />
-              Confirm Withdrawal Processing
-            </DialogTitle>
-            <DialogDescription>
-              This will initiate a Paystack transfer to the user's bank account.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedWithdrawal && (
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Amount</p>
-                  <p className="text-lg font-bold">₦{Number(selectedWithdrawal.amount).toFixed(2)}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">User</p>
-                  <p className="text-lg font-semibold">{selectedWithdrawal.profiles?.full_name}</p>
-                </div>
-              </div>
-              {(() => {
-                const details = parseBankDetails(selectedWithdrawal.admin_note);
-                return (
-                  <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                    <p className="text-sm font-medium">Bank Details:</p>
-                    <div className="space-y-1 text-sm">
-                      <p><span className="text-muted-foreground">Bank:</span> {details.bank_name}</p>
-                      <p><span className="text-muted-foreground">Account:</span> {details.account_number}</p>
-                      <p><span className="text-muted-foreground">Name:</span> {details.account_name}</p>
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>User</TableHead>
+            <TableHead>Amount</TableHead>
+            <TableHead>Bank Details</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Reference</TableHead>
+            <TableHead>Date</TableHead>
+            {showErrors && <TableHead>Error</TableHead>}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {withdrawals.map((withdrawal) => {
+            const bankDetails = parseBankDetails(withdrawal.admin_note);
+            return (
+              <TableRow key={withdrawal.id}>
+                <TableCell className="font-medium">
+                  {userEmailMap[withdrawal.user_id] || 'Unknown'}
+                </TableCell>
+                <TableCell className="font-semibold">
+                  ₦{withdrawal.amount.toLocaleString()}
+                </TableCell>
+                <TableCell>
+                  {bankDetails ? (
+                    <div className="text-xs">
+                      <div className="font-medium">{bankDetails.account_name}</div>
+                      <div className="text-muted-foreground">{bankDetails.bank_name}</div>
+                      <div className="text-muted-foreground">{bankDetails.account_number}</div>
                     </div>
-                  </div>
-                );
-              })()}
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-                <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                  <strong>Warning:</strong> This action will deduct ₦{Number(selectedWithdrawal.amount).toFixed(2)} from the user's wallet and initiate a transfer via Paystack. This cannot be undone.
-                </p>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={confirmProcessWithdrawal}>
-              Confirm & Process
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {getStatusBadge(withdrawal.status, withdrawal.processing_stage)}
+                </TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  {withdrawal.reference || '—'}
+                </TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  {format(new Date(withdrawal.created_at), 'MMM dd, yyyy HH:mm')}
+                </TableCell>
+                {showErrors && (
+                  <TableCell>
+                    {withdrawal.error_message ? (
+                      <div className="text-xs text-destructive max-w-xs">
+                        <AlertCircle className="w-3 h-3 inline mr-1" />
+                        {withdrawal.error_message}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                )}
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 }
