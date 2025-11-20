@@ -183,11 +183,31 @@ export default function Withdrawal() {
         return;
       }
 
+      // Get current wallet balance first
+      const { data: walletData, error: walletFetchError } = await supabase
+        .from("wallets")
+        .select("balance")
+        .eq("user_id", user.id)
+        .single();
+
+      if (walletFetchError) {
+        toast.error("Failed to fetch wallet balance");
+        setLoading(false);
+        return;
+      }
+
+      const currentBalance = walletData.balance;
+      if (withdrawalAmount > currentBalance) {
+        toast.error("Insufficient balance");
+        setLoading(false);
+        return;
+      }
+
       // Deduct balance immediately to prevent double withdrawals
-      const { error: deductError } = await supabase.rpc('increment_wallet_balance', {
-        p_user_id: user.id,
-        p_amount: -withdrawalAmount
-      });
+      const { error: deductError } = await supabase
+        .from("wallets")
+        .update({ balance: currentBalance - withdrawalAmount })
+        .eq("user_id", user.id);
 
       if (deductError) {
         toast.error("Failed to deduct balance. Please try again.");
@@ -215,14 +235,14 @@ export default function Withdrawal() {
 
       if (insertError) {
         // Refund balance if transaction creation failed
-        await supabase.rpc('increment_wallet_balance', {
-          p_user_id: user.id,
-          p_amount: withdrawalAmount
-        });
+        await supabase
+          .from("wallets")
+          .update({ balance: currentBalance })
+          .eq("user_id", user.id);
         throw insertError;
       }
 
-      toast.success("Withdrawal request submitted successfully! Your balance has been deducted and the request is pending admin approval.");
+      toast.success("Withdrawal request submitted! Your balance has been reserved and the request is pending admin approval.");
 
       setAmount("");
       fetchWithdrawals();
