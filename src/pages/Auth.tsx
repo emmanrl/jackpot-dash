@@ -59,8 +59,8 @@ const Auth = () => {
         description: "Your account has been verified successfully.",
       });
 
-      // Redirect to tutorial
-      navigate('/tutorial');
+      // Redirect to tutorial after successful verification
+      setTimeout(() => navigate('/tutorial'), 500);
     } catch (error: any) {
       toast({
         title: "Verification Failed",
@@ -147,7 +147,7 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/auth`;
+      const redirectUrl = `${window.location.origin}/tutorial`;
       const fullName = `${firstName.trim()} ${lastName.trim()}`;
       
       const { data, error } = await supabase.auth.signUp({
