@@ -18,15 +18,6 @@ const Leaderboard = () => {
   useEffect(() => {
     const fetchTopWinners = async () => {
       try {
-        // First, get the admin user ID by email to exclude from leaderboard
-        const { data: adminProfile } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("email", "emmanueloladimeji409@gmail.com")
-          .maybeSingle();
-        
-        const adminId = adminProfile?.id;
-        
         const { data: winnersData, error } = await supabase
           .from('winners')
           .select('user_id, prize_amount');
@@ -39,14 +30,11 @@ const Leaderboard = () => {
           return;
         }
 
-        // Aggregate winnings by user, excluding admin
+        // Aggregate winnings by user
         const userWinnings = new Map<string, number>();
         
         winnersData.forEach((winner: any) => {
           const userId = winner.user_id;
-          // Skip admin user
-          if (adminId && userId === adminId) return;
-          
           const amount = Number(winner.prize_amount) || 0;
           
           if (userWinnings.has(userId)) {
@@ -65,12 +53,12 @@ const Leaderboard = () => {
           return;
         }
 
-        // Fetch profiles for these users, explicitly excluding admin email
+        // Fetch profiles for these users, excluding those hidden from leaderboard
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('id, full_name, email, avatar_url')
           .in('id', userIds)
-          .neq('email', 'emmanueloladimeji409@gmail.com');
+          .or('hide_from_leaderboard.is.null,hide_from_leaderboard.eq.false');
 
         if (profilesError) throw profilesError;
 

@@ -372,6 +372,7 @@ export type Database = {
           email: string
           experience_points: number | null
           full_name: string | null
+          hide_from_leaderboard: boolean | null
           id: string
           referral_code: string | null
           theme: string | null
@@ -385,6 +386,7 @@ export type Database = {
           email: string
           experience_points?: number | null
           full_name?: string | null
+          hide_from_leaderboard?: boolean | null
           id: string
           referral_code?: string | null
           theme?: string | null
@@ -398,6 +400,7 @@ export type Database = {
           email?: string
           experience_points?: number | null
           full_name?: string | null
+          hide_from_leaderboard?: boolean | null
           id?: string
           referral_code?: string | null
           theme?: string | null

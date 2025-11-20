@@ -45,6 +45,8 @@ export default function Admin() {
   const [withdrawalAmount, setWithdrawalAmount] = useState("");
   const [withdrawalLoading, setWithdrawalLoading] = useState(false);
   const [automationDialogOpen, setAutomationDialogOpen] = useState(false);
+  const [hideFromLeaderboard, setHideFromLeaderboard] = useState(false);
+  const [updatingLeaderboardVisibility, setUpdatingLeaderboardVisibility] = useState(false);
 
   // Jackpot form state
   const [jackpotForm, setJackpotForm] = useState({
@@ -90,6 +92,18 @@ export default function Admin() {
       }
 
       setIsAdmin(true);
+      
+      // Fetch admin's profile settings
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('hide_from_leaderboard')
+        .eq('id', user.id)
+        .single();
+      
+      if (profileData) {
+        setHideFromLeaderboard(profileData.hide_from_leaderboard || false);
+      }
+      
       await Promise.all([fetchJackpots(), fetchTransactions(), fetchUsers(), fetchPaymentSettings(), fetchAdminBalance()]);
     } catch (error) {
       console.error('Error checking admin status:', error);
@@ -748,6 +762,10 @@ export default function Admin() {
                   <Sparkles className="w-4 h-4" />
                   <span className="hidden sm:inline">Bonus</span>
                 </TabsTrigger>
+                <TabsTrigger value="admin-settings" className="gap-2 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-4">
+                  <Shield className="w-4 h-4" />
+                  <span className="hidden sm:inline">Admin Settings</span>
+                </TabsTrigger>
               </TabsList>
             </ScrollArea>
           </div>
@@ -1339,56 +1357,90 @@ export default function Admin() {
             <AdminEmailSender />
           </TabsContent>
 
-          <TabsContent value="withdrawal">
+          <TabsContent value="admin-settings">
             <Card>
               <CardHeader>
-                <CardTitle>Admin Withdrawal</CardTitle>
-                <CardDescription>Withdraw your earnings from the admin wallet</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="w-5 h-5" />
+                  Admin Settings
+                </CardTitle>
+                <CardDescription>Manage your admin profile and visibility settings</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="bg-gradient-to-r from-primary/20 to-accent/20 rounded-lg p-6">
-                  <p className="text-sm text-muted-foreground mb-2">Available Balance</p>
-                  <p className="text-4xl font-bold text-foreground">₦{adminBalance.toFixed(2)}</p>
-                </div>
+                <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-primary"></div>
+                    <h3 className="font-semibold">Leaderboard Visibility</h3>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                      <Label htmlFor="hide-leaderboard" className="text-base font-medium">
+                        Hide from Public Leaderboards
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        When enabled, your wins will not appear on public leaderboards. This setting helps maintain your privacy as an admin.
+                      </p>
+                    </div>
+                    <Switch
+                      id="hide-leaderboard"
+                      checked={hideFromLeaderboard}
+                      onCheckedChange={async (checked) => {
+                        try {
+                          setUpdatingLeaderboardVisibility(true);
+                          const { data: { user } } = await supabase.auth.getUser();
+                          
+                          if (!user) {
+                            toast.error('Not authenticated');
+                            return;
+                          }
 
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="withdrawal-amount">Withdrawal Amount (₦)</Label>
-                    <Input
-                      id="withdrawal-amount"
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={withdrawalAmount}
-                      onChange={(e) => setWithdrawalAmount(e.target.value)}
-                      disabled={withdrawalLoading}
+                          const { error } = await supabase
+                            .from('profiles')
+                            .update({ hide_from_leaderboard: checked })
+                            .eq('id', user.id);
+
+                          if (error) throw error;
+
+                          setHideFromLeaderboard(checked);
+                          toast.success(
+                            checked 
+                              ? 'You are now hidden from public leaderboards' 
+                              : 'You are now visible on public leaderboards'
+                          );
+                        } catch (error: any) {
+                          toast.error(`Failed to update setting: ${error.message}`);
+                        } finally {
+                          setUpdatingLeaderboardVisibility(false);
+                        }
+                      }}
+                      disabled={updatingLeaderboardVisibility}
                     />
                   </div>
+                  {updatingLeaderboardVisibility && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Updating...</span>
+                    </div>
+                  )}
+                </div>
 
-                  <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground space-y-1">
-                    <p>• Withdrawals are processed instantly</p>
-                    <p>• 20% from each draw is added to admin wallet</p>
-                    <p>• Transaction records are created automatically</p>
+                <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-secondary"></div>
+                    <h3 className="font-semibold">Information</h3>
                   </div>
-
-                  <Button
-                    onClick={handleAdminWithdrawal}
-                    disabled={withdrawalLoading || !withdrawalAmount || parseFloat(withdrawalAmount) <= 0}
-                    className="w-full"
-                    size="lg"
-                  >
-                    {withdrawalLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      'Withdraw Funds'
-                    )}
-                  </Button>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>• When hidden, your winnings will not be displayed on any public-facing leaderboards</p>
+                    <p>• This setting only affects your public visibility - your wins are still tracked internally</p>
+                    <p>• Other admins can still see your activity in the admin dashboard</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="bonus">
+            <BonusSettingsPanel />
           </TabsContent>
         </Tabs>
       </div>
