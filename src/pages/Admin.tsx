@@ -56,6 +56,7 @@ export default function Admin() {
     expires_at: "",
     category: "hourly",
     winners_count: "1",
+    admin_commission_percentage: "10",
     background_image: null as File | null
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -315,13 +316,14 @@ export default function Admin() {
           prize_pool: 0,
           category: jackpotForm.category,
           winners_count: parseInt(jackpotForm.winners_count),
+          admin_commission_percentage: parseFloat(jackpotForm.admin_commission_percentage),
           background_image_url: backgroundImageUrl
         });
 
       if (error) throw error;
 
       toast.success('Jackpot created successfully');
-      setJackpotForm({ name: "", description: "", ticket_price: "", frequency: "1hour", next_draw: "", expires_at: "", category: "hourly", winners_count: "1", background_image: null });
+      setJackpotForm({ name: "", description: "", ticket_price: "", frequency: "1hour", next_draw: "", expires_at: "", category: "hourly", winners_count: "1", admin_commission_percentage: "10", background_image: null });
       setImagePreview(null);
       await fetchJackpots();
     } catch (error: any) {
@@ -839,6 +841,20 @@ export default function Admin() {
                   <p className="text-xs text-muted-foreground">1st: 60% | 2nd-4th: 25% | 5th-10th: 15% of prize pool</p>
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="admin_commission">Admin Commission (%)</Label>
+                  <Input
+                    id="admin_commission"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    value={jackpotForm.admin_commission_percentage}
+                    onChange={(e) => setJackpotForm({ ...jackpotForm, admin_commission_percentage: e.target.value })}
+                    placeholder="10"
+                  />
+                  <p className="text-xs text-muted-foreground">Percentage of prize pool that goes to admin (0-100%)</p>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="background_image">Background Image (Optional)</Label>
                   <Input
                     id="background_image"
@@ -952,6 +968,7 @@ export default function Admin() {
                               expires_at: jackpot.expires_at ? new Date(jackpot.expires_at).toISOString().slice(0, 16) : "",
                               category: jackpot.category || "hourly",
                               winners_count: (jackpot.winners_count || 1).toString(),
+                              admin_commission_percentage: (jackpot.admin_commission_percentage || 10).toString(),
                               background_image: null
                             });
                               setImagePreview(null);

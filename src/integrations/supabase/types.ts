@@ -228,6 +228,7 @@ export type Database = {
       }
       jackpots: {
         Row: {
+          admin_commission_percentage: number | null
           background_image_url: string | null
           category: string | null
           created_at: string
@@ -247,6 +248,7 @@ export type Database = {
           winners_count: number
         }
         Insert: {
+          admin_commission_percentage?: number | null
           background_image_url?: string | null
           category?: string | null
           created_at?: string
@@ -266,6 +268,7 @@ export type Database = {
           winners_count?: number
         }
         Update: {
+          admin_commission_percentage?: number | null
           background_image_url?: string | null
           category?: string | null
           created_at?: string
