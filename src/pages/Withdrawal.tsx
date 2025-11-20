@@ -252,9 +252,19 @@ export default function Withdrawal() {
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Balance Display */}
-              <div className="bg-gradient-to-r from-primary/20 to-accent/20 rounded-lg p-4">
-                <p className="text-sm text-muted-foreground">Available Balance</p>
-                <p className="text-3xl font-bold text-foreground">₦{balance.toFixed(2)}</p>
+              <div className="bg-gradient-to-r from-primary/20 to-accent/20 rounded-lg p-4 space-y-2">
+                <div>
+                  <p className="text-sm text-muted-foreground">Current Balance</p>
+                  <p className="text-3xl font-bold text-foreground">₦{balance.toFixed(2)}</p>
+                </div>
+                {amount && parseFloat(amount) > 0 && (
+                  <div className="pt-2 border-t border-border/50">
+                    <p className="text-sm text-muted-foreground">Balance After Withdrawal</p>
+                    <p className="text-2xl font-bold text-accent">
+                      ₦{(balance - parseFloat(amount)).toFixed(2)}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Amount Input */}

@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { Sparkles, LogIn, UserPlus, Loader2, ArrowRight, Trophy } from "lucide-react";
 import { ReferralSignupField } from "@/components/ReferralSignupField";
+import { LuckyWinLogo } from "@/components/LuckyWinLogo";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -245,11 +246,8 @@ const Auth = () => {
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-primary/90 to-primary/80 items-center justify-center p-12">
         <div className="max-w-md text-center space-y-6">
           <div className="flex items-center justify-center mb-8">
-            <Trophy className="h-16 w-16 text-primary-foreground animate-pulse" />
+            <LuckyWinLogo size="lg" className="brightness-0 invert" />
           </div>
-          <h1 className="text-4xl font-bold text-primary-foreground">
-            Welcome to LuckyWin
-          </h1>
           <p className="text-xl text-primary-foreground/90">
             Your chance to win big starts here! Join thousands of winners today.
           </p>
@@ -265,7 +263,9 @@ const Auth = () => {
       <div className="flex-1 flex items-center justify-center p-6 bg-background">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-3xl font-bold text-center">LuckyWin</CardTitle>
+            <div className="flex justify-center mb-4">
+              <LuckyWinLogo size="md" />
+            </div>
             <CardDescription className="text-center">
               Sign in or create an account to get started
             </CardDescription>
