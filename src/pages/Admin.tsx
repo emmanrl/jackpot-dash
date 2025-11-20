@@ -57,6 +57,7 @@ export default function Admin() {
     category: "hourly",
     winners_count: "1",
     admin_commission_percentage: "10",
+    initial_prize_pool: "",
     background_image: null as File | null
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -281,27 +282,31 @@ export default function Admin() {
       let nextDrawTime = jackpotForm.next_draw;
       if (!nextDrawTime && jackpotForm.frequency) {
         const now = new Date();
-        if (jackpotForm.frequency === '30mins') {
+        if (jackpotForm.frequency === '3min') {
+          now.setMinutes(now.getMinutes() + 3);
+        } else if (jackpotForm.frequency === '5minutes') {
+          now.setMinutes(now.getMinutes() + 5);
+        } else if (jackpotForm.frequency === '10minutes') {
+          now.setMinutes(now.getMinutes() + 10);
+        } else if (jackpotForm.frequency === '30minutes') {
           now.setMinutes(now.getMinutes() + 30);
-        } else if (jackpotForm.frequency === '1hour') {
+        } else if (jackpotForm.frequency === 'hourly') {
           now.setHours(now.getHours() + 1);
-        } else if (jackpotForm.frequency === '2hours') {
-          now.setHours(now.getHours() + 2);
-        } else if (jackpotForm.frequency === '4hours') {
-          now.setHours(now.getHours() + 4);
         } else if (jackpotForm.frequency === '12hours') {
           now.setHours(now.getHours() + 12);
-        } else if (jackpotForm.frequency === '1day') {
+        } else if (jackpotForm.frequency === 'daily') {
           now.setDate(now.getDate() + 1);
-        } else if (jackpotForm.frequency === '3days') {
-          now.setDate(now.getDate() + 3);
-        } else if (jackpotForm.frequency === '1week') {
+        } else if (jackpotForm.frequency === 'weekly') {
           now.setDate(now.getDate() + 7);
-        } else if (jackpotForm.frequency === '1month') {
+        } else if (jackpotForm.frequency === 'monthly') {
           now.setMonth(now.getMonth() + 1);
         }
         nextDrawTime = now.toISOString().slice(0, 16);
       }
+
+      // For recurring jackpots like 3min, set expires_at to null
+      const expiresAt = jackpotForm.frequency === '3min' ? null : (jackpotForm.expires_at || null);
+      const initialPrizePool = jackpotForm.initial_prize_pool ? parseFloat(jackpotForm.initial_prize_pool) : 0;
 
       const { error } = await supabase
         .from('jackpots')
@@ -311,9 +316,10 @@ export default function Admin() {
           ticket_price: parseFloat(jackpotForm.ticket_price),
           frequency: jackpotForm.frequency,
           next_draw: nextDrawTime,
-          expires_at: jackpotForm.expires_at || null,
+          expires_at: expiresAt,
           status: 'active',
-          prize_pool: 0,
+          prize_pool: initialPrizePool,
+          initial_prize_pool: initialPrizePool,
           category: jackpotForm.category,
           winners_count: parseInt(jackpotForm.winners_count),
           admin_commission_percentage: parseFloat(jackpotForm.admin_commission_percentage),
@@ -323,7 +329,19 @@ export default function Admin() {
       if (error) throw error;
 
       toast.success('Jackpot created successfully');
-      setJackpotForm({ name: "", description: "", ticket_price: "", frequency: "1hour", next_draw: "", expires_at: "", category: "hourly", winners_count: "1", admin_commission_percentage: "10", background_image: null });
+      setJackpotForm({ 
+        name: "", 
+        description: "", 
+        ticket_price: "", 
+        frequency: "1hour", 
+        next_draw: "", 
+        expires_at: "", 
+        category: "hourly", 
+        winners_count: "1", 
+        admin_commission_percentage: "10",
+        initial_prize_pool: "",
+        background_image: null 
+      });
       setImagePreview(null);
       await fetchJackpots();
     } catch (error: any) {
@@ -783,15 +801,15 @@ export default function Admin() {
                         <SelectValue placeholder="Select frequency" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="30mins">30 Minutes</SelectItem>
-                        <SelectItem value="1hour">1 Hour</SelectItem>
-                        <SelectItem value="2hours">2 Hours</SelectItem>
-                        <SelectItem value="4hours">4 Hours</SelectItem>
+                        <SelectItem value="3min">3 Minutes (Fast Repeat)</SelectItem>
+                        <SelectItem value="5minutes">5 Minutes</SelectItem>
+                        <SelectItem value="10minutes">10 Minutes</SelectItem>
+                        <SelectItem value="30minutes">30 Minutes</SelectItem>
+                        <SelectItem value="hourly">1 Hour</SelectItem>
                         <SelectItem value="12hours">12 Hours</SelectItem>
-                        <SelectItem value="1day">1 Day</SelectItem>
-                        <SelectItem value="3days">3 Days</SelectItem>
-                        <SelectItem value="1week">1 Week</SelectItem>
-                        <SelectItem value="1month">1 Month</SelectItem>
+                        <SelectItem value="daily">1 Day</SelectItem>
+                        <SelectItem value="weekly">1 Week</SelectItem>
+                        <SelectItem value="monthly">1 Month</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -853,6 +871,19 @@ export default function Admin() {
                     placeholder="10"
                   />
                   <p className="text-xs text-muted-foreground">Percentage of prize pool that goes to admin (0-100%)</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="initial_prize_pool">Initial Prize Pool (Optional)</Label>
+                  <Input
+                    id="initial_prize_pool"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={jackpotForm.initial_prize_pool}
+                    onChange={(e) => setJackpotForm({ ...jackpotForm, initial_prize_pool: e.target.value })}
+                    placeholder="0.00"
+                  />
+                  <p className="text-xs text-muted-foreground">Starting prize pool amount (for recurring jackpots)</p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="background_image">Background Image (Optional)</Label>
@@ -969,6 +1000,7 @@ export default function Admin() {
                               category: jackpot.category || "hourly",
                               winners_count: (jackpot.winners_count || 1).toString(),
                               admin_commission_percentage: (jackpot.admin_commission_percentage || 10).toString(),
+                              initial_prize_pool: (jackpot.initial_prize_pool || 0).toString(),
                               background_image: null
                             });
                               setImagePreview(null);
