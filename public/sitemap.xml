@@ -1,68 +1,74 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://yoursite.com/</loc>
-    <lastmod>2025-01-01</lastmod>
+    <loc>https://luckywin.name.ng/</loc>
+    <lastmod>2025-11-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://yoursite.com/auth</loc>
-    <lastmod>2025-01-01</lastmod>
+    <loc>https://luckywin.name.ng/auth</loc>
+    <lastmod>2025-11-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://yoursite.com/dashboard</loc>
-    <lastmod>2025-01-01</lastmod>
+    <loc>https://luckywin.name.ng/dashboard</loc>
+    <lastmod>2025-11-20</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://yoursite.com/about</loc>
-    <lastmod>2025-01-01</lastmod>
+    <loc>https://luckywin.name.ng/about</loc>
+    <lastmod>2025-11-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://yoursite.com/how-it-works</loc>
-    <lastmod>2025-01-01</lastmod>
+    <loc>https://luckywin.name.ng/how-it-works</loc>
+    <lastmod>2025-11-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://yoursite.com/winners</loc>
-    <lastmod>2025-01-01</lastmod>
-    <changefreq>weekly</changefreq>
+    <loc>https://luckywin.name.ng/winners</loc>
+    <lastmod>2025-11-20</lastmod>
+    <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://yoursite.com/faq</loc>
-    <lastmod>2025-01-01</lastmod>
+    <loc>https://luckywin.name.ng/leaderboard</loc>
+    <lastmod>2025-11-20</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://luckywin.name.ng/faq</loc>
+    <lastmod>2025-11-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://yoursite.com/terms</loc>
-    <lastmod>2025-01-01</lastmod>
+    <loc>https://luckywin.name.ng/terms</loc>
+    <lastmod>2025-11-20</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://yoursite.com/privacy</loc>
-    <lastmod>2025-01-01</lastmod>
+    <loc>https://luckywin.name.ng/privacy</loc>
+    <lastmod>2025-11-20</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://yoursite.com/fair-play</loc>
-    <lastmod>2025-01-01</lastmod>
+    <loc>https://luckywin.name.ng/fair-play</loc>
+    <lastmod>2025-11-20</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://yoursite.com/contact</loc>
-    <lastmod>2025-01-01</lastmod>
+    <loc>https://luckywin.name.ng/contact</loc>
+    <lastmod>2025-11-20</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
