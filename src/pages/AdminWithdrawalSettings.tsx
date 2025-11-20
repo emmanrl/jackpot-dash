@@ -65,13 +65,7 @@ const AdminWithdrawalSettings = () => {
       // Fetch failed withdrawals
       const { data: failedData, error: failedError } = await supabase
         .from('transactions')
-        .select(`
-          id,
-          amount,
-          error_message,
-          created_at,
-          profiles!inner(email)
-        `)
+        .select('id, amount, error_message, created_at, user_id')
         .eq('type', 'withdrawal')
         .eq('processing_stage', 'failed')
         .order('created_at', { ascending: false })
@@ -79,12 +73,21 @@ const AdminWithdrawalSettings = () => {
 
       if (failedError) throw failedError;
 
+      // Fetch user emails separately
+      const userIds = (failedData || []).map(t => t.user_id);
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .in('id', userIds);
+
+      const profileMap = new Map(profilesData?.map(p => [p.id, p.email]) || []);
+
       const formattedFailures = (failedData || []).map((item: any) => ({
         id: item.id,
         amount: item.amount,
         error_message: item.error_message,
         created_at: item.created_at,
-        user_email: item.profiles.email,
+        user_email: profileMap.get(item.user_id) || 'Unknown',
       }));
 
       setFailedWithdrawals(formattedFailures);
