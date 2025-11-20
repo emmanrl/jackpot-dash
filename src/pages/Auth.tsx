@@ -156,7 +156,7 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const redirectUrl = `${window.location.origin}/tutorial`;
+      const redirectUrl = 'https://luckywin.name.ng/tutorial';
       const fullName = `${firstName.trim()} ${lastName.trim()}`;
       
       const { data, error } = await supabase.auth.signUp({
@@ -254,7 +254,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/tutorial?verified=true`,
+          redirectTo: 'https://luckywin.name.ng/tutorial?verified=true',
         }
       });
 
