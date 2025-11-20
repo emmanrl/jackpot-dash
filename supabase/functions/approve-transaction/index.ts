@@ -97,10 +97,13 @@ serve(async (req) => {
         console.log(`Added deposit to wallet for user ${transaction.user_id}`);
       } else if (transaction.type === 'withdrawal') {
         // For withdrawals with manual admin approval:
-        // Balance was already deducted when user requested withdrawal
-        // Admin approval marks it as completed - no automatic processing needed
-        console.log(`Withdrawal approved for transaction ${transaction_id}`);
-        console.log(`Amount: ${transaction.amount} will be sent to user ${transaction.user_id}`);
+        // Balance was already deducted when user requested withdrawal via reserve_withdrawal_balance
+        // Admin approval marks it as completed - NO balance changes should occur
+        console.log(`[WITHDRAWAL APPROVAL] Transaction ID: ${transaction_id}`);
+        console.log(`[WITHDRAWAL APPROVAL] User ID: ${transaction.user_id}`);
+        console.log(`[WITHDRAWAL APPROVAL] Amount: ₦${transaction.amount}`);
+        console.log(`[WITHDRAWAL APPROVAL] Status: Approved - Balance should NOT change`);
+        console.log(`[WITHDRAWAL APPROVAL] Note: Balance was already deducted when user requested withdrawal`);
       }
       
       // Create notification
@@ -123,17 +126,21 @@ serve(async (req) => {
     } else if (action === 'reject') {
       // For rejected withdrawals, refund the balance (it was already deducted)
       if (transaction.type === 'withdrawal') {
+        console.log(`[WITHDRAWAL REJECTION] Transaction ID: ${transaction_id}`);
+        console.log(`[WITHDRAWAL REJECTION] User ID: ${transaction.user_id}`);
+        console.log(`[WITHDRAWAL REJECTION] Amount to refund: ₦${transaction.amount}`);
+        
         const { error: refundError } = await supabase.rpc('increment_wallet_balance', {
           p_user_id: transaction.user_id,
           p_amount: parseFloat(transaction.amount)
         });
 
         if (refundError) {
-          console.error('Failed to refund balance:', refundError);
+          console.error('[WITHDRAWAL REJECTION] Failed to refund balance:', refundError);
           throw new Error(`Failed to refund balance: ${refundError.message}`);
         }
 
-        console.log(`Refunded ₦${transaction.amount} to user ${transaction.user_id}`);
+        console.log(`[WITHDRAWAL REJECTION] Successfully refunded ₦${transaction.amount} to user ${transaction.user_id}`);
       }
       
       // Create rejection notification
