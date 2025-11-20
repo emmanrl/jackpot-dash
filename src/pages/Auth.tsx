@@ -88,33 +88,26 @@ const Auth = () => {
     setEmailChecking(true);
 
     try {
-      // Try to sign up with a temporary password to check if email exists
-      // Supabase will reject if email is already registered
-      const { data, error } = await supabase.auth.signUp({
-        email: email.toLowerCase(),
-        password: 'temporary_check_12345', // This won't be used
-        options: {
-          data: { check_only: true }
-        }
+      // Call edge function to check if email exists
+      const { data, error } = await supabase.functions.invoke('check-email-exists', {
+        body: { email: email.toLowerCase() }
       });
 
       if (error) {
-        if (error.message.includes('already registered') || error.message.includes('already been registered')) {
-          setErrors({ email: "This email is already registered. Please log in instead." });
-        } else {
-          throw error;
-        }
-      } else {
-        // Email doesn't exist, proceed to details step
-        setSignupStep('details');
+        throw error;
       }
+
+      if (data?.exists) {
+        // Email already exists
+        setErrors({ email: "This email is already registered. Please log in instead." });
+        return;
+      }
+
+      // Email doesn't exist, proceed to details step
+      setSignupStep('details');
     } catch (error: any) {
       console.error('Email check error:', error);
-      if (error.message.includes('already registered')) {
-        setErrors({ email: "This email is already registered. Please log in instead." });
-      } else {
-        setErrors({ email: "Failed to check email availability. Please try again." });
-      }
+      setErrors({ email: "Failed to check email availability. Please try again." });
     } finally {
       setEmailChecking(false);
     }
