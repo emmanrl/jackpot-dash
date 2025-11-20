@@ -95,6 +95,7 @@ serve(async (req) => {
         .update({ 
           status: 'approved', 
           processed_at: new Date().toISOString(),
+          processing_stage: 'completed',
           admin_note: 'Auto-approved via Paystack webhook'
         })
         .eq('id', transaction.id);

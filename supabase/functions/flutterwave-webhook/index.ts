@@ -68,7 +68,8 @@ serve(async (req) => {
         .from('transactions')
         .update({ 
           status: 'approved', 
-          processed_at: new Date().toISOString()
+          processed_at: new Date().toISOString(),
+          processing_stage: 'completed'
         })
         .eq('id', transaction.id);
 
