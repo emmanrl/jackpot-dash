@@ -56,6 +56,7 @@ export const AdminNav = () => {
     { to: "/admin/email-sender", icon: Mail, label: "Email" },
     { to: "/admin/payments", icon: CreditCard, label: "Payments" },
     { to: "/admin/withdrawals", icon: Wallet, label: "Withdrawals" },
+    { to: "/admin/withdrawal-settings", icon: Settings, label: "W. Settings" },
   ];
 
   const MenuContent = () => (

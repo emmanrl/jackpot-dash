@@ -37,6 +37,7 @@ import AdminSliderManagementPage from "./pages/AdminSliderManagementPage";
 import AdminEmailSenderPage from "./pages/AdminEmailSenderPage";
 import AdminPaymentsPage from "./pages/AdminPaymentsPage";
 import AdminWithdrawalsPage from "./pages/AdminWithdrawalsPage";
+import AdminWithdrawalSettingsPage from "./pages/AdminWithdrawalSettingsPage";
 import SiteSettingsPage from "./pages/SiteSettingsPage";
 import UserManagementPage from "./pages/UserManagementPage";
 import Tutorial from "./pages/Tutorial";
@@ -124,6 +125,7 @@ const AppContent = () => {
       <Route path="/admin/email-sender" element={<AdminEmailSenderPage />} />
       <Route path="/admin/payments" element={<AdminPaymentsPage />} />
       <Route path="/admin/withdrawals" element={<AdminWithdrawalsPage />} />
+      <Route path="/admin/withdrawal-settings" element={<AdminWithdrawalSettingsPage />} />
       <Route path="/statistics" element={<ProtectedStatistics />} />
       <Route path="/leaderboard" element={<Leaderboard />} />
       <Route path="/leaderboard-xp" element={<LeaderboardPage />} />

@@ -15,14 +15,23 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let transactionId: string | undefined;
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { transactionId } = await req.json() as WithdrawalRequest;
+    const requestData = await req.json() as WithdrawalRequest;
+    transactionId = requestData.transactionId;
 
     console.log('Processing withdrawal:', { transactionId });
+
+    // Update stage to verifying
+    await supabase
+      .from('transactions')
+      .update({ processing_stage: 'verifying' })
+      .eq('id', transactionId);
 
     // Get transaction details
     const { data: transaction, error: txError } = await supabase
@@ -79,6 +88,12 @@ serve(async (req) => {
     }
 
     console.log('Using withdrawal provider:', settings.provider);
+
+    // Update stage to transferring
+    await supabase
+      .from('transactions')
+      .update({ processing_stage: 'transferring' })
+      .eq('id', transactionId);
 
     let transferResponse;
     const withdrawalFee = parseFloat(transaction.amount) * (settings.withdrawal_fee_percentage || 0.01);
@@ -141,11 +156,13 @@ serve(async (req) => {
         // Update transaction with error details
         await supabase
           .from('transactions')
-          .update({ 
-            status: 'rejected',
-            admin_note: JSON.stringify({ error: errorMessage, provider: 'paystack' })
-          })
-          .eq('id', transaction.id);
+      .update({ 
+        status: 'rejected',
+        admin_note: JSON.stringify({ error: errorMessage, provider: 'paystack' }),
+        error_message: errorMessage,
+        processing_stage: 'failed'
+      })
+      .eq('id', transaction.id);
         
         throw new Error(errorMessage);
       }
@@ -187,23 +204,26 @@ serve(async (req) => {
         // Update transaction with error details
         await supabase
           .from('transactions')
-          .update({ 
-            status: 'rejected',
-            admin_note: JSON.stringify({ error: errorMessage, provider: 'flutterwave' })
-          })
-          .eq('id', transaction.id);
+        .update({ 
+          status: 'rejected',
+          admin_note: JSON.stringify({ error: errorMessage, provider: 'flutterwave' }),
+          error_message: errorMessage,
+          processing_stage: 'failed'
+        })
+        .eq('id', transaction.id);
         
         throw new Error(errorMessage);
       }
     }
 
-    // Update transaction status
+    // Update transaction status to completed
     await supabase
       .from('transactions')
       .update({ 
         status: 'approved', 
         processed_at: new Date().toISOString(),
-        reference: transferResponse.data?.reference || transaction.reference
+        reference: transferResponse.data?.reference || transaction.reference,
+        processing_stage: 'completed'
       })
       .eq('id', transaction.id);
 
@@ -243,6 +263,27 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error('Withdrawal processing error:', error);
+    
+    // Update transaction to failed status with error message
+    if (transactionId) {
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        await supabase
+          .from('transactions')
+          .update({
+            status: 'rejected',
+            processing_stage: 'failed',
+            error_message: error.message,
+            processed_at: new Date().toISOString(),
+          })
+          .eq('id', transactionId);
+      } catch (updateError) {
+        console.error('Failed to update transaction status:', updateError);
+      }
+    }
     
     // Send email notification to admins about the failure
     try {
