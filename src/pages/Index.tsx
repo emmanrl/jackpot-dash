@@ -14,6 +14,7 @@ import WinCelebrationModal from "@/components/WinCelebrationModal";
 import { useWinNotification } from "@/hooks/useWinNotification";
 import { ImageSlider } from "@/components/ImageSlider";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
+import { StructuredData } from "@/components/StructuredData";
 
 const Index = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -130,6 +131,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
+      <StructuredData />
       <TopNav />
       <ImageSlider />
       <Hero />
