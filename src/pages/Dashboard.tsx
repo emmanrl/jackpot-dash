@@ -191,6 +191,26 @@ const Dashboard = () => {
       supabase.removeChannel(channel);
     };
   }, [user, activeJackpots]);
+
+  // Real-time updates for wallet balance
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel('wallet-updates')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'wallets',
+        filter: `user_id=eq.${user.id}`
+      }, async (payload) => {
+        console.log('Wallet updated:', payload);
+        setWallet(payload.new as WalletData);
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
   const fetchUserData = async (userId: string) => {
     try {
       const {
