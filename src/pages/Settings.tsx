@@ -43,6 +43,7 @@ const Settings = () => {
   const [bankName, setBankName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [accountName, setAccountName] = useState("");
+  const [verifiedAccountName, setVerifiedAccountName] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [banks, setBanks] = useState<Bank[]>([]);
   const [selectedBankCode, setSelectedBankCode] = useState("");
@@ -162,6 +163,43 @@ const Settings = () => {
     }
   };
 
+  const verifyAccountNumber = async (accNumber: string, bankCode: string) => {
+    if (accNumber.length !== 10 || !bankCode) return;
+
+    try {
+      const { data, error: verifyError } = await supabase.functions.invoke("verify-bank-account", {
+        body: {
+          accountNumber: accNumber,
+          bankCode: bankCode,
+        }
+      });
+
+      if (verifyError) {
+        console.error("Verification error:", verifyError);
+        setVerifiedAccountName("");
+        return;
+      }
+
+      if (data?.success && data?.accountName) {
+        setVerifiedAccountName(data.accountName);
+      } else {
+        setVerifiedAccountName("");
+      }
+    } catch (error) {
+      console.error("Verification error:", error);
+      setVerifiedAccountName("");
+    }
+  };
+
+  const handleAccountNumberChange = (value: string) => {
+    setAccountNumber(value);
+    setVerifiedAccountName("");
+    
+    if (value.length === 10 && selectedBankCode) {
+      verifyAccountNumber(value, selectedBankCode);
+    }
+  };
+
   const handleAddAccount = async () => {
     if (!userId) return;
     
@@ -232,6 +270,7 @@ const Settings = () => {
       setBankName("");
       setAccountNumber("");
       setAccountName("");
+      setVerifiedAccountName("");
       setSelectedBankCode("");
       setAddAccountOpen(false);
       await fetchWithdrawalAccounts(userId);
@@ -526,10 +565,16 @@ const Settings = () => {
                         <Label>Account Number</Label>
                         <Input
                           value={accountNumber}
-                          onChange={(e) => setAccountNumber(e.target.value)}
+                          onChange={(e) => handleAccountNumberChange(e.target.value)}
                           placeholder="Enter 10-digit account number"
                           maxLength={10}
                         />
+                        {verifiedAccountName && (
+                          <p className="text-sm text-green-600 dark:text-green-400 mt-1 flex items-center gap-2">
+                            <span className="inline-block w-2 h-2 bg-green-600 rounded-full"></span>
+                            {verifiedAccountName}
+                          </p>
+                        )}
                       </div>
                       {accountName && (
                         <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3">

@@ -9,9 +9,11 @@ const corsHeaders = {
 
 interface NotificationRequest {
   userId: string;
-  type: 'deposit_approved' | 'withdrawal_processed' | 'jackpot_win';
-  amount: number;
+  type: 'deposit_approved' | 'withdrawal_processed' | 'jackpot_win' | 'admin_message';
+  amount?: number;
   jackpotName?: string;
+  title?: string;
+  message?: string;
 }
 
 serve(async (req) => {
@@ -24,9 +26,9 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { userId, type, amount, jackpotName }: NotificationRequest = await req.json();
+    const { userId, type, amount, jackpotName, title, message }: NotificationRequest = await req.json();
 
-    console.log('Sending notification:', { userId, type, amount });
+    console.log('Sending notification:', { userId, type, amount, title });
 
     // Get user profile
     const { data: profile, error: profileError } = await supabase
@@ -71,7 +73,7 @@ serve(async (req) => {
         html = `
           <h1>Deposit Approved!</h1>
           <p>Hi ${profile.full_name || 'there'},</p>
-          <p>Your deposit of <strong>₦${amount.toFixed(2)}</strong> has been approved and added to your wallet.</p>
+          <p>Your deposit of <strong>₦${(amount || 0).toFixed(2)}</strong> has been approved and added to your wallet.</p>
           <p>You can now use your balance to purchase lottery tickets and win big!</p>
           <p>Good luck!</p>
           <p>Best regards,<br>The ${fromName} Team</p>
@@ -83,7 +85,7 @@ serve(async (req) => {
         html = `
           <h1>Withdrawal Processed!</h1>
           <p>Hi ${profile.full_name || 'there'},</p>
-          <p>Your withdrawal request of <strong>₦${amount.toFixed(2)}</strong> has been processed.</p>
+          <p>Your withdrawal request of <strong>₦${(amount || 0).toFixed(2)}</strong> has been processed.</p>
           <p>The funds should arrive in your account within 1-3 business days.</p>
           <p>Thank you for using ${fromName}!</p>
           <p>Best regards,<br>The ${fromName} Team</p>
@@ -96,10 +98,20 @@ serve(async (req) => {
           <h1 style="color: #e3a008;">🎉 CONGRATULATIONS! 🎉</h1>
           <p>Hi ${profile.full_name || 'there'},</p>
           <h2>You just won the ${jackpotName || 'jackpot'}!</h2>
-          <p style="font-size: 24px; color: #e3a008; font-weight: bold;">Prize: ₦${amount.toFixed(2)}</p>
+          <p style="font-size: 24px; color: #e3a008; font-weight: bold;">Prize: ₦${amount?.toFixed(2)}</p>
           <p>Your prize has been automatically credited to your wallet.</p>
           <p>You can now use it to buy more tickets or withdraw it to your bank account.</p>
           <p>Keep playing and good luck!</p>
+          <p>Best regards,<br>The ${fromName} Team</p>
+        `;
+        break;
+
+      case 'admin_message':
+        subject = title || `Message from ${fromName}`;
+        html = `
+          <h1>Message from ${fromName}</h1>
+          <p>Hi ${profile.full_name || 'there'},</p>
+          <p>${message || ''}</p>
           <p>Best regards,<br>The ${fromName} Team</p>
         `;
         break;
@@ -125,11 +137,15 @@ serve(async (req) => {
 
     // Try to send push notification if user has subscriptions
     try {
+      const pushBody = type === 'admin_message' 
+        ? message || subject
+        : `₦${amount?.toFixed(2)} - ${type.replace('_', ' ')}`;
+
       await supabase.functions.invoke('send-push-notification', {
         body: {
           userId: userId,
           title: subject,
-          body: `₦${amount.toFixed(2)} - ${type.replace('_', ' ')}`,
+          body: pushBody,
           data: { type, amount },
           url: '/dashboard',
         }
