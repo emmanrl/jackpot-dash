@@ -1,8 +1,20 @@
 User-agent: Googlebot
 Allow: /
+Disallow: /admin
+Disallow: /settings
+Disallow: /edit-profile
+Disallow: /complete-profile
+Disallow: /withdrawal
+Disallow: /transaction-history
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin
+Disallow: /settings
+Disallow: /edit-profile
+Disallow: /complete-profile
+Disallow: /withdrawal
+Disallow: /transaction-history
 
 User-agent: Twitterbot
 Allow: /
@@ -12,3 +24,13 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /settings
+Disallow: /edit-profile
+Disallow: /complete-profile
+Disallow: /withdrawal
+Disallow: /transaction-history
+
+# Sitemap
+Sitemap: https://luckywin.name.ng/sitemap.xml
+Sitemap: https://cpdzeqlhpvjervimbfvq.supabase.co/functions/v1/sitemap
