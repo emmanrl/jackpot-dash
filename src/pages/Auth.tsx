@@ -41,7 +41,25 @@ const Auth = () => {
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        navigate("/dashboard");
+        // Check if this is from Google OAuth callback
+        const isOAuthCallback = window.location.hash.includes('access_token');
+        
+        if (isOAuthCallback) {
+          // Check if user is new (created in last 10 seconds)
+          const userCreatedAt = new Date(session.user.created_at);
+          const now = new Date();
+          const secondsSinceCreation = (now.getTime() - userCreatedAt.getTime()) / 1000;
+          
+          if (secondsSinceCreation < 10) {
+            // New user - redirect to tutorial
+            navigate("/tutorial?verified=true");
+          } else {
+            // Existing user - redirect to dashboard
+            navigate("/dashboard");
+          }
+        } else {
+          navigate("/dashboard");
+        }
       }
     });
 
@@ -254,7 +272,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'https://luckywin.name.ng/tutorial?verified=true',
+          redirectTo: 'https://luckywin.name.ng/auth',
         }
       });
 
