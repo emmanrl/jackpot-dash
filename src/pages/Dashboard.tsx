@@ -356,11 +356,11 @@ const Dashboard = () => {
       await supabase.from('notifications').insert({
         user_id: user?.id,
         type: 'withdrawal_placed',
-        title: '📤 Withdrawal Request Submitted',
-        message: `Your withdrawal request of ₦${amount.toFixed(2)} is being processed. You'll be notified once approved.`,
+        title: '📤 Withdrawal Processing',
+        message: `Your withdrawal of ₦${amount.toFixed(2)} is being processed automatically. You'll be notified once completed.`,
         is_read: false
       });
-      toast.success("Withdrawal request submitted. Awaiting admin approval.");
+      toast.success("Withdrawal is being processed automatically.");
       setWithdrawAmount("");
       setWithdrawDialogOpen(false);
     } catch (error: any) {
