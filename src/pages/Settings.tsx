@@ -47,6 +47,7 @@ const Settings = () => {
   const [banks, setBanks] = useState<Bank[]>([]);
   const [selectedBankCode, setSelectedBankCode] = useState("");
   const [verifyingAccount, setVerifyingAccount] = useState(false);
+  const [loadingBanks, setLoadingBanks] = useState(false);
   const [achievements, setAchievements] = useState<any[]>([]);
   const [emailVerified, setEmailVerified] = useState(false);
   const [phoneVerified, setPhoneVerified] = useState(false);
@@ -106,6 +107,7 @@ const Settings = () => {
   }, [navigate]);
 
   const fetchBanks = async () => {
+    setLoadingBanks(true);
     try {
       const { data, error } = await supabase.functions.invoke('get-banks');
       
@@ -120,6 +122,8 @@ const Settings = () => {
     } catch (error: any) {
       console.error("Failed to fetch banks:", error);
       toast.error("Failed to load banks list. Please try again later.");
+    } finally {
+      setLoadingBanks(false);
     }
   };
 
@@ -457,20 +461,34 @@ const Settings = () => {
                     <div className="space-y-4">
                       <div>
                         <Label>Bank</Label>
-                        <Select value={selectedBankCode} onValueChange={(value) => {
-                          setSelectedBankCode(value);
-                          const bank = banks.find(b => b.code === value);
-                          if (bank) setBankName(bank.name);
-                        }}>
+                        <Select 
+                          value={selectedBankCode} 
+                          onValueChange={(value) => {
+                            setSelectedBankCode(value);
+                            const bank = banks.find(b => b.code === value);
+                            if (bank) setBankName(bank.name);
+                          }}
+                          disabled={loadingBanks}
+                        >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select your bank" />
+                            <SelectValue placeholder={loadingBanks ? "Loading banks..." : "Select your bank"} />
                           </SelectTrigger>
-                          <SelectContent>
-                            {banks.map((bank) => (
-                              <SelectItem key={bank.code} value={bank.code}>
-                                {bank.name}
+                          <SelectContent className="bg-background z-50">
+                            {loadingBanks ? (
+                              <SelectItem value="loading" disabled>
+                                Loading banks...
                               </SelectItem>
-                            ))}
+                            ) : banks.length === 0 ? (
+                              <SelectItem value="no-banks" disabled>
+                                No banks available
+                              </SelectItem>
+                            ) : (
+                              banks.map((bank) => (
+                                <SelectItem key={bank.code} value={bank.code}>
+                                  {bank.name}
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
                       </div>

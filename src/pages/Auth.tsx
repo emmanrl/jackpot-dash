@@ -261,7 +261,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: 'https://luckywin.name.ng/auth',
+          redirectTo: `${window.location.origin}/auth`,
         }
       });
 
