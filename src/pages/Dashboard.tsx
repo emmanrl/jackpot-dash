@@ -29,6 +29,7 @@ import { ArrowDown } from "lucide-react";
 import { PublicProfileCard } from "@/components/PublicProfileCard";
 import { ReferralCard } from "@/components/ReferralCard";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
+import { WithdrawalStatusTracker } from "@/components/WithdrawalStatusTracker";
 interface WalletData {
   balance: number;
 }
@@ -645,6 +646,9 @@ const Dashboard = () => {
               </Button>
             </div>}
         </section>
+
+        {/* Withdrawal Status Tracker */}
+        {user && <WithdrawalStatusTracker userId={user.id} />}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
           <Card>

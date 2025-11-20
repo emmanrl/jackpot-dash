@@ -578,9 +578,11 @@ export type Database = {
           admin_note: string | null
           amount: number
           created_at: string
+          error_message: string | null
           id: string
           processed_at: string | null
           processed_by: string | null
+          processing_stage: string | null
           reference: string | null
           status: Database["public"]["Enums"]["transaction_status"]
           type: Database["public"]["Enums"]["transaction_type"]
@@ -590,9 +592,11 @@ export type Database = {
           admin_note?: string | null
           amount: number
           created_at?: string
+          error_message?: string | null
           id?: string
           processed_at?: string | null
           processed_by?: string | null
+          processing_stage?: string | null
           reference?: string | null
           status?: Database["public"]["Enums"]["transaction_status"]
           type: Database["public"]["Enums"]["transaction_type"]
@@ -602,9 +606,11 @@ export type Database = {
           admin_note?: string | null
           amount?: number
           created_at?: string
+          error_message?: string | null
           id?: string
           processed_at?: string | null
           processed_by?: string | null
+          processing_stage?: string | null
           reference?: string | null
           status?: Database["public"]["Enums"]["transaction_status"]
           type?: Database["public"]["Enums"]["transaction_type"]
