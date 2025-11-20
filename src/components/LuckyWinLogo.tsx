@@ -1,5 +1,3 @@
-import logoImage from "@/assets/luckywin-logo.png";
-
 interface LuckyWinLogoProps {
   className?: string;
   size?: "sm" | "md" | "lg";
@@ -7,16 +5,14 @@ interface LuckyWinLogoProps {
 
 export const LuckyWinLogo = ({ className = "", size = "md" }: LuckyWinLogoProps) => {
   const sizeClasses = {
-    sm: "h-8",
-    md: "h-10",
-    lg: "h-14 md:h-16"
+    sm: "text-2xl",
+    md: "text-3xl",
+    lg: "text-5xl md:text-6xl"
   };
 
   return (
-    <img 
-      src={logoImage} 
-      alt="LuckyWin Logo" 
-      className={`${sizeClasses[size]} w-auto ${className}`}
-    />
+    <span className={`font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent ${sizeClasses[size]} ${className}`}>
+      LuckyWin
+    </span>
   );
 };
