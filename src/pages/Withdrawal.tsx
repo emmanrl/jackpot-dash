@@ -183,7 +183,6 @@ export default function Withdrawal() {
         return;
       }
 
-      // Atomically deduct balance for withdrawal
       console.log('Attempting to reserve withdrawal balance:', withdrawalAmount);
       const { data: reserveResult, error: reserveError } = await supabase
         .rpc('reserve_withdrawal_balance', {
@@ -193,14 +192,21 @@ export default function Withdrawal() {
 
       console.log('Reserve result:', reserveResult, 'Error:', reserveError);
 
-      if (reserveError || !reserveResult) {
-        console.error('Failed to reserve balance:', reserveError);
-        toast.error("Insufficient balance or failed to reserve funds");
+      if (reserveError) {
+        console.error('Reserve error:', reserveError);
+        toast.error(`Failed to process withdrawal: ${reserveError.message}`);
         setLoading(false);
         return;
       }
 
-      console.log('Balance reserved successfully');
+      if (!reserveResult) {
+        console.error('Insufficient balance for withdrawal');
+        toast.error("Insufficient balance");
+        setLoading(false);
+        return;
+      }
+
+      console.log('Balance reserved successfully, creating transaction...');
 
       // Create withdrawal transaction for admin approval
       const { data: transaction, error: insertError } = await supabase
@@ -340,8 +346,8 @@ export default function Withdrawal() {
 
               {/* Info */}
               <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground space-y-1">
-                <p>• Withdrawals require admin approval</p>
                 <p>• Your balance will be deducted immediately</p>
+                <p>• Withdrawals require admin approval</p>
                 <p>• Minimum withdrawal: ₦1,000</p>
                 <p>• You'll be notified once approved</p>
               </div>

@@ -103,7 +103,7 @@ export default function AdminWithdrawals() {
     }
     
     if (status === 'pending') {
-      return <Badge variant="secondary" className="gap-1"><Loader2 className="w-3 h-3 animate-spin" />Processing</Badge>;
+      return <Badge variant="secondary" className="gap-1"><AlertCircle className="w-3 h-3" />Pending Approval</Badge>;
     }
     
     if (status === 'rejected') {
@@ -193,7 +193,7 @@ export default function AdminWithdrawals() {
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="all">All ({withdrawals.length})</TabsTrigger>
-          <TabsTrigger value="processing">Processing ({pendingWithdrawals.length})</TabsTrigger>
+          <TabsTrigger value="processing">Pending ({pendingWithdrawals.length})</TabsTrigger>
           <TabsTrigger value="completed">Completed ({completedWithdrawals.length})</TabsTrigger>
           <TabsTrigger value="failed">Failed ({failedWithdrawals.length})</TabsTrigger>
         </TabsList>
@@ -218,8 +218,8 @@ export default function AdminWithdrawals() {
         <TabsContent value="processing" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Processing Withdrawals</CardTitle>
-              <CardDescription>Withdrawals currently being processed automatically</CardDescription>
+              <CardTitle>Pending Approvals</CardTitle>
+              <CardDescription>Withdrawal requests awaiting admin approval. Click on any withdrawal to approve or reject.</CardDescription>
             </CardHeader>
             <CardContent>
               <WithdrawalTable 
