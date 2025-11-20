@@ -50,3 +50,10 @@ verify_jwt = true
 
 [functions.get-provider-balance]
 verify_jwt = true
+
+[functions.process-pending-withdrawals]
+verify_jwt = false
+
+[[crons.process_withdrawals]]
+function = "process-pending-withdrawals"
+schedule = "*/5 * * * *"
