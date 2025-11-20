@@ -114,7 +114,11 @@ const Settings = () => {
       if (error) throw error;
       
       if (data?.banks && data.banks.length > 0) {
-        setBanks(data.banks);
+        // Sort banks alphabetically by name
+        const sortedBanks = [...data.banks].sort((a, b) => 
+          a.name.localeCompare(b.name)
+        );
+        setBanks(sortedBanks);
       } else if (data?.error) {
         console.error("Banks not available:", data.error);
         toast.error("Bank list unavailable. Please contact admin to configure payment provider.");
@@ -162,8 +166,14 @@ const Settings = () => {
     if (!userId) return;
     
     try {
+      // Validate inputs
       if (!selectedBankCode || !accountNumber) {
         toast.error("Please select a bank and enter account number");
+        return;
+      }
+
+      if (accountNumber.length !== 10) {
+        toast.error("Account number must be exactly 10 digits");
         return;
       }
 
@@ -177,10 +187,17 @@ const Settings = () => {
         }
       });
 
-      setVerifyingAccount(false);
+      if (verifyError) {
+        setVerifyingAccount(false);
+        console.error("Verification error:", verifyError);
+        toast.error(verifyError.message || "Failed to verify bank account");
+        return;
+      }
 
-      if (verifyError || !data?.success) {
-        toast.error(data?.error || "Failed to verify bank account");
+      if (!data?.success) {
+        setVerifyingAccount(false);
+        console.error("Verification failed:", data);
+        toast.error(data?.error || "Failed to verify bank account. Please check your details.");
         return;
       }
 
@@ -188,7 +205,13 @@ const Settings = () => {
       const selectedBank = banks.find(b => b.code === selectedBankCode);
       const verifiedAccountName = data.accountName;
 
-      const { error } = await supabase
+      console.log("Adding account:", {
+        bank: selectedBank?.name,
+        accountNumber,
+        accountName: verifiedAccountName
+      });
+
+      const { error: insertError } = await supabase
         .from("withdrawal_accounts")
         .insert({
           user_id: userId,
@@ -198,9 +221,14 @@ const Settings = () => {
           is_default: accounts.length === 0
         });
 
-      if (error) throw error;
+      setVerifyingAccount(false);
 
-      toast.success(`Account verified: ${verifiedAccountName}`);
+      if (insertError) {
+        console.error("Insert error:", insertError);
+        throw insertError;
+      }
+
+      toast.success(`Account added: ${verifiedAccountName}`);
       setBankName("");
       setAccountNumber("");
       setAccountName("");
@@ -208,6 +236,8 @@ const Settings = () => {
       setAddAccountOpen(false);
       await fetchWithdrawalAccounts(userId);
     } catch (error: any) {
+      setVerifyingAccount(false);
+      console.error("Add account error:", error);
       toast.error(error.message || "Failed to add account");
     }
   };
