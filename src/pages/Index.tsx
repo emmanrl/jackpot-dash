@@ -151,7 +151,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen scroll-smooth">
+    <div className="min-h-screen animated-bg scroll-smooth">
       <SEOHead
         title="LuckyWin - Win Big with Hourly, Daily & Weekly Jackpots"
         description="Play Nigeria's most exciting online lottery! Win instant prizes with hourly draws, daily jackpots up to ₦1M, and weekly mega prizes. Join thousands of winners today!"

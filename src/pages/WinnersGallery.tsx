@@ -9,7 +9,7 @@ const WinnersGallery = () => {
   const location = useLocation();
   
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen animated-bg flex flex-col">
       <SEOHead
         title="Winners Gallery - LuckyWin Success Stories"
         description="Meet our lucky winners! Browse through LuckyWin's hall of fame featuring real winners, their amazing prizes, and inspiring success stories. You could be next!"

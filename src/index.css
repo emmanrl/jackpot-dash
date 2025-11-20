@@ -145,6 +145,19 @@ All colors MUST be HSL.
     50% { transform: translateY(-10px); }
   }
   
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  
+  @keyframes gradient-rotate {
+    0% { background-position: 0% 0%; }
+    25% { background-position: 100% 0%; }
+    50% { background-position: 100% 100%; }
+    75% { background-position: 0% 100%; }
+    100% { background-position: 0% 0%; }
+  }
+  
   .shimmer {
     background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.3), transparent);
     background-size: 200% 100%;
@@ -153,6 +166,28 @@ All colors MUST be HSL.
   
   .gold-glow {
     text-shadow: 0 0 20px hsl(var(--primary) / 0.6);
+  }
+  
+  .animated-bg {
+    background: linear-gradient(135deg, 
+      hsl(var(--background)), 
+      hsl(var(--muted)),
+      hsl(var(--background)),
+      hsl(var(--accent) / 0.05)
+    );
+    background-size: 400% 400%;
+    animation: gradient-shift 15s ease infinite;
+  }
+  
+  .animated-bg-alt {
+    background: linear-gradient(45deg, 
+      hsl(var(--background)), 
+      hsl(var(--primary) / 0.03),
+      hsl(var(--secondary) / 0.03),
+      hsl(var(--background))
+    );
+    background-size: 400% 400%;
+    animation: gradient-rotate 20s ease infinite;
   }
   
   /* Scroll animations */

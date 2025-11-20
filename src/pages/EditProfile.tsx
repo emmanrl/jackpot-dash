@@ -150,7 +150,7 @@ const EditProfile = () => {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen animated-bg-alt">
       <TopNav />
       <main className="container mx-auto px-4 py-8">
         <Card className="max-w-2xl mx-auto">
