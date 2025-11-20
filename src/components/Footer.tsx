@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { Sparkles } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { LuckyWinLogo } from "@/components/LuckyWinLogo";
 
 const Footer = () => {
   const navigate = useNavigate();
@@ -13,18 +13,7 @@ const Footer = () => {
           {/* Brand Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 cursor-pointer group" onClick={() => navigate("/")}>
-              {settings.site_logo_url ? (
-                <img src={settings.site_logo_url} alt={settings.site_name} className="h-8 w-auto" />
-              ) : (
-                <>
-                  <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors">
-                    <Sparkles className="w-6 h-6 text-primary" />
-                  </div>
-                  <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                    {settings.site_name}
-                  </span>
-                </>
-              )}
+              <LuckyWinLogo size="sm" />
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               The most trusted and transparent jackpot system. Win big, win fair, win often.

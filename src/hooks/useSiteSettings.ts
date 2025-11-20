@@ -12,7 +12,7 @@ interface SiteSettings {
 }
 
 const defaultSettings: SiteSettings = {
-  site_name: 'JackpotWin',
+  site_name: 'LuckyWin',
   site_logo_url: null,
   contact_email: null,
   support_email: null,

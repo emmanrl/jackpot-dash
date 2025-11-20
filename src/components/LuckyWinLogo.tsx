@@ -1,6 +1,4 @@
-import { useTheme } from "@/hooks/useTheme";
-import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
+import logoImage from "@/assets/luckywin-logo.png";
 
 interface LuckyWinLogoProps {
   className?: string;
@@ -8,30 +6,17 @@ interface LuckyWinLogoProps {
 }
 
 export const LuckyWinLogo = ({ className = "", size = "md" }: LuckyWinLogoProps) => {
-  const [userId, setUserId] = useState<string>();
-  
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUserId(session?.user?.id);
-    });
-  }, []);
-
-  const { currentTheme } = useTheme(userId);
-  
   const sizeClasses = {
-    sm: "text-lg",
-    md: "text-xl",
-    lg: "text-3xl md:text-4xl"
+    sm: "h-8",
+    md: "h-10",
+    lg: "h-14 md:h-16"
   };
 
   return (
-    <div className={`font-bold ${sizeClasses[size]} ${className}`}>
-      <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-        Lucky
-      </span>
-      <span className="bg-gradient-to-r from-accent to-accent/80 bg-clip-text text-transparent">
-        Win
-      </span>
-    </div>
+    <img 
+      src={logoImage} 
+      alt="LuckyWin Logo" 
+      className={`${sizeClasses[size]} w-auto ${className}`}
+    />
   );
 };
