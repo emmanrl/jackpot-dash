@@ -21,6 +21,8 @@ import { useLocation } from "react-router-dom";
 import StatsSection from "@/components/StatsSection";
 import FeaturesSection from "@/components/FeaturesSection";
 import CTASection from "@/components/CTASection";
+import TestimonialsSection from "@/components/TestimonialsSection";
+import TrustBadgesSection from "@/components/TrustBadgesSection";
 
 const Index = () => {
   const location = useLocation();
@@ -149,7 +151,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen scroll-smooth">
       <SEOHead
         title="LuckyWin - Win Big with Hourly, Daily & Weekly Jackpots"
         description="Play Nigeria's most exciting online lottery! Win instant prizes with hourly draws, daily jackpots up to ₦1M, and weekly mega prizes. Join thousands of winners today!"
@@ -163,10 +165,12 @@ const Index = () => {
       <Hero />
       <StatsSection stats={stats} />
       <JackpotCarouselSection onBuyTicket={isLoggedIn ? handleBuyTicket : undefined} />
-      <FeaturesSection />
+      <TrustBadgesSection />
       <HowItWorks />
+      <TestimonialsSection />
       <Leaderboard />
       <RecentWinners />
+      <FeaturesSection />
       <CTASection />
       <Footer />
       <FloatingActionButton />
