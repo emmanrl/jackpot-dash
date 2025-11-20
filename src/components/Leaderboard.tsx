@@ -56,14 +56,18 @@ const Leaderboard = () => {
         // Fetch profiles for these users, excluding those hidden from leaderboard
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
-          .select('id, full_name, email, avatar_url')
-          .in('id', userIds)
-          .or('hide_from_leaderboard.is.null,hide_from_leaderboard.eq.false');
-
+          .select('id, full_name, email, avatar_url, hide_from_leaderboard')
+          .in('id', userIds);
+        
         if (profilesError) throw profilesError;
+        
+        // Filter out users who have hide_from_leaderboard set to true
+        const visibleProfiles = profilesData.filter((profile: any) => 
+          !profile.hide_from_leaderboard
+        );
 
         // Combine data
-        const leaderboardUsers: LeaderboardUser[] = profilesData.map((profile: any) => ({
+        const leaderboardUsers: LeaderboardUser[] = visibleProfiles.map((profile: any) => ({
           user_id: profile.id,
           total_winnings: userWinnings.get(profile.id) || 0,
           full_name: profile.full_name,
