@@ -183,7 +183,7 @@ export default function Withdrawal() {
         return;
       }
 
-      // Atomically reserve balance for withdrawal
+      // Atomically deduct balance for withdrawal
       const { data: reserveResult, error: reserveError } = await supabase
         .rpc('reserve_withdrawal_balance', {
           p_user_id: user.id,
@@ -196,7 +196,7 @@ export default function Withdrawal() {
         return;
       }
 
-      // Create withdrawal transaction
+      // Create withdrawal transaction for admin approval
       const { data: transaction, error: insertError } = await supabase
         .from("transactions")
         .insert({
@@ -223,7 +223,7 @@ export default function Withdrawal() {
         throw insertError;
       }
 
-      toast.success("Withdrawal request submitted! It will be processed automatically within 5 minutes.");
+      toast.success("Withdrawal request submitted! Awaiting admin approval.");
 
       setAmount("");
       fetchWithdrawals();
@@ -334,9 +334,10 @@ export default function Withdrawal() {
 
               {/* Info */}
               <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground space-y-1">
-                <p>• Withdrawals are processed automatically every 5 minutes</p>
+                <p>• Withdrawals require admin approval</p>
+                <p>• Your balance will be deducted immediately</p>
                 <p>• Minimum withdrawal: ₦1,000</p>
-                <p>• You'll be notified once completed</p>
+                <p>• You'll be notified once approved</p>
               </div>
 
               {/* Submit Button */}
