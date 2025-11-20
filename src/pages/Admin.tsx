@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Sparkles, Settings, Users, Shield, Image, Mail, CreditCard, Wallet, ArrowDown } from "lucide-react";
+import { Loader2, Sparkles, Settings, Users, Shield, Image, Mail, CreditCard, Wallet, ArrowDown, Activity } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import AdminPayments from "./AdminPayments";
 import AdminWithdrawals from "./AdminWithdrawals";
@@ -22,6 +22,7 @@ import AdminSliderManagement from "./AdminSliderManagement";
 import AdminEmailSender from "./AdminEmailSender";
 import TransactionDetailDrawer from "@/components/TransactionDetailDrawer";
 import { BonusSettingsPanel } from "@/components/BonusSettingsPanel";
+import { AdminActivityLog } from "@/components/AdminActivityLog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { SEOHead } from "@/components/SEOHead";
 
@@ -342,6 +343,22 @@ export default function Admin() {
 
       if (error) throw error;
 
+      // Log the jackpot creation
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('admin_activity_log').insert({
+          admin_id: user.id,
+          action_type: 'jackpot_created',
+          action_description: `Created jackpot: ${jackpotForm.name} (₦${jackpotForm.ticket_price}/ticket, ${jackpotForm.frequency})`,
+          metadata: {
+            jackpot_name: jackpotForm.name,
+            ticket_price: parseFloat(jackpotForm.ticket_price),
+            frequency: jackpotForm.frequency,
+            category: jackpotForm.category
+          }
+        });
+      }
+
       toast.success('Jackpot created successfully');
       setJackpotForm({ 
         name: "", 
@@ -379,6 +396,23 @@ export default function Admin() {
       if (response.error) throw response.error;
 
       const result = response.data;
+      
+      // Log the jackpot deletion
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('admin_activity_log').insert({
+          admin_id: user.id,
+          action_type: 'jackpot_deleted',
+          action_description: `Deleted jackpot. Refunded ${result.refundedUsers} users with total ₦${result.totalRefunded.toFixed(2)}`,
+          target_id: jackpotId,
+          target_type: 'jackpot',
+          metadata: {
+            refunded_users: result.refundedUsers,
+            total_refunded: result.totalRefunded
+          }
+        });
+      }
+      
       toast.success(`Jackpot deleted. Refunded ${result.refundedUsers} users with total ₦${result.totalRefunded.toFixed(2)}`);
       await fetchJackpots();
     } catch (error: any) {
@@ -399,6 +433,19 @@ export default function Admin() {
       });
 
       if (response.error) throw response.error;
+
+      // Log the transaction approval/rejection
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('admin_activity_log').insert({
+          admin_id: user.id,
+          action_type: action === 'approve' ? 'transaction_approved' : 'transaction_rejected',
+          action_description: `${action === 'approve' ? 'Approved' : 'Rejected'} transaction${adminNote ? `: ${adminNote}` : ''}`,
+          target_id: transactionId,
+          target_type: 'transaction',
+          metadata: { action, admin_note: adminNote }
+        });
+      }
 
       toast.success(`Transaction ${action}d successfully`);
       setDrawerOpen(false);
@@ -766,6 +813,10 @@ export default function Admin() {
                   <Shield className="w-4 h-4" />
                   <span className="hidden sm:inline">Admin Settings</span>
                 </TabsTrigger>
+                <TabsTrigger value="activity-log" className="gap-2 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-4">
+                  <Activity className="w-4 h-4" />
+                  <span className="hidden sm:inline">Activity Log</span>
+                </TabsTrigger>
               </TabsList>
             </ScrollArea>
           </div>
@@ -788,7 +839,7 @@ export default function Admin() {
                     onClick={() => setJackpotForm({
                       name: "3-Minute Express",
                       description: "Lightning-fast draws every 3 minutes! Perfect for quick wins and instant excitement.",
-                      ticket_price: "50",
+                      ticket_price: "10",
                       frequency: "3min",
                       next_draw: "",
                       expires_at: "",
@@ -802,7 +853,7 @@ export default function Admin() {
                     <div className="text-2xl mb-2">⚡</div>
                     <div className="font-bold text-base">3-Minute Express</div>
                     <div className="text-xs text-muted-foreground text-left mt-1">
-                      Fast & Furious • ₦50/ticket • ₦5K pool
+                      Fast & Furious • ₦10/ticket • ₦5K pool
                     </div>
                   </Button>
                   
@@ -812,7 +863,7 @@ export default function Admin() {
                     onClick={() => setJackpotForm({
                       name: "Hourly Classic",
                       description: "Regular hourly draws with great prizes! Join the winning circle every hour.",
-                      ticket_price: "100",
+                      ticket_price: "50",
                       frequency: "hourly",
                       next_draw: "",
                       expires_at: "",
@@ -826,7 +877,7 @@ export default function Admin() {
                     <div className="text-2xl mb-2">⏰</div>
                     <div className="font-bold text-base">Hourly Classic</div>
                     <div className="text-xs text-muted-foreground text-left mt-1">
-                      Popular Choice • ₦100/ticket • ₦10K pool
+                      Popular Choice • ₦50/ticket • ₦10K pool
                     </div>
                   </Button>
                   
@@ -836,7 +887,7 @@ export default function Admin() {
                     onClick={() => setJackpotForm({
                       name: "Daily Mega",
                       description: "Massive daily jackpot with life-changing prizes! One chance, one winner, big dreams.",
-                      ticket_price: "200",
+                      ticket_price: "100",
                       frequency: "daily",
                       next_draw: "",
                       expires_at: "",
@@ -850,7 +901,7 @@ export default function Admin() {
                     <div className="text-2xl mb-2">💎</div>
                     <div className="font-bold text-base">Daily Mega</div>
                     <div className="text-xs text-muted-foreground text-left mt-1">
-                      Big Prizes • ₦200/ticket • ₦50K pool
+                      Big Prizes • ₦100/ticket • ₦50K pool
                     </div>
                   </Button>
                 </div>
@@ -1401,6 +1452,14 @@ export default function Admin() {
 
                           if (error) throw error;
 
+                          // Log the leaderboard visibility change
+                          await supabase.from('admin_activity_log').insert({
+                            admin_id: user.id,
+                            action_type: 'settings_updated',
+                            action_description: `${checked ? 'Hidden from' : 'Made visible on'} public leaderboards`,
+                            metadata: { hide_from_leaderboard: checked }
+                          });
+
                           setHideFromLeaderboard(checked);
                           toast.success(
                             checked 
@@ -1441,6 +1500,10 @@ export default function Admin() {
 
           <TabsContent value="bonus">
             <BonusSettingsPanel />
+          </TabsContent>
+
+          <TabsContent value="activity-log">
+            <AdminActivityLog />
           </TabsContent>
         </Tabs>
       </div>

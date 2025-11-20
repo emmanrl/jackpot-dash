@@ -68,6 +68,25 @@ export const BonusSettingsPanel = () => {
     }
   };
 
+  const createReferralBonus = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('bonus_settings' as any).insert({
+        bonus_type: 'referral',
+        is_active: true,
+        fixed_amount: 50,
+        description: 'Referral bonus - ₦50 per referral'
+      });
+      if (error) throw error;
+      toast.success('Referral bonus created');
+      fetchBonusSettings();
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const toggleBonus = async (id: string, isActive: boolean) => {
     try {
       const { error } = await supabase.from('bonus_settings' as any).update({ is_active: !isActive }).eq('id', id);
@@ -85,12 +104,15 @@ export const BonusSettingsPanel = () => {
         <CardTitle>Bonus Settings</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button onClick={createSignupBonus} disabled={loading}>
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create ₦50 Signup Bonus'}
           </Button>
           <Button onClick={createDepositBonus} disabled={loading} variant="outline">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create 5% First Deposit Bonus'}
+          </Button>
+          <Button onClick={createReferralBonus} disabled={loading} variant="outline">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create ₦50 Referral Bonus'}
           </Button>
         </div>
 
