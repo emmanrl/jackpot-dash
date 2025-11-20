@@ -69,8 +69,9 @@ serve(async (req) => {
 
         // Calculate prize distribution
         const totalPool = parseFloat(jackpot.prize_pool);
-        const adminShare = totalPool * 0.2;
-        const prizePool = totalPool * 0.8;
+        const adminCommissionPercentage = (jackpot.admin_commission_percentage || 10) / 100;
+        const adminShare = totalPool * adminCommissionPercentage;
+        const prizePool = totalPool * (1 - adminCommissionPercentage);
         
         // Prize distribution tiers: 60% for 1st, 25% for 2nd-4th, 15% for 5th-10th
         const calculatePrize = (rank: number) => {
@@ -208,19 +209,26 @@ serve(async (req) => {
 
         // Create next jackpot based on frequency
         const nextDrawTime = calculateNextDrawTime(jackpot.frequency);
+        
+        // For recurring jackpots (like 3min), set expires_at to null or far in future
+        const expiresAt = jackpot.frequency === '3min' ? null : nextDrawTime;
+        
         const { data: nextJackpot, error: nextJackpotError} = await supabase
           .from('jackpots')
           .insert({
             name: jackpot.name,
             description: jackpot.description,
             ticket_price: jackpot.ticket_price,
-            prize_pool: 0,
+            prize_pool: jackpot.initial_prize_pool || 0,
+            initial_prize_pool: jackpot.initial_prize_pool || 0,
             category: jackpot.category,
             frequency: jackpot.frequency,
             next_draw: nextDrawTime,
-            expires_at: nextDrawTime,
+            expires_at: expiresAt,
             status: 'active',
             winners_count: jackpot.winners_count || 1,
+            admin_commission_percentage: jackpot.admin_commission_percentage || 10,
+            background_image_url: jackpot.background_image_url
           })
           .select()
           .single();
@@ -274,8 +282,18 @@ function calculateNextDrawTime(frequency: string): string {
   const now = new Date();
   
   switch (frequency) {
+    case '3min':
+      now.setMinutes(now.getMinutes() + 3);
+      now.setSeconds(now.getSeconds() + 10); // Add 10 second break
+      break;
     case '5minutes':
       now.setMinutes(now.getMinutes() + 5);
+      break;
+    case '10minutes':
+      now.setMinutes(now.getMinutes() + 10);
+      break;
+    case '30minutes':
+      now.setMinutes(now.getMinutes() + 30);
       break;
     case 'hourly':
       now.setHours(now.getHours() + 1);

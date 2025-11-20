@@ -26,6 +26,17 @@ const Leaderboard = () => {
         
         const adminIds = adminRoles?.map(r => r.user_id) || [];
         
+        // Also get the specific admin email to exclude
+        const { data: adminProfile } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("email", "emmanueloladimeji409@gmail.com")
+          .single();
+        
+        if (adminProfile && !adminIds.includes(adminProfile.id)) {
+          adminIds.push(adminProfile.id);
+        }
+        
         const { data: winnersData, error } = await supabase
           .from('winners')
           .select('user_id, prize_amount');
@@ -57,11 +68,18 @@ const Leaderboard = () => {
         // Get unique user IDs
         const userIds = Array.from(userWinnings.keys());
 
-        // Fetch profiles for these users
+        if (userIds.length === 0) {
+          setTopWinners([]);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch profiles for these users, excluding admin email
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('id, full_name, email, avatar_url')
-          .in('id', userIds);
+          .in('id', userIds)
+          .neq('email', 'emmanueloladimeji409@gmail.com');
 
         if (profilesError) throw profilesError;
 
