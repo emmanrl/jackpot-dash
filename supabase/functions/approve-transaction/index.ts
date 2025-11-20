@@ -96,33 +96,11 @@ serve(async (req) => {
 
         console.log(`Added deposit to wallet for user ${transaction.user_id}`);
       } else if (transaction.type === 'withdrawal') {
-        // For withdrawals, call process-withdrawal edge function
-        // Balance is already deducted when user requested withdrawal
-        console.log(`Processing withdrawal for transaction ${transaction_id}`);
-        
-        const { error: processError } = await supabase.functions.invoke('process-withdrawal', {
-          body: { transactionId: transaction_id }
-        });
-
-        if (processError) {
-          // If processing fails, refund the balance
-          await supabase.rpc('increment_wallet_balance', {
-            p_user_id: transaction.user_id,
-            p_amount: parseFloat(transaction.amount)
-          });
-          
-          // Mark transaction as failed
-          await supabase
-            .from('transactions')
-            .update({ 
-              status: 'rejected',
-              error_message: processError.message,
-              processing_stage: 'failed'
-            })
-            .eq('id', transaction_id);
-          
-          throw new Error(`Withdrawal processing failed: ${processError.message}`);
-        }
+        // For withdrawals with manual admin approval:
+        // Balance was already deducted when user requested withdrawal
+        // Admin approval marks it as completed - no automatic processing needed
+        console.log(`Withdrawal approved for transaction ${transaction_id}`);
+        console.log(`Amount: ${transaction.amount} will be sent to user ${transaction.user_id}`);
       }
       
       // Create notification
@@ -133,7 +111,7 @@ serve(async (req) => {
         : '✅ Withdrawal Approved';
       const notificationMessage = transaction.type === 'deposit'
         ? `Your deposit of ₦${amount.toFixed(2)} has been approved and added to your wallet.`
-        : `Your withdrawal of ₦${amount.toFixed(2)} has been approved and processed.`;
+        : `Your withdrawal request of ₦${amount.toFixed(2)} has been approved. The funds will be sent to your bank account shortly.`;
       
       await supabase.from('notifications').insert({
         user_id: transaction.user_id,
