@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Sparkles, Settings, Users, Shield, Image, Mail, CreditCard, Wallet } from "lucide-react";
+import { Loader2, Sparkles, Settings, Users, Shield, Image, Mail, CreditCard, Wallet, ArrowDown } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import AdminPayments from "./AdminPayments";
 import AdminWithdrawals from "./AdminWithdrawals";
@@ -721,15 +721,6 @@ export default function Admin() {
               </TabsList>
             </ScrollArea>
           </div>
-              <TabsTrigger value="bonuses" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap flex items-center gap-2 px-3 py-2">
-                <Settings className="w-4 h-4" />
-                <span className="hidden md:inline">Bonuses</span>
-              </TabsTrigger>
-              <TabsTrigger value="withdrawal" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap">
-                <span className="hidden sm:inline">Withdraw</span>
-              </TabsTrigger>
-            </TabsList>
-          </ScrollArea>
 
           <TabsContent value="jackpots" className="space-y-6">
             <Card>
