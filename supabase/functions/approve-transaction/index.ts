@@ -81,40 +81,52 @@ serve(async (req) => {
       throw new Error(`Failed to update transaction: ${updateError.message}`);
     }
 
-    // If approved, update wallet balance
+    // If approved, handle based on transaction type
     if (action === 'approve') {
-      const { data: wallet, error: walletError } = await supabase
-        .from('wallets')
-        .select('balance')
-        .eq('user_id', transaction.user_id)
-        .single();
+      if (transaction.type === 'deposit') {
+        // For deposits, add the amount to wallet
+        const { error: balanceError } = await supabase.rpc('increment_wallet_balance', {
+          p_user_id: transaction.user_id,
+          p_amount: parseFloat(transaction.amount)
+        });
 
-      if (walletError || !wallet) {
-        throw new Error('Wallet not found');
+        if (balanceError) {
+          throw new Error(`Failed to update wallet balance: ${balanceError.message}`);
+        }
+
+        console.log(`Added deposit to wallet for user ${transaction.user_id}`);
+      } else if (transaction.type === 'withdrawal') {
+        // For withdrawals, call process-withdrawal edge function
+        // Balance is already deducted when user requested withdrawal
+        console.log(`Processing withdrawal for transaction ${transaction_id}`);
+        
+        const { error: processError } = await supabase.functions.invoke('process-withdrawal', {
+          body: { transactionId: transaction_id }
+        });
+
+        if (processError) {
+          // If processing fails, refund the balance
+          await supabase.rpc('increment_wallet_balance', {
+            p_user_id: transaction.user_id,
+            p_amount: parseFloat(transaction.amount)
+          });
+          
+          // Mark transaction as failed
+          await supabase
+            .from('transactions')
+            .update({ 
+              status: 'rejected',
+              error_message: processError.message,
+              processing_stage: 'failed'
+            })
+            .eq('id', transaction_id);
+          
+          throw new Error(`Withdrawal processing failed: ${processError.message}`);
+        }
       }
-
-      const currentBalance = parseFloat(wallet.balance);
-      const amount = parseFloat(transaction.amount);
-      const newBalance = transaction.type === 'deposit' 
-        ? currentBalance + amount 
-        : currentBalance - amount;
-
-      if (newBalance < 0) {
-        throw new Error('Insufficient balance for withdrawal');
-      }
-
-      const { error: balanceError } = await supabase
-        .from('wallets')
-        .update({ balance: newBalance })
-        .eq('user_id', transaction.user_id);
-
-      if (balanceError) {
-        throw new Error(`Failed to update wallet balance: ${balanceError.message}`);
-      }
-
-      console.log(`Updated wallet balance for user ${transaction.user_id}: ${newBalance}`);
       
       // Create notification
+      const amount = parseFloat(transaction.amount);
       const notificationType = transaction.type === 'deposit' ? 'deposit_approved' : 'withdrawal_approved';
       const notificationTitle = transaction.type === 'deposit' 
         ? '💰 Deposit Approved' 
@@ -131,6 +143,21 @@ serve(async (req) => {
         is_read: false
       });
     } else if (action === 'reject') {
+      // For rejected withdrawals, refund the balance (it was already deducted)
+      if (transaction.type === 'withdrawal') {
+        const { error: refundError } = await supabase.rpc('increment_wallet_balance', {
+          p_user_id: transaction.user_id,
+          p_amount: parseFloat(transaction.amount)
+        });
+
+        if (refundError) {
+          console.error('Failed to refund balance:', refundError);
+          throw new Error(`Failed to refund balance: ${refundError.message}`);
+        }
+
+        console.log(`Refunded ₦${transaction.amount} to user ${transaction.user_id}`);
+      }
+      
       // Create rejection notification
       const notificationTitle = transaction.type === 'deposit' 
         ? '❌ Deposit Rejected' 

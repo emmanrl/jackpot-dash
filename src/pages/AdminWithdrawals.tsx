@@ -147,7 +147,7 @@ export default function AdminWithdrawals() {
         <div>
           <h2 className="text-2xl font-bold text-foreground">Withdrawal Management</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            All withdrawals are processed automatically. Monitor status here.
+            Review and approve pending withdrawal requests. Once approved, they will be processed automatically.
           </p>
         </div>
         <Button onClick={fetchWithdrawals} variant="outline" size="sm" className="gap-2">

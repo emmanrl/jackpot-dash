@@ -222,33 +222,7 @@ export default function Withdrawal() {
         throw insertError;
       }
 
-      toast.success("Withdrawal request submitted! Processing automatically...");
-
-      // Automatically process withdrawal
-      const { error: processError } = await supabase.functions.invoke('process-withdrawal', {
-        body: { transactionId: transaction.id }
-      });
-
-      if (processError) {
-        console.error('Withdrawal processing error:', processError);
-        // Refund balance if processing failed
-        await supabase.rpc('increment_wallet_balance', {
-          p_user_id: user.id,
-          p_amount: withdrawalAmount
-        });
-        // Mark transaction as rejected
-        await supabase
-          .from("transactions")
-          .update({ 
-            status: "rejected", 
-            error_message: processError.message,
-            processing_stage: 'failed'
-          })
-          .eq("id", transaction.id);
-        toast.error('Withdrawal processing failed. Balance has been refunded.');
-      } else {
-        toast.success("Withdrawal processed successfully! Funds will be transferred to your account shortly.");
-      }
+      toast.success("Withdrawal request submitted successfully! Your balance has been deducted and the request is pending admin approval.");
 
       setAmount("");
       fetchWithdrawals();
