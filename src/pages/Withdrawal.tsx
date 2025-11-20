@@ -109,6 +109,7 @@ export default function Withdrawal() {
   };
 
   const handleWithdrawal = async () => {
+    let withdrawalAmount = 0;
     try {
       // Check email and phone verification
       const { data: { user: currentUser } } = await supabase.auth.getUser();
@@ -123,7 +124,7 @@ export default function Withdrawal() {
         return;
       }
 
-      const withdrawalAmount = parseFloat(amount);
+      withdrawalAmount = parseFloat(amount);
       if (isNaN(withdrawalAmount) || withdrawalAmount <= 0) {
         toast.error("Please enter a valid amount");
         return;
@@ -182,6 +183,18 @@ export default function Withdrawal() {
         return;
       }
 
+      // Deduct balance immediately to prevent double withdrawals
+      const { error: deductError } = await supabase.rpc('increment_wallet_balance', {
+        p_user_id: user.id,
+        p_amount: -withdrawalAmount
+      });
+
+      if (deductError) {
+        toast.error("Failed to deduct balance. Please try again.");
+        setLoading(false);
+        return;
+      }
+
       // Create withdrawal transaction
       const { data: transaction, error: insertError } = await supabase
         .from("transactions")
@@ -200,7 +213,14 @@ export default function Withdrawal() {
         .select()
         .single();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        // Refund balance if transaction creation failed
+        await supabase.rpc('increment_wallet_balance', {
+          p_user_id: user.id,
+          p_amount: withdrawalAmount
+        });
+        throw insertError;
+      }
 
       toast.success("Withdrawal request submitted! Processing automatically...");
 
@@ -211,7 +231,21 @@ export default function Withdrawal() {
 
       if (processError) {
         console.error('Withdrawal processing error:', processError);
-        toast.error('Withdrawal processing failed. Please contact support or try again.');
+        // Refund balance if processing failed
+        await supabase.rpc('increment_wallet_balance', {
+          p_user_id: user.id,
+          p_amount: withdrawalAmount
+        });
+        // Mark transaction as rejected
+        await supabase
+          .from("transactions")
+          .update({ 
+            status: "rejected", 
+            error_message: processError.message,
+            processing_stage: 'failed'
+          })
+          .eq("id", transaction.id);
+        toast.error('Withdrawal processing failed. Balance has been refunded.');
       } else {
         toast.success("Withdrawal processed successfully! Funds will be transferred to your account shortly.");
       }
@@ -222,6 +256,18 @@ export default function Withdrawal() {
     } catch (error: any) {
       console.error("Withdrawal error:", error);
       toast.error("Failed to submit withdrawal request");
+      // Try to refund balance if anything went wrong
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.rpc('increment_wallet_balance', {
+            p_user_id: user.id,
+            p_amount: withdrawalAmount
+          });
+        }
+      } catch (refundError) {
+        console.error("Failed to refund balance:", refundError);
+      }
     } finally {
       setLoading(false);
     }

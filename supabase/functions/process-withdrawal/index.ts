@@ -264,12 +264,19 @@ serve(async (req) => {
   } catch (error: any) {
     console.error('Withdrawal processing error:', error);
     
-    // Update transaction to failed status with error message
+    // Update transaction to failed status and refund balance
     if (transactionId) {
       try {
         const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
         const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        // Get transaction details to refund
+        const { data: transaction } = await supabase
+          .from('transactions')
+          .select('user_id, amount')
+          .eq('id', transactionId)
+          .single();
         
         await supabase
           .from('transactions')
@@ -280,6 +287,15 @@ serve(async (req) => {
             processed_at: new Date().toISOString(),
           })
           .eq('id', transactionId);
+        
+        // Refund balance to user since processing failed
+        if (transaction) {
+          await supabase.rpc('increment_wallet_balance', {
+            p_user_id: transaction.user_id,
+            p_amount: parseFloat(transaction.amount)
+          });
+          console.log('Balance refunded to user due to processing failure');
+        }
       } catch (updateError) {
         console.error('Failed to update transaction status:', updateError);
       }
