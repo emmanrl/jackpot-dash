@@ -211,9 +211,9 @@ export default function Withdrawal() {
 
       if (processError) {
         console.error('Withdrawal processing error:', processError);
-        toast.error('Withdrawal created but auto-processing failed. Admin will process manually.');
+        toast.error('Withdrawal processing failed. Please contact support or try again.');
       } else {
-        toast.success("Withdrawal processed successfully!");
+        toast.success("Withdrawal processed successfully! Funds will be transferred to your account shortly.");
       }
 
       setAmount("");
