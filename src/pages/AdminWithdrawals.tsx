@@ -147,7 +147,7 @@ export default function AdminWithdrawals() {
         <div>
           <h2 className="text-2xl font-bold text-foreground">Withdrawal Management</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Review and approve pending withdrawal requests. Once approved, they will be processed automatically.
+            Automatic withdrawal processing runs every 5 minutes. Monitor processing status and failed transactions below.
           </p>
         </div>
         <Button onClick={fetchWithdrawals} variant="outline" size="sm" className="gap-2">

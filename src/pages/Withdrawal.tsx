@@ -183,34 +183,15 @@ export default function Withdrawal() {
         return;
       }
 
-      // Get current wallet balance first
-      const { data: walletData, error: walletFetchError } = await supabase
-        .from("wallets")
-        .select("balance")
-        .eq("user_id", user.id)
-        .single();
+      // Atomically reserve balance for withdrawal
+      const { data: reserveResult, error: reserveError } = await supabase
+        .rpc('reserve_withdrawal_balance', {
+          p_user_id: user.id,
+          p_amount: withdrawalAmount
+        });
 
-      if (walletFetchError) {
-        toast.error("Failed to fetch wallet balance");
-        setLoading(false);
-        return;
-      }
-
-      const currentBalance = walletData.balance;
-      if (withdrawalAmount > currentBalance) {
-        toast.error("Insufficient balance");
-        setLoading(false);
-        return;
-      }
-
-      // Deduct balance immediately to prevent double withdrawals
-      const { error: deductError } = await supabase
-        .from("wallets")
-        .update({ balance: currentBalance - withdrawalAmount })
-        .eq("user_id", user.id);
-
-      if (deductError) {
-        toast.error("Failed to deduct balance. Please try again.");
+      if (reserveError || !reserveResult) {
+        toast.error("Insufficient balance or failed to reserve funds");
         setLoading(false);
         return;
       }
@@ -235,14 +216,14 @@ export default function Withdrawal() {
 
       if (insertError) {
         // Refund balance if transaction creation failed
-        await supabase
-          .from("wallets")
-          .update({ balance: currentBalance })
-          .eq("user_id", user.id);
+        await supabase.rpc('increment_wallet_balance', {
+          p_user_id: user.id,
+          p_amount: withdrawalAmount
+        });
         throw insertError;
       }
 
-      toast.success("Withdrawal request submitted! Your balance has been reserved and the request is pending admin approval.");
+      toast.success("Withdrawal request submitted! It will be processed automatically within 5 minutes.");
 
       setAmount("");
       fetchWithdrawals();
@@ -353,9 +334,9 @@ export default function Withdrawal() {
 
               {/* Info */}
               <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground space-y-1">
-                <p>• Withdrawals are processed within 24-48 hours</p>
+                <p>• Withdrawals are processed automatically every 5 minutes</p>
                 <p>• Minimum withdrawal: ₦1,000</p>
-                <p>• You'll be notified once approved</p>
+                <p>• You'll be notified once completed</p>
               </div>
 
               {/* Submit Button */}

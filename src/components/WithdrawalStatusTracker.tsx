@@ -121,7 +121,7 @@ export const WithdrawalStatusTracker = ({ userId }: WithdrawalStatusTrackerProps
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Your withdrawal request is pending admin approval. The funds have been reserved from your balance.
+              Your withdrawal request has been submitted and will be processed automatically within 5 minutes.
             </p>
 
             {withdrawal.reference && (
