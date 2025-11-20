@@ -24,10 +24,26 @@ serve(async (req) => {
       .select('*')
       .eq('provider', 'paystack')
       .eq('is_enabled', true)
-      .single();
+      .maybeSingle();
 
-    if (settingsError || !settings || !settings.secret_key) {
-      throw new Error('Paystack is not configured or enabled');
+    if (settingsError) {
+      console.error('Error fetching payment settings:', settingsError);
+      throw new Error('Failed to fetch payment settings');
+    }
+
+    if (!settings || !settings.secret_key) {
+      console.error('Paystack not configured');
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Paystack is not configured. Please configure Paystack in admin settings to enable bank selection.',
+          banks: []
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        }
+      );
     }
 
     // Fetch banks from Paystack

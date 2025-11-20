@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "@/hooks/use-toast";
+import { toast as shadcnToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Sparkles, LogIn, UserPlus, Loader2, ArrowRight, Trophy } from "lucide-react";
 import { ReferralSignupField } from "@/components/ReferralSignupField";
 import { LuckyWinLogo } from "@/components/LuckyWinLogo";
@@ -45,16 +46,17 @@ const Auth = () => {
         const isOAuthCallback = window.location.hash.includes('access_token');
         
         if (isOAuthCallback) {
-          // Check if user is new (created in last 10 seconds)
+          // Check if user is new (created in last 30 seconds)
           const userCreatedAt = new Date(session.user.created_at);
           const now = new Date();
           const secondsSinceCreation = (now.getTime() - userCreatedAt.getTime()) / 1000;
           
-          if (secondsSinceCreation < 10) {
-            // New user - redirect to tutorial
+          if (secondsSinceCreation < 30) {
+            // New user from Google signup - redirect to tutorial
             navigate("/tutorial?verified=true");
           } else {
-            // Existing user - redirect to dashboard
+            // Existing user signing in with Google - show welcome back and go to dashboard
+            toast.success(`Welcome back, ${session.user.user_metadata?.full_name || session.user.email}! 🎉`);
             navigate("/dashboard");
           }
         } else {
@@ -81,19 +83,12 @@ const Auth = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Email Verified!",
-        description: "Your account has been verified successfully.",
-      });
+      toast.success("Email Verified! Your account has been verified successfully.");
 
       // Redirect to tutorial after successful verification with verified param
       setTimeout(() => navigate('/tutorial?verified=true'), 500);
     } catch (error: any) {
-      toast({
-        title: "Verification Failed",
-        description: error.message || "Failed to verify email. The link may have expired.",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to verify email. The link may have expired.");
       navigate('/auth');
     }
   };
@@ -203,10 +198,7 @@ const Auth = () => {
         }
       }
 
-      toast({
-        title: "Account Created!",
-        description: "Please check your email to verify your account.",
-      });
+      toast.success("Account Created! Please check your email to verify your account.");
 
       // Navigate to verify email page
       navigate('/verify-email', { state: { email } });
@@ -253,10 +245,7 @@ const Auth = () => {
         return;
       }
 
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
-      });
+      toast.success("Welcome back! You have successfully logged in.");
 
       navigate("/dashboard");
     } catch (error: any) {
@@ -279,11 +268,7 @@ const Auth = () => {
       if (error) throw error;
     } catch (error: any) {
       console.error('Google sign in error:', error);
-      toast({
-        title: "Sign In Failed",
-        description: error.message || "Failed to sign in with Google. Please try again.",
-        variant: "destructive",
-      });
+      toast.error(error.message || "Failed to sign in with Google. Please try again.");
     }
   };
 

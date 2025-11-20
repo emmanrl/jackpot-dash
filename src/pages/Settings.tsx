@@ -111,12 +111,15 @@ const Settings = () => {
       
       if (error) throw error;
       
-      if (data?.banks) {
+      if (data?.banks && data.banks.length > 0) {
         setBanks(data.banks);
+      } else if (data?.error) {
+        console.error("Banks not available:", data.error);
+        toast.error("Bank list unavailable. Please contact admin to configure payment provider.");
       }
     } catch (error: any) {
       console.error("Failed to fetch banks:", error);
-      toast.error("Failed to load banks list");
+      toast.error("Failed to load banks list. Please try again later.");
     }
   };
 
