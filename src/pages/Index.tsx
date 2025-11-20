@@ -15,8 +15,12 @@ import { useWinNotification } from "@/hooks/useWinNotification";
 import { ImageSlider } from "@/components/ImageSlider";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { StructuredData } from "@/components/StructuredData";
+import { SEOHead } from "@/components/SEOHead";
+import { BreadcrumbSchema, generateBreadcrumbs } from "@/components/BreadcrumbSchema";
+import { useLocation } from "react-router-dom";
 
 const Index = () => {
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [receiptData, setReceiptData] = useState<any>(null);
@@ -131,6 +135,13 @@ const Index = () => {
 
   return (
     <div className="min-h-screen">
+      <SEOHead
+        title="LuckyWin - Win Big with Hourly, Daily & Weekly Jackpots"
+        description="Play Nigeria's most exciting online lottery! Win instant prizes with hourly draws, daily jackpots up to ₦1M, and weekly mega prizes. Join thousands of winners today!"
+        url="https://luckywin.name.ng"
+        type="website"
+      />
+      <BreadcrumbSchema items={generateBreadcrumbs(location.pathname)} />
       <StructuredData />
       <TopNav />
       <ImageSlider />

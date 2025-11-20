@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +30,9 @@ import { PublicProfileCard } from "@/components/PublicProfileCard";
 import { ReferralCard } from "@/components/ReferralCard";
 import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { WithdrawalStatusTracker } from "@/components/WithdrawalStatusTracker";
+import { SEOHead } from "@/components/SEOHead";
+import { BreadcrumbSchema, generateBreadcrumbs } from "@/components/BreadcrumbSchema";
+
 interface WalletData {
   balance: number;
 }
@@ -64,6 +67,7 @@ interface WithdrawalAccount {
   is_default: boolean;
 }
 const Dashboard = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -418,6 +422,14 @@ const Dashboard = () => {
   }
   const xpProgress = getXPProgress();
   return <div className="min-h-screen bg-background">
+      <SEOHead
+        title={`Dashboard - ${profile?.full_name || user?.email} | LuckyWin`}
+        description="Manage your LuckyWin account, buy lottery tickets, check your wallet balance, track your wins, and participate in exciting jackpot draws."
+        url="https://luckywin.name.ng/dashboard"
+        type="profile"
+        noIndex={true}
+      />
+      <BreadcrumbSchema items={generateBreadcrumbs(location.pathname)} />
       <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">

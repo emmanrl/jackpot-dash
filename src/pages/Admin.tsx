@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { AdminNav } from "@/components/AdminNav";
@@ -23,8 +23,10 @@ import AdminEmailSender from "./AdminEmailSender";
 import TransactionDetailDrawer from "@/components/TransactionDetailDrawer";
 import { BonusSettingsPanel } from "@/components/BonusSettingsPanel";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { SEOHead } from "@/components/SEOHead";
 
 export default function Admin() {
+  const location = useLocation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -553,6 +555,14 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        title="Admin Dashboard - LuckyWin"
+        description="LuckyWin admin panel for managing jackpots, users, transactions, and platform settings."
+        url="https://luckywin.name.ng/admin"
+        type="website"
+        noIndex={true}
+        noFollow={true}
+      />
       <AdminNav />
 
       <div className="container mx-auto px-4 py-6 max-w-7xl">
