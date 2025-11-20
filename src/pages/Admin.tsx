@@ -552,106 +552,175 @@ export default function Admin() {
   if (!isAdmin) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-screen bg-background">
       <AdminNav />
 
-      <div className="container mx-auto px-4 py-8 space-y-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-primary/10 rounded-lg shadow-lg shadow-primary/10">
-              <Shield className="w-8 h-8 text-primary" />
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary/10 rounded-xl border border-primary/20">
+              <Shield className="w-7 h-7 text-primary" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold text-foreground">
                 Admin Dashboard
               </h1>
-              <p className="text-muted-foreground mt-1">Manage jackpots, transactions, and users</p>
+              <p className="text-muted-foreground text-sm mt-0.5">Manage your platform efficiently</p>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Link to="/site-settings">
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-2">
                 <Settings className="w-4 h-4" />
-                Site Settings
+                Settings
               </Button>
             </Link>
             <Link to="/user-management">
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" size="sm" className="gap-2">
                 <Users className="w-4 h-4" />
-                User Management
+                Users
               </Button>
             </Link>
-            <Button onClick={() => setAutomationDialogOpen(true)} variant="default">
-              Create Automated Jackpot
+            <Button onClick={() => setAutomationDialogOpen(true)} size="sm" className="gap-2">
+              <Sparkles className="w-4 h-4" />
+              Auto Jackpot
             </Button>
           </div>
         </div>
-        {/* Admin Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Earnings</CardTitle>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <Card className="border-border/50 bg-card hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3 space-y-0">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Earnings</CardTitle>
+                <Wallet className="w-4 h-4 text-primary" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-primary">₦{adminBalance.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground mt-2">From all completed draws</p>
+              <div className="text-2xl font-bold text-foreground">₦{adminBalance.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground mt-1">Total platform earnings</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Active Users</CardTitle>
+          <Card className="border-border/50 bg-card hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3 space-y-0">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Active Users</CardTitle>
+                <Users className="w-4 h-4 text-green-600" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-600">{activeUserCount}</div>
-              <p className="text-xs text-muted-foreground mt-2">Users active in last 30 days</p>
+              <div className="text-2xl font-bold text-foreground">{activeUserCount}</div>
+              <p className="text-xs text-muted-foreground mt-1">Last 30 days activity</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Active Jackpots</CardTitle>
+          <Card className="border-border/50 bg-card hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3 space-y-0">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
+                <Users className="w-4 h-4 text-blue-600" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-foreground">{users.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">All registered users</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/50 bg-card hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3 space-y-0">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Active Jackpots</CardTitle>
+                <Sparkles className="w-4 h-4 text-purple-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">
                 {jackpots.filter(j => j.status === 'active').length}
               </div>
-              <p className="text-xs text-muted-foreground mt-2">Currently running draws</p>
+              <p className="text-xs text-muted-foreground mt-1">Currently running draws</p>
             </CardContent>
           </Card>
         </div>
 
+        {/* Admin Wallet Withdrawal */}
+        <Card className="mb-6 border-border/50">
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Wallet className="w-5 h-5 text-primary" />
+              <div>
+                <CardTitle>Admin Wallet</CardTitle>
+                <CardDescription>Withdraw platform earnings</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-3 items-end max-w-md">
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="withdrawal-amount">Amount (₦)</Label>
+                <Input
+                  id="withdrawal-amount"
+                  type="number"
+                  placeholder="Enter amount"
+                  value={withdrawalAmount}
+                  onChange={(e) => setWithdrawalAmount(e.target.value)}
+                  disabled={withdrawalLoading}
+                />
+              </div>
+              <Button
+                onClick={handleAdminWithdrawal}
+                disabled={withdrawalLoading || !withdrawalAmount || parseFloat(withdrawalAmount) <= 0}
+                className="gap-2"
+              >
+                {withdrawalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><ArrowDown className="w-4 h-4" />Withdraw</>}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Main Tabs */}
         <Tabs defaultValue="jackpots" className="space-y-6">
-          <ScrollArea className="w-full">
-            <TabsList className="inline-flex w-full min-w-max h-auto p-1 bg-card/50 backdrop-blur-sm border border-border">
-              <TabsTrigger value="jackpots" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap flex items-center gap-2 px-3 py-2">
-                <Sparkles className="w-4 h-4" />
-                <span className="hidden md:inline">Jackpots</span>
-              </TabsTrigger>
-              <TabsTrigger value="transactions" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap flex items-center gap-2 px-3 py-2">
-                <CreditCard className="w-4 h-4" />
-                <span className="hidden md:inline">Transactions</span>
-              </TabsTrigger>
-              <TabsTrigger value="withdrawals" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap flex items-center gap-2 px-3 py-2">
-                <Wallet className="w-4 h-4" />
-                <span className="hidden md:inline">Withdrawals</span>
-              </TabsTrigger>
-              <TabsTrigger value="users" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap flex items-center gap-2 px-3 py-2">
-                <Users className="w-4 h-4" />
-                <span className="hidden md:inline">Users</span>
-              </TabsTrigger>
-              <TabsTrigger value="slider" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap flex items-center gap-2 px-3 py-2">
-                <Image className="w-4 h-4" />
-                <span className="hidden md:inline">Slider</span>
-              </TabsTrigger>
-              <TabsTrigger value="email" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap flex items-center gap-2 px-3 py-2">
-                <Mail className="w-4 h-4" />
-                <span className="hidden md:inline">Email</span>
-              </TabsTrigger>
-              <TabsTrigger value="payments" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap flex items-center gap-2 px-3 py-2">
-                <Settings className="w-4 h-4" />
-                <span className="hidden md:inline">Settings</span>
-              </TabsTrigger>
+          <div className="border-b border-border">
+            <ScrollArea className="w-full">
+              <TabsList className="inline-flex w-full min-w-max h-auto p-0 bg-transparent rounded-none">
+                <TabsTrigger value="jackpots" className="gap-2 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-4">
+                  <Sparkles className="w-4 h-4" />
+                  <span className="hidden sm:inline">Jackpots</span>
+                </TabsTrigger>
+                <TabsTrigger value="transactions" className="gap-2 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-4">
+                  <CreditCard className="w-4 h-4" />
+                  <span className="hidden sm:inline">Transactions</span>
+                </TabsTrigger>
+                <TabsTrigger value="withdrawals" className="gap-2 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-4">
+                  <Wallet className="w-4 h-4" />
+                  <span className="hidden sm:inline">Withdrawals</span>
+                </TabsTrigger>
+                <TabsTrigger value="users" className="gap-2 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-4">
+                  <Users className="w-4 h-4" />
+                  <span className="hidden sm:inline">Users</span>
+                </TabsTrigger>
+                <TabsTrigger value="slider" className="gap-2 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-4">
+                  <Image className="w-4 h-4" />
+                  <span className="hidden sm:inline">Slider</span>
+                </TabsTrigger>
+                <TabsTrigger value="email" className="gap-2 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-4">
+                  <Mail className="w-4 h-4" />
+                  <span className="hidden sm:inline">Email</span>
+                </TabsTrigger>
+                <TabsTrigger value="payments" className="gap-2 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-4">
+                  <Settings className="w-4 h-4" />
+                  <span className="hidden sm:inline">Payment Settings</span>
+                </TabsTrigger>
+                <TabsTrigger value="bonus" className="gap-2 data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none pb-3 px-4">
+                  <Sparkles className="w-4 h-4" />
+                  <span className="hidden sm:inline">Bonus</span>
+                </TabsTrigger>
+              </TabsList>
+            </ScrollArea>
+          </div>
               <TabsTrigger value="bonuses" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground whitespace-nowrap flex items-center gap-2 px-3 py-2">
                 <Settings className="w-4 h-4" />
                 <span className="hidden md:inline">Bonuses</span>
