@@ -243,6 +243,111 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error('Withdrawal processing error:', error);
+    
+    // Send email notification to admins about the failure
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      
+      // Get all admin emails
+      const { data: adminRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
+      
+      if (adminRoles && adminRoles.length > 0) {
+        const { data: adminProfiles } = await supabase
+          .from('profiles')
+          .select('email')
+          .in('id', adminRoles.map(r => r.user_id));
+        
+        if (adminProfiles && adminProfiles.length > 0) {
+          const adminEmails = adminProfiles.map(p => p.email);
+          
+          // Get transaction details for the email
+          const { data: transaction } = await supabase
+            .from('transactions')
+            .select('*, profiles!inner(email, full_name)')
+            .eq('id', error.transactionId || 'unknown')
+            .single();
+          
+          const { data: settings } = await supabase
+            .from('payment_settings')
+            .select('provider')
+            .eq('is_withdrawal_enabled', true)
+            .in('provider', ['paystack', 'flutterwave'])
+            .single();
+          
+          // Send email to admins using Resend
+          const { data: siteSettings } = await supabase
+            .from('site_settings')
+            .select('resend_api_key')
+            .limit(1)
+            .single();
+          
+          const resendApiKey = siteSettings?.resend_api_key;
+          if (resendApiKey) {
+            const Resend = (await import('https://esm.sh/resend@2.0.0')).Resend;
+            const resend = new Resend(resendApiKey);
+            
+            const emailSubject = `🚨 Automatic Withdrawal Failed - Action Required`;
+            const emailMessage = `
+<strong>Automatic Withdrawal Processing Failed</strong>
+
+A withdrawal attempt has failed and requires your attention.
+
+<strong>Error Details:</strong>
+${error.message}
+
+<strong>Transaction Information:</strong>
+- Transaction ID: ${error.transactionId || 'Unknown'}
+- User: ${transaction?.profiles?.full_name || 'Unknown'} (${transaction?.profiles?.email || 'Unknown'})
+- Amount: ₦${transaction?.amount || 'Unknown'}
+- Provider: ${settings?.provider || 'Unknown'}
+- Time: ${new Date().toLocaleString()}
+
+<strong>Recommended Actions:</strong>
+1. Check the payment provider dashboard (${settings?.provider || 'Unknown'})
+2. Verify IP whitelisting is enabled (for Flutterwave)
+3. Confirm API keys are correct
+4. Check provider balance sufficiency
+5. Review the transaction in the admin panel
+
+Please resolve this issue as soon as possible to ensure smooth operations.
+            `;
+            
+            await resend.emails.send({
+              from: 'LuckyWin Payments <payment@luckywin.name.ng>',
+              to: adminEmails,
+              subject: emailSubject,
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <div style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); padding: 30px; text-align: center;">
+                    <h1 style="color: white; margin: 0; font-size: 28px;">⚠️ Withdrawal Failed</h1>
+                  </div>
+                  <div style="padding: 30px; background-color: #f9fafb;">
+                    <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                      <div style="white-space: pre-wrap; line-height: 1.6; color: #374151;">
+                        ${emailMessage.replace(/\n/g, '<br>')}
+                      </div>
+                    </div>
+                    <p style="text-align: center; color: #6b7280; font-size: 14px; margin-top: 20px;">
+                      © ${new Date().getFullYear()} LuckyWin. All rights reserved.
+                    </p>
+                  </div>
+                </div>
+              `,
+            });
+            
+            console.log('Failure notification sent to admins:', adminEmails);
+          }
+        }
+      }
+    } catch (emailError) {
+      console.error('Failed to send admin notification:', emailError);
+    }
+    
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
