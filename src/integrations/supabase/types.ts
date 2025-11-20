@@ -823,10 +823,6 @@ export type Database = {
       }
       notify_upcoming_draws: { Args: never; Returns: undefined }
       record_daily_login: { Args: { p_user_id: string }; Returns: number }
-      reserve_withdrawal_balance: {
-        Args: { p_amount: number; p_user_id: string }
-        Returns: boolean
-      }
     }
     Enums: {
       app_role: "admin" | "user"

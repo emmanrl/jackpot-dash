@@ -56,7 +56,7 @@ export const WithdrawalStatusTracker = ({ userId }: WithdrawalStatusTrackerProps
         .select('*')
         .eq('user_id', userId)
         .eq('type', 'withdrawal')
-        .eq('status', 'pending')
+        .in('status', ['pending', 'approved'])
         .order('created_at', { ascending: false })
         .limit(5);
 
@@ -101,7 +101,7 @@ export const WithdrawalStatusTracker = ({ userId }: WithdrawalStatusTrackerProps
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Clock className="h-5 w-5" />
-          Pending Withdrawals
+          Withdrawal Status
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -114,15 +114,42 @@ export const WithdrawalStatusTracker = ({ userId }: WithdrawalStatusTrackerProps
                   {format(new Date(withdrawal.created_at), 'MMM dd, yyyy HH:mm')}
                 </p>
               </div>
-              <Badge variant="secondary" className="gap-1">
-                <Clock className="h-3 w-3" />
-                Awaiting Admin Approval
+              <Badge variant={withdrawal.processing_stage === 'failed' ? 'destructive' : 'default'}>
+                {withdrawal.processing_stage}
               </Badge>
             </div>
 
-            <p className="text-xs text-muted-foreground">
-              Your withdrawal request is awaiting admin approval. You will be notified once processed.
-            </p>
+            {/* Progress Stages */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                {getStatusIcon(getStageStatus(withdrawal.processing_stage, 'initiated'))}
+                <span className="text-xs">Initiated</span>
+              </div>
+              <ArrowRight className="h-3 w-3 text-muted-foreground" />
+              
+              <div className="flex items-center gap-1">
+                {getStatusIcon(getStageStatus(withdrawal.processing_stage, 'verifying'))}
+                <span className="text-xs">Verifying</span>
+              </div>
+              <ArrowRight className="h-3 w-3 text-muted-foreground" />
+              
+              <div className="flex items-center gap-1">
+                {getStatusIcon(getStageStatus(withdrawal.processing_stage, 'transferring'))}
+                <span className="text-xs">Transferring</span>
+              </div>
+              <ArrowRight className="h-3 w-3 text-muted-foreground" />
+              
+              <div className="flex items-center gap-1">
+                {getStatusIcon(getStageStatus(withdrawal.processing_stage, 'completed'))}
+                <span className="text-xs">Completed</span>
+              </div>
+            </div>
+
+            {withdrawal.error_message && (
+              <div className="bg-destructive/10 text-destructive text-sm p-2 rounded">
+                Error: {withdrawal.error_message}
+              </div>
+            )}
 
             {withdrawal.reference && (
               <p className="text-xs text-muted-foreground">

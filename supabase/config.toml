@@ -31,7 +31,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.process-withdrawal]
-verify_jwt = false
+verify_jwt = true
 
 [functions.process-batch-withdrawal]
 verify_jwt = true
@@ -46,7 +46,4 @@ verify_jwt = true
 verify_jwt = false
 
 [functions.delete-jackpot]
-verify_jwt = true
-
-[functions.get-provider-balance]
 verify_jwt = true

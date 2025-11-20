@@ -109,7 +109,6 @@ export default function Withdrawal() {
   };
 
   const handleWithdrawal = async () => {
-    let withdrawalAmount = 0;
     try {
       // Check email and phone verification
       const { data: { user: currentUser } } = await supabase.auth.getUser();
@@ -124,7 +123,7 @@ export default function Withdrawal() {
         return;
       }
 
-      withdrawalAmount = parseFloat(amount);
+      const withdrawalAmount = parseFloat(amount);
       if (isNaN(withdrawalAmount) || withdrawalAmount <= 0) {
         toast.error("Please enter a valid amount");
         return;
@@ -183,51 +182,7 @@ export default function Withdrawal() {
         return;
       }
 
-      // Get balance BEFORE deduction
-      const { data: balanceBefore } = await supabase
-        .from("wallets")
-        .select("balance")
-        .eq("user_id", user.id)
-        .single();
-      
-      console.log('Balance BEFORE withdrawal request:', balanceBefore?.balance);
-      console.log('Attempting to reserve withdrawal balance:', withdrawalAmount);
-      
-      const { data: reserveResult, error: reserveError } = await supabase
-        .rpc('reserve_withdrawal_balance', {
-          p_user_id: user.id,
-          p_amount: withdrawalAmount
-        });
-
-      console.log('Reserve result:', reserveResult, 'Error:', reserveError);
-
-      // Get balance AFTER deduction
-      const { data: balanceAfter } = await supabase
-        .from("wallets")
-        .select("balance")
-        .eq("user_id", user.id)
-        .single();
-      
-      console.log('Balance AFTER reserve_withdrawal_balance:', balanceAfter?.balance);
-      console.log('Expected balance:', (balanceBefore?.balance || 0) - withdrawalAmount);
-
-      if (reserveError) {
-        console.error('Reserve error:', reserveError);
-        toast.error(`Failed to process withdrawal: ${reserveError.message}`);
-        setLoading(false);
-        return;
-      }
-
-      if (!reserveResult) {
-        console.error('Insufficient balance for withdrawal');
-        toast.error("Insufficient balance");
-        setLoading(false);
-        return;
-      }
-
-      console.log('Balance reserved successfully, creating transaction...');
-
-      // Create withdrawal transaction for admin approval
+      // Create withdrawal transaction
       const { data: transaction, error: insertError } = await supabase
         .from("transactions")
         .insert({
@@ -235,7 +190,7 @@ export default function Withdrawal() {
           type: "withdrawal",
           amount: withdrawalAmount,
           status: "pending",
-          reference: `Withdrawal request - ${new Date().toISOString()}`,
+          reference: `WD-${Date.now()}`,
           admin_note: JSON.stringify({
             bank_name: account.bank_name,
             account_number: account.account_number,
@@ -245,30 +200,21 @@ export default function Withdrawal() {
         .select()
         .single();
 
-      console.log('Transaction created:', transaction);
+      if (insertError) throw insertError;
 
-      if (insertError) {
-        console.error('Transaction creation failed, refunding balance');
-        // Refund balance if transaction creation failed
-        await supabase.rpc('increment_wallet_balance', {
-          p_user_id: user.id,
-          p_amount: withdrawalAmount
-        });
-        throw insertError;
+      toast.success("Withdrawal request submitted! Processing automatically...");
+
+      // Automatically process withdrawal
+      const { error: processError } = await supabase.functions.invoke('process-withdrawal', {
+        body: { transactionId: transaction.id }
+      });
+
+      if (processError) {
+        console.error('Withdrawal processing error:', processError);
+        toast.error('Withdrawal processing failed. Please contact support or try again.');
+      } else {
+        toast.success("Withdrawal processed successfully! Funds will be transferred to your account shortly.");
       }
-
-      console.log('Withdrawal request completed successfully');
-      console.log('Final balance check...');
-      
-      const { data: finalBalance } = await supabase
-        .from("wallets")
-        .select("balance")
-        .eq("user_id", user.id)
-        .single();
-      
-      console.log('Final balance:', finalBalance?.balance);
-
-      toast.success("Withdrawal request submitted! Balance has been deducted. Awaiting admin approval.");
 
       setAmount("");
       fetchWithdrawals();
@@ -276,18 +222,6 @@ export default function Withdrawal() {
     } catch (error: any) {
       console.error("Withdrawal error:", error);
       toast.error("Failed to submit withdrawal request");
-      // Try to refund balance if anything went wrong
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.rpc('increment_wallet_balance', {
-            p_user_id: user.id,
-            p_amount: withdrawalAmount
-          });
-        }
-      } catch (refundError) {
-        console.error("Failed to refund balance:", refundError);
-      }
     } finally {
       setLoading(false);
     }
@@ -379,8 +313,7 @@ export default function Withdrawal() {
 
               {/* Info */}
               <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground space-y-1">
-                <p>• Your balance will be deducted immediately</p>
-                <p>• Withdrawals require admin approval</p>
+                <p>• Withdrawals are processed within 24-48 hours</p>
                 <p>• Minimum withdrawal: ₦1,000</p>
                 <p>• You'll be notified once approved</p>
               </div>
