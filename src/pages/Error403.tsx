@@ -4,7 +4,7 @@ import { ShieldX, Home, ArrowLeft } from "lucide-react";
 
 const Error403 = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="flex min-h-screen animated-bg items-center justify-center">
       <div className="text-center space-y-6 px-4">
         <div className="flex justify-center">
           <ShieldX className="h-24 w-24 text-destructive" />

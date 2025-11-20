@@ -237,7 +237,7 @@ export default function Withdrawal() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+    <div className="min-h-screen animated-bg-alt">
       <TopNav />
       
       <main className="container mx-auto px-4 py-8">

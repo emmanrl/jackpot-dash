@@ -469,7 +469,7 @@ const Dashboard = () => {
       </div>;
   }
   const xpProgress = getXPProgress();
-  return <div className="min-h-screen bg-background scroll-smooth">
+  return <div className="min-h-screen animated-bg-alt scroll-smooth">
       <SEOHead
         title={`Dashboard - ${profile?.full_name || user?.email} | LuckyWin`}
         description="Manage your LuckyWin account, buy lottery tickets, check your wallet balance, track your wins, and participate in exciting jackpot draws."

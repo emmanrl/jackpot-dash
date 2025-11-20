@@ -4,7 +4,7 @@ import HowItWorks from "@/components/HowItWorks";
 
 const HowItWorksPage = () => {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen animated-bg flex flex-col">
       <TopNav />
       <main className="flex-1">
         <HowItWorks />

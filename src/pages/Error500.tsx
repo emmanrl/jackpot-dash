@@ -4,7 +4,7 @@ import { ServerCrash, Home, RefreshCw } from "lucide-react";
 
 const Error500 = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="flex min-h-screen animated-bg-alt items-center justify-center">
       <div className="text-center space-y-6 px-4">
         <div className="flex justify-center">
           <ServerCrash className="h-24 w-24 text-destructive" />

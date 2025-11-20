@@ -273,7 +273,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen animated-bg flex">
       {/* Left side - Animation/Branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-primary/90 to-primary/80 items-center justify-center p-12">
         <div className="max-w-md text-center space-y-6">

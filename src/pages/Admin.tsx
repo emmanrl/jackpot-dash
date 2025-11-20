@@ -635,7 +635,7 @@ export default function Admin() {
   if (!isAdmin) return null;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen animated-bg-alt">
       <SEOHead
         title="Admin Dashboard - LuckyWin"
         description="LuckyWin admin panel for managing jackpots, users, transactions, and platform settings."
