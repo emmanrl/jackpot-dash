@@ -18,6 +18,9 @@ import { StructuredData } from "@/components/StructuredData";
 import { SEOHead } from "@/components/SEOHead";
 import { BreadcrumbSchema, generateBreadcrumbs } from "@/components/BreadcrumbSchema";
 import { useLocation } from "react-router-dom";
+import StatsSection from "@/components/StatsSection";
+import FeaturesSection from "@/components/FeaturesSection";
+import CTASection from "@/components/CTASection";
 
 const Index = () => {
   const location = useLocation();
@@ -28,7 +31,12 @@ const Index = () => {
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
   const [selectedJackpot, setSelectedJackpot] = useState<any>(null);
   const [walletBalance, setWalletBalance] = useState(0);
-  const [stats, setStats] = useState({ totalPrizePool: 0, totalWinners: 0 });
+  const [stats, setStats] = useState({ 
+    totalPrizePool: 0, 
+    totalWinners: 0, 
+    activeJackpots: 0, 
+    todayDraws: 0 
+  });
   const { winData, showWinModal, setShowWinModal } = useWinNotification();
 
   useEffect(() => {
@@ -71,27 +79,34 @@ const Index = () => {
     };
     
     const fetchStats = async () => {
-      // Get total prize pool from active jackpots
+      // Get active jackpots
       const { data: jackpots } = await supabase
         .from("jackpots")
         .select("prize_pool, created_at")
         .eq("status", "active");
       
       const totalPrizePool = jackpots?.reduce((sum, j) => sum + Number(j.prize_pool), 0) || 0;
-      
-      // Calculate today's prize pool (jackpots created today)
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const todayPrizePool = jackpots
-        ?.filter(j => new Date(j.created_at) >= today)
-        ?.reduce((sum, j) => sum + Number(j.prize_pool), 0) || 0;
+      const activeJackpots = jackpots?.length || 0;
       
       // Get total winners count
       const { count: totalWinners } = await supabase
         .from("winners")
         .select("*", { count: "exact", head: true });
       
-      setStats({ totalPrizePool: todayPrizePool, totalWinners: totalWinners || 0 });
+      // Get today's draws count
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const { count: todayDraws } = await supabase
+        .from("draws")
+        .select("*", { count: "exact", head: true })
+        .gte("drawn_at", today.toISOString());
+      
+      setStats({ 
+        totalPrizePool, 
+        totalWinners: totalWinners || 0,
+        activeJackpots,
+        todayDraws: todayDraws || 0
+      });
     };
     
     checkAuth();
@@ -146,10 +161,13 @@ const Index = () => {
       <TopNav />
       <ImageSlider />
       <Hero />
+      <StatsSection stats={stats} />
       <JackpotCarouselSection onBuyTicket={isLoggedIn ? handleBuyTicket : undefined} />
+      <FeaturesSection />
       <HowItWorks />
-      {stats.totalPrizePool >= 10000 && <Leaderboard />}
-      {stats.totalWinners >= 10 && <RecentWinners />}
+      <Leaderboard />
+      <RecentWinners />
+      <CTASection />
       <Footer />
       <FloatingActionButton />
       

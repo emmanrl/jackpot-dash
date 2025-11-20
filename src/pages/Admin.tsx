@@ -753,199 +753,324 @@ export default function Admin() {
           </div>
 
           <TabsContent value="jackpots" className="space-y-6">
+            {/* Preset Buttons */}
+            <Card className="bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  Quick Create Presets
+                </CardTitle>
+                <CardDescription>Start with a proven jackpot configuration</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button
+                    variant="outline"
+                    className="h-auto flex-col items-start p-4 border-2 hover:border-primary hover:bg-primary/5 transition-all"
+                    onClick={() => setJackpotForm({
+                      name: "3-Minute Express",
+                      description: "Lightning-fast draws every 3 minutes! Perfect for quick wins and instant excitement.",
+                      ticket_price: "50",
+                      frequency: "3min",
+                      next_draw: "",
+                      expires_at: "",
+                      category: "quick",
+                      winners_count: "1",
+                      admin_commission_percentage: "15",
+                      initial_prize_pool: "5000",
+                      background_image: null
+                    })}
+                  >
+                    <div className="text-2xl mb-2">⚡</div>
+                    <div className="font-bold text-base">3-Minute Express</div>
+                    <div className="text-xs text-muted-foreground text-left mt-1">
+                      Fast & Furious • ₦50/ticket • ₦5K pool
+                    </div>
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    className="h-auto flex-col items-start p-4 border-2 hover:border-primary hover:bg-primary/5 transition-all"
+                    onClick={() => setJackpotForm({
+                      name: "Hourly Classic",
+                      description: "Regular hourly draws with great prizes! Join the winning circle every hour.",
+                      ticket_price: "100",
+                      frequency: "hourly",
+                      next_draw: "",
+                      expires_at: "",
+                      category: "hourly",
+                      winners_count: "3",
+                      admin_commission_percentage: "10",
+                      initial_prize_pool: "10000",
+                      background_image: null
+                    })}
+                  >
+                    <div className="text-2xl mb-2">⏰</div>
+                    <div className="font-bold text-base">Hourly Classic</div>
+                    <div className="text-xs text-muted-foreground text-left mt-1">
+                      Popular Choice • ₦100/ticket • ₦10K pool
+                    </div>
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    className="h-auto flex-col items-start p-4 border-2 hover:border-primary hover:bg-primary/5 transition-all"
+                    onClick={() => setJackpotForm({
+                      name: "Daily Mega",
+                      description: "Massive daily jackpot with life-changing prizes! One chance, one winner, big dreams.",
+                      ticket_price: "200",
+                      frequency: "daily",
+                      next_draw: "",
+                      expires_at: "",
+                      category: "daily",
+                      winners_count: "5",
+                      admin_commission_percentage: "10",
+                      initial_prize_pool: "50000",
+                      background_image: null
+                    })}
+                  >
+                    <div className="text-2xl mb-2">💎</div>
+                    <div className="font-bold text-base">Daily Mega</div>
+                    <div className="text-xs text-muted-foreground text-left mt-1">
+                      Big Prizes • ₦200/ticket • ₦50K pool
+                    </div>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>Create New Jackpot</CardTitle>
-                <CardDescription>Set up a new jackpot draw</CardDescription>
+                <CardDescription>Customize your jackpot settings or use a preset above</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              <CardContent className="space-y-6">
+                {/* Basic Info Section */}
+                <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-primary"></div>
+                    <h3 className="font-semibold">Basic Information</h3>
+                  </div>
                   <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
+                    <Label htmlFor="name">Jackpot Name</Label>
                     <Input
                       id="name"
                       value={jackpotForm.name}
                       onChange={(e) => setJackpotForm({ ...jackpotForm, name: e.target.value })}
-                      placeholder="Weekend Mega Draw"
+                      placeholder="e.g., Weekend Mega Draw"
+                      className="text-base"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="ticket_price">Ticket Price</Label>
-                    <Input
-                      id="ticket_price"
-                      type="number"
-                      step="0.01"
-                      value={jackpotForm.ticket_price}
-                      onChange={(e) => setJackpotForm({ ...jackpotForm, ticket_price: e.target.value })}
-                      placeholder="10.00"
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={jackpotForm.description}
+                      onChange={(e) => setJackpotForm({ ...jackpotForm, description: e.target.value })}
+                      placeholder="Describe what makes this jackpot special..."
+                      className="min-h-[80px]"
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={jackpotForm.description}
-                    onChange={(e) => setJackpotForm({ ...jackpotForm, description: e.target.value })}
-                    placeholder="Enter jackpot description"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="frequency">Draw Frequency</Label>
-                    <Select
-                      value={jackpotForm.frequency}
-                      onValueChange={(value) => setJackpotForm({ ...jackpotForm, frequency: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select frequency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="3min">3 Minutes (Fast Repeat)</SelectItem>
-                        <SelectItem value="5minutes">5 Minutes</SelectItem>
-                        <SelectItem value="10minutes">10 Minutes</SelectItem>
-                        <SelectItem value="30minutes">30 Minutes</SelectItem>
-                        <SelectItem value="hourly">1 Hour</SelectItem>
-                        <SelectItem value="12hours">12 Hours</SelectItem>
-                        <SelectItem value="daily">1 Day</SelectItem>
-                        <SelectItem value="weekly">1 Week</SelectItem>
-                        <SelectItem value="monthly">1 Month</SelectItem>
-                      </SelectContent>
-                    </Select>
+
+                {/* Pricing & Schedule Section */}
+                <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-secondary"></div>
+                    <h3 className="font-semibold">Pricing & Schedule</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="ticket_price">Ticket Price (₦)</Label>
+                      <Input
+                        id="ticket_price"
+                        type="number"
+                        step="0.01"
+                        value={jackpotForm.ticket_price}
+                        onChange={(e) => setJackpotForm({ ...jackpotForm, ticket_price: e.target.value })}
+                        placeholder="100.00"
+                        className="text-base"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="initial_prize_pool">Initial Prize Pool (₦)</Label>
+                      <Input
+                        id="initial_prize_pool"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={jackpotForm.initial_prize_pool}
+                        onChange={(e) => setJackpotForm({ ...jackpotForm, initial_prize_pool: e.target.value })}
+                        placeholder="0.00"
+                        className="text-base"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="frequency">Draw Frequency</Label>
+                      <Select
+                        value={jackpotForm.frequency}
+                        onValueChange={(value) => setJackpotForm({ ...jackpotForm, frequency: value })}
+                      >
+                        <SelectTrigger className="text-base">
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="3min">⚡ 3 Minutes (Fast Repeat)</SelectItem>
+                          <SelectItem value="5minutes">🔥 5 Minutes</SelectItem>
+                          <SelectItem value="10minutes">⏱️ 10 Minutes</SelectItem>
+                          <SelectItem value="30minutes">⏰ 30 Minutes</SelectItem>
+                          <SelectItem value="hourly">🕐 1 Hour</SelectItem>
+                          <SelectItem value="12hours">🌓 12 Hours</SelectItem>
+                          <SelectItem value="daily">📅 1 Day</SelectItem>
+                          <SelectItem value="weekly">📆 1 Week</SelectItem>
+                          <SelectItem value="monthly">🗓️ 1 Month</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="category">Category</Label>
+                      <Select
+                        value={jackpotForm.category}
+                        onValueChange={(value) => setJackpotForm({ ...jackpotForm, category: value })}
+                      >
+                        <SelectTrigger className="text-base">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="quick">⚡ Quick</SelectItem>
+                          <SelectItem value="hourly">⏰ Hourly</SelectItem>
+                          <SelectItem value="daily">📅 Daily</SelectItem>
+                          <SelectItem value="weekly">📆 Weekly</SelectItem>
+                          <SelectItem value="monthly">🗓️ Monthly</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="next_draw">Next Draw Date/Time (Optional if frequency set)</Label>
+                    <Label htmlFor="next_draw">Custom Draw Time (Optional)</Label>
                     <Input
                       id="next_draw"
                       type="datetime-local"
                       value={jackpotForm.next_draw}
                       onChange={(e) => setJackpotForm({ ...jackpotForm, next_draw: e.target.value })}
+                      className="text-base"
                     />
                     <p className="text-xs text-muted-foreground">Leave empty to auto-calculate from frequency</p>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select
-                    value={jackpotForm.category}
-                    onValueChange={(value) => setJackpotForm({ ...jackpotForm, category: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="hourly">Hourly</SelectItem>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="3hours">3 Hours</SelectItem>
-                      <SelectItem value="1hour">1 Hour</SelectItem>
-                      <SelectItem value="quick">Quick</SelectItem>
-                      <SelectItem value="long">Long</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="winners_count">Number of Winners (1-10)</Label>
-                  <Input
-                    id="winners_count"
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={jackpotForm.winners_count}
-                    onChange={(e) => setJackpotForm({ ...jackpotForm, winners_count: e.target.value })}
-                    placeholder="1"
-                  />
-                  <p className="text-xs text-muted-foreground">1st: 60% | 2nd-4th: 25% | 5th-10th: 15% of prize pool</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="admin_commission">Admin Commission (%)</Label>
-                  <Input
-                    id="admin_commission"
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    value={jackpotForm.admin_commission_percentage}
-                    onChange={(e) => setJackpotForm({ ...jackpotForm, admin_commission_percentage: e.target.value })}
-                    placeholder="10"
-                  />
-                  <p className="text-xs text-muted-foreground">Percentage of prize pool that goes to admin (0-100%)</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="initial_prize_pool">Initial Prize Pool (Optional)</Label>
-                  <Input
-                    id="initial_prize_pool"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={jackpotForm.initial_prize_pool}
-                    onChange={(e) => setJackpotForm({ ...jackpotForm, initial_prize_pool: e.target.value })}
-                    placeholder="0.00"
-                  />
-                  <p className="text-xs text-muted-foreground">Starting prize pool amount (for recurring jackpots)</p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="background_image">Background Image (Optional)</Label>
-                  <Input
-                    id="background_image"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0] || null;
-                      setJackpotForm({ ...jackpotForm, background_image: file });
-                      
-                      // Create preview
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          setImagePreview(reader.result as string);
-                        };
-                        reader.readAsDataURL(file);
-                      } else {
-                        setImagePreview(null);
-                      }
-                    }}
-                  />
-                  <p className="text-xs text-muted-foreground">Upload an image to display as the jackpot card background</p>
-                  
-                  {imagePreview && (
-                    <div className="mt-4 relative">
-                      <img 
-                        src={imagePreview} 
-                        alt="Preview" 
-                        className="w-full h-48 object-cover rounded-lg border-2 border-border"
+
+                {/* Prize Distribution Section */}
+                <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-accent"></div>
+                    <h3 className="font-semibold">Prize Distribution</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="winners_count">Number of Winners</Label>
+                      <Input
+                        id="winners_count"
+                        type="number"
+                        min="1"
+                        max="10"
+                        value={jackpotForm.winners_count}
+                        onChange={(e) => setJackpotForm({ ...jackpotForm, winners_count: e.target.value })}
+                        placeholder="1"
+                        className="text-base"
                       />
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        className="absolute top-2 right-2"
-                        onClick={() => {
-                          setImagePreview(null);
-                          setJackpotForm({ ...jackpotForm, background_image: null });
-                        }}
-                      >
-                        Remove
-                      </Button>
+                      <p className="text-xs text-muted-foreground">1st: 60% | 2nd-4th: 25% | 5th-10th: 15%</p>
                     </div>
-                  )}
+                    <div className="space-y-2">
+                      <Label htmlFor="admin_commission">Admin Commission (%)</Label>
+                      <Input
+                        id="admin_commission"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value={jackpotForm.admin_commission_percentage}
+                        onChange={(e) => setJackpotForm({ ...jackpotForm, admin_commission_percentage: e.target.value })}
+                        placeholder="10"
+                        className="text-base"
+                      />
+                      <p className="text-xs text-muted-foreground">Percentage of pool for admin</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="expires_at">Expiration Date/Time (Optional)</Label>
-                  <Input
-                    id="expires_at"
-                    type="datetime-local"
-                    value={jackpotForm.expires_at}
-                    onChange={(e) => setJackpotForm({ ...jackpotForm, expires_at: e.target.value })}
-                  />
-                  <p className="text-xs text-muted-foreground">If set, jackpot will automatically expire and close at this time</p>
+
+                {/* Visual Customization Section */}
+                <div className="space-y-4 p-4 bg-muted/30 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-primary"></div>
+                    <h3 className="font-semibold">Visual Customization</h3>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="background_image">Background Image (Optional)</Label>
+                    <Input
+                      id="background_image"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setJackpotForm({ ...jackpotForm, background_image: file });
+                        
+                        // Create preview
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setImagePreview(reader.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        } else {
+                          setImagePreview(null);
+                        }
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">Upload an image to display as the jackpot card background</p>
+                    
+                    {imagePreview && (
+                      <div className="mt-4 relative">
+                        <img 
+                          src={imagePreview} 
+                          alt="Preview" 
+                          className="w-full h-48 object-cover rounded-lg border-2 border-border"
+                        />
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="absolute top-2 right-2"
+                          onClick={() => {
+                            setImagePreview(null);
+                            setJackpotForm({ ...jackpotForm, background_image: null });
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="expires_at">Expiration Date/Time (Optional)</Label>
+                    <Input
+                      id="expires_at"
+                      type="datetime-local"
+                      value={jackpotForm.expires_at}
+                      onChange={(e) => setJackpotForm({ ...jackpotForm, expires_at: e.target.value })}
+                      className="text-base"
+                    />
+                    <p className="text-xs text-muted-foreground">If set, jackpot will automatically expire and close at this time</p>
+                  </div>
                 </div>
+
                 <Button
                   onClick={createJackpot}
                   disabled={processing === 'create-jackpot'}
-                  className="w-full"
+                  className="w-full py-6 text-base"
                 >
-                  {processing === 'create-jackpot' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Jackpot'}
+                  {processing === 'create-jackpot' ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Create Jackpot'}
                 </Button>
               </CardContent>
             </Card>
