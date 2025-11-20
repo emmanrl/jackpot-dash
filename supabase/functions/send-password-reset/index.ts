@@ -14,11 +14,24 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const resendApiKey = Deno.env.get('RESEND_API_KEY')!;
     
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { email } = await req.json();
+
+    // Fetch email settings from site_settings
+    const { data: settings } = await supabase
+      .from('site_settings')
+      .select('resend_api_key, email_from_address, email_from_name')
+      .single();
+
+    const resendApiKey = settings?.resend_api_key || Deno.env.get('RESEND_API_KEY');
+    const fromAddress = settings?.email_from_address || 'noreply@luckywin.name.ng';
+    const fromName = settings?.email_from_name || 'LuckyWin';
+
+    if (!resendApiKey) {
+      throw new Error('Resend API key not configured');
+    }
 
     if (!email) {
       throw new Error('Email is required');
@@ -41,7 +54,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'noreply@luckywin.name.ng',
+        from: `${fromName} <${fromAddress}>`,
         to: email,
         subject: 'Reset Your LuckyWin Password',
         html: `
