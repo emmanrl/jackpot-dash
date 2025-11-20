@@ -35,10 +35,10 @@ serve(async (req) => {
     const fromEmail = settings.email_from_address || 'noreply@luckywin.name.ng';
     const siteName = settings.site_name || 'LuckyWin';
 
-    // Construct verification URL - use the correct domain
-    const verificationUrl = `https://luckywin.name.ng/auth?token_hash=${token_hash}&type=${email_action_type}`;
+    // Construct verification URL - redirects to tutorial page
+    const verificationUrl = `https://luckywin.name.ng/tutorial?token_hash=${token_hash}&type=${email_action_type}`;
 
-    // Send email using Resend
+    // Send email using Resend with fun comic-style design
     const emailResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -48,7 +48,7 @@ serve(async (req) => {
       body: JSON.stringify({
         from: `${fromName} <${fromEmail}>`,
         to: [email],
-        subject: `Welcome to ${siteName} - Verify Your Email`,
+        subject: `🎰 BOOM! Welcome to ${siteName} - Let's Get You Started! 💥`,
         html: `
           <!DOCTYPE html>
           <html>
@@ -56,51 +56,95 @@ serve(async (req) => {
               <meta charset="utf-8">
               <meta name="viewport" content="width=device-width, initial-scale=1.0">
             </head>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-                <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to ${siteName}! 🎉</h1>
+            <body style="font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background: #fff9e6;">
+              <!-- Header with comic explosion effect -->
+              <div style="background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); padding: 40px 30px; text-align: center; border-radius: 20px 20px 0 0; border: 4px solid #000; position: relative; box-shadow: 8px 8px 0 #000;">
+                <div style="font-size: 60px; margin-bottom: 10px;">💰🎉🎊</div>
+                <h1 style="color: #000; margin: 0; font-size: 32px; text-shadow: 3px 3px 0 #FFD700, 6px 6px 0 rgba(0,0,0,0.2); font-weight: bold; letter-spacing: 2px;">WELCOME ABOARD!</h1>
+                <div style="background: #FF6B6B; color: white; display: inline-block; padding: 8px 20px; border-radius: 20px; margin-top: 15px; border: 3px solid #000; font-size: 14px; font-weight: bold; transform: rotate(-2deg); box-shadow: 3px 3px 0 #000;">NEW WINNER INCOMING! 🚀</div>
               </div>
               
-              <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px;">
-                <p style="font-size: 16px; margin-bottom: 20px;">Hi there,</p>
+              <!-- Main content with comic speech bubbles -->
+              <div style="background: white; padding: 40px 30px; border-radius: 0 0 20px 20px; border: 4px solid #000; border-top: none; box-shadow: 8px 8px 0 #000;">
+                <!-- Greeting bubble -->
+                <div style="background: #FFE66D; padding: 20px; border-radius: 15px; border: 3px solid #000; position: relative; margin-bottom: 25px; box-shadow: 4px 4px 0 #000;">
+                  <div style="position: absolute; top: -10px; left: 30px; width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 15px solid #000;"></div>
+                  <div style="position: absolute; top: -6px; left: 32px; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 12px solid #FFE66D;"></div>
+                  <p style="font-size: 18px; margin: 0; font-weight: bold; color: #000;">Hey Champion! 👋</p>
+                </div>
                 
-                <p style="font-size: 16px; margin-bottom: 20px;">
-                  Thank you for signing up with ${siteName}! We're excited to have you join our community of winners.
+                <p style="font-size: 17px; margin-bottom: 20px; color: #000;">
+                  🎯 You just took the FIRST STEP to becoming our next BIG WINNER! 
                 </p>
                 
-                <p style="font-size: 16px; margin-bottom: 25px;">
-                  To get started, please verify your email address by clicking the button below:
+                <p style="font-size: 17px; margin-bottom: 20px; color: #000;">
+                  But wait... <span style="background: #FF6B6B; color: white; padding: 2px 8px; border-radius: 5px; border: 2px solid #000;">⚡ ACTION REQUIRED!</span>
                 </p>
                 
-                <div style="text-align: center; margin: 30px 0;">
+                <!-- Excitement box -->
+                <div style="background: linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%); padding: 20px; border-radius: 15px; border: 3px solid #000; margin: 25px 0; box-shadow: 4px 4px 0 #000;">
+                  <p style="font-size: 16px; margin: 0 0 10px 0; color: white; font-weight: bold;">
+                    🎁 What's waiting for you after verification:
+                  </p>
+                  <ul style="color: white; font-size: 15px; margin: 0; padding-left: 20px;">
+                    <li>🎰 Access to LIVE jackpots</li>
+                    <li>💎 Exclusive welcome bonuses</li>
+                    <li>🏆 Join 1000+ happy winners</li>
+                    <li>⚡ Lightning-fast withdrawals</li>
+                  </ul>
+                </div>
+                
+                <p style="font-size: 17px; margin-bottom: 25px; color: #000; font-weight: bold;">
+                  👉 Click the BIG button below to verify and START WINNING! 👇
+                </p>
+                
+                <!-- Big CTA Button -->
+                <div style="text-align: center; margin: 35px 0;">
                   <a href="${verificationUrl}" 
-                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                     style="background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%); 
                             color: white; 
-                            padding: 15px 40px; 
+                            padding: 20px 50px; 
                             text-decoration: none; 
-                            border-radius: 5px; 
+                            border-radius: 50px; 
                             font-weight: bold; 
                             display: inline-block;
-                            font-size: 16px;">
-                    Verify Email Address
+                            font-size: 20px;
+                            border: 4px solid #000;
+                            box-shadow: 6px 6px 0 #000;
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
+                            transform: rotate(-1deg);">
+                    🚀 VERIFY & WIN NOW! 💰
                   </a>
                 </div>
                 
-                <p style="font-size: 14px; color: #666; margin-top: 30px;">
-                  Or copy and paste this link into your browser:
-                </p>
-                <p style="font-size: 12px; color: #667eea; word-break: break-all; background: white; padding: 10px; border-radius: 5px;">
-                  ${verificationUrl}
-                </p>
-                
-                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
-                  <p style="font-size: 14px; color: #666;">
-                    If you didn't create an account with ${siteName}, you can safely ignore this email.
+                <!-- Alternate link -->
+                <div style="background: #F7F7F7; padding: 15px; border-radius: 10px; border: 2px dashed #000; margin-top: 30px;">
+                  <p style="font-size: 13px; color: #666; margin: 0 0 10px 0; font-weight: bold;">
+                    🔗 Button not working? Copy this magic link:
+                  </p>
+                  <p style="font-size: 11px; color: #4ECDC4; word-break: break-all; background: white; padding: 10px; border-radius: 5px; border: 2px solid #000; margin: 0;">
+                    ${verificationUrl}
                   </p>
                 </div>
                 
-                <div style="margin-top: 30px; text-align: center; color: #999; font-size: 12px;">
-                  <p>© ${new Date().getFullYear()} ${siteName}. All rights reserved.</p>
+                <!-- Fun footer -->
+                <div style="margin-top: 35px; padding-top: 25px; border-top: 3px dashed #000;">
+                  <div style="text-align: center; margin-bottom: 15px;">
+                    <span style="font-size: 30px;">🎲</span>
+                    <span style="font-size: 30px;">🎰</span>
+                    <span style="font-size: 30px;">💰</span>
+                  </div>
+                  <p style="font-size: 13px; color: #666; text-align: center; margin: 0;">
+                    <strong>P.S.</strong> Didn't sign up? No worries! Just ignore this email and we'll pretend this never happened! 😉
+                  </p>
+                </div>
+                
+                <!-- Footer -->
+                <div style="margin-top: 30px; text-align: center; color: #999; font-size: 12px; padding: 20px; background: #F7F7F7; border-radius: 10px; border: 2px solid #E0E0E0;">
+                  <p style="margin: 5px 0; font-weight: bold; color: #000;">© ${new Date().getFullYear()} ${siteName}</p>
+                  <p style="margin: 5px 0;">Making winners every day! 🎉</p>
+                  <p style="margin: 5px 0; font-size: 10px;">This is your lucky email - don't delete it! 🍀</p>
                 </div>
               </div>
             </body>
