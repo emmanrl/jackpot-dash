@@ -121,7 +121,7 @@ export const WithdrawalStatusTracker = ({ userId }: WithdrawalStatusTrackerProps
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Your withdrawal request has been submitted and will be processed automatically within 5 minutes.
+              Your withdrawal request is awaiting admin approval. You will be notified once processed.
             </p>
 
             {withdrawal.reference && (

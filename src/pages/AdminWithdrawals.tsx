@@ -147,7 +147,7 @@ export default function AdminWithdrawals() {
         <div>
           <h2 className="text-2xl font-bold text-foreground">Withdrawal Management</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Automatic withdrawal processing runs every 5 minutes. Monitor processing status and failed transactions below.
+            Review and approve or reject withdrawal requests from users.
           </p>
         </div>
         <Button onClick={fetchWithdrawals} variant="outline" size="sm" className="gap-2">
@@ -160,11 +160,11 @@ export default function AdminWithdrawals() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Processing</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground">{pendingWithdrawals.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">Currently being processed</p>
+            <p className="text-xs text-muted-foreground mt-1">Awaiting admin approval</p>
           </CardContent>
         </Card>
 
