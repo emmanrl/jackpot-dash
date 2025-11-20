@@ -184,17 +184,23 @@ export default function Withdrawal() {
       }
 
       // Atomically deduct balance for withdrawal
+      console.log('Attempting to reserve withdrawal balance:', withdrawalAmount);
       const { data: reserveResult, error: reserveError } = await supabase
         .rpc('reserve_withdrawal_balance', {
           p_user_id: user.id,
           p_amount: withdrawalAmount
         });
 
+      console.log('Reserve result:', reserveResult, 'Error:', reserveError);
+
       if (reserveError || !reserveResult) {
+        console.error('Failed to reserve balance:', reserveError);
         toast.error("Insufficient balance or failed to reserve funds");
         setLoading(false);
         return;
       }
+
+      console.log('Balance reserved successfully');
 
       // Create withdrawal transaction for admin approval
       const { data: transaction, error: insertError } = await supabase
