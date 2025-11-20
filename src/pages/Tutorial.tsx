@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -11,6 +11,7 @@ import {
   CheckCircle,
   Sparkles
 } from "lucide-react";
+import WelcomeCelebrationModal from "@/components/WelcomeCelebrationModal";
 
 const tutorialSteps = [
   {
@@ -45,7 +46,19 @@ const tutorialSteps = [
 
 export default function Tutorial() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [currentStep, setCurrentStep] = useState(0);
+  const [showWelcome, setShowWelcome] = useState(false);
+
+  useEffect(() => {
+    // Check if user just verified email
+    const verified = searchParams.get('verified');
+    if (verified === 'true') {
+      setShowWelcome(true);
+      // Clean up URL
+      window.history.replaceState({}, '', '/tutorial');
+    }
+  }, [searchParams]);
 
   const handleNext = () => {
     if (currentStep < tutorialSteps.length - 1) {
@@ -63,7 +76,12 @@ export default function Tutorial() {
   const Icon = step.icon;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-background via-primary/5 to-background">
+    <>
+      <WelcomeCelebrationModal 
+        open={showWelcome} 
+        onOpenChange={setShowWelcome}
+      />
+      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-gradient-to-br from-background via-primary/5 to-background">
       {/* Animated background effects */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-0 -left-4 w-96 h-96 bg-primary/10 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-float" />
@@ -151,5 +169,6 @@ export default function Tutorial() {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 }
