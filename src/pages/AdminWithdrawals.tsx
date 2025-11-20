@@ -4,10 +4,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle, XCircle, AlertCircle, RefreshCw } from "lucide-react";
+import { Loader2, CheckCircle, XCircle, AlertCircle, RefreshCw, ThumbsUp, ThumbsDown } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface WithdrawalTransaction {
   id: string;
@@ -26,6 +36,9 @@ export default function AdminWithdrawals() {
   const [withdrawals, setWithdrawals] = useState<WithdrawalTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [userEmailMap, setUserEmailMap] = useState<Record<string, string>>({});
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchWithdrawals();
@@ -122,6 +135,58 @@ export default function AdminWithdrawals() {
     }
   };
 
+  const handleApprove = async (transactionId: string) => {
+    setProcessingId(transactionId);
+    try {
+      const { data, error } = await supabase.functions.invoke('approve-transaction', {
+        body: { 
+          transaction_id: transactionId,
+          action: 'approve'
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success('Withdrawal approved successfully');
+      fetchWithdrawals();
+    } catch (error: any) {
+      console.error('Approval error:', error);
+      toast.error(error.message || 'Failed to approve withdrawal');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleReject = async (transactionId: string) => {
+    setProcessingId(transactionId);
+    try {
+      const { data, error } = await supabase.functions.invoke('approve-transaction', {
+        body: { 
+          transaction_id: transactionId,
+          action: 'reject',
+          admin_note: 'Rejected by admin'
+        }
+      });
+
+      if (error) throw error;
+
+      toast.success('Withdrawal rejected');
+      fetchWithdrawals();
+    } catch (error: any) {
+      console.error('Rejection error:', error);
+      toast.error(error.message || 'Failed to reject withdrawal');
+    } finally {
+      setProcessingId(null);
+      setShowRejectDialog(false);
+      setRejectingId(null);
+    }
+  };
+
+  const initiateReject = (transactionId: string) => {
+    setRejectingId(transactionId);
+    setShowRejectDialog(true);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -210,6 +275,9 @@ export default function AdminWithdrawals() {
                 userEmailMap={userEmailMap}
                 getStatusBadge={getStatusBadge}
                 parseBankDetails={parseBankDetails}
+                onApprove={handleApprove}
+                onReject={initiateReject}
+                processingId={processingId}
               />
             </CardContent>
           </Card>
@@ -227,6 +295,10 @@ export default function AdminWithdrawals() {
                 userEmailMap={userEmailMap}
                 getStatusBadge={getStatusBadge}
                 parseBankDetails={parseBankDetails}
+                onApprove={handleApprove}
+                onReject={initiateReject}
+                processingId={processingId}
+                showActions
               />
             </CardContent>
           </Card>
@@ -244,6 +316,9 @@ export default function AdminWithdrawals() {
                 userEmailMap={userEmailMap}
                 getStatusBadge={getStatusBadge}
                 parseBankDetails={parseBankDetails}
+                onApprove={handleApprove}
+                onReject={initiateReject}
+                processingId={processingId}
               />
             </CardContent>
           </Card>
@@ -261,12 +336,36 @@ export default function AdminWithdrawals() {
                 userEmailMap={userEmailMap}
                 getStatusBadge={getStatusBadge}
                 parseBankDetails={parseBankDetails}
+                onApprove={handleApprove}
+                onReject={initiateReject}
+                processingId={processingId}
                 showErrors
               />
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Reject Confirmation Dialog */}
+      <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reject Withdrawal?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to reject this withdrawal request? The amount will be refunded to the user's wallet.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => rejectingId && handleReject(rejectingId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Reject Withdrawal
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -276,7 +375,11 @@ interface WithdrawalTableProps {
   userEmailMap: Record<string, string>;
   getStatusBadge: (status: string, processingStage: string | null) => JSX.Element;
   parseBankDetails: (adminNote: string | null) => any;
+  onApprove: (id: string) => void;
+  onReject: (id: string) => void;
+  processingId: string | null;
   showErrors?: boolean;
+  showActions?: boolean;
 }
 
 function WithdrawalTable({ 
@@ -284,7 +387,11 @@ function WithdrawalTable({
   userEmailMap, 
   getStatusBadge, 
   parseBankDetails,
-  showErrors = false 
+  onApprove,
+  onReject,
+  processingId,
+  showErrors = false,
+  showActions = false
 }: WithdrawalTableProps) {
   if (withdrawals.length === 0) {
     return (
@@ -306,6 +413,7 @@ function WithdrawalTable({
             <TableHead>Reference</TableHead>
             <TableHead>Date</TableHead>
             {showErrors && <TableHead>Error</TableHead>}
+            {showActions && <TableHead className="text-right">Actions</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -349,6 +457,40 @@ function WithdrawalTable({
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}
+                  </TableCell>
+                )}
+                {showActions && withdrawal.status === 'pending' && (
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => onApprove(withdrawal.id)}
+                        disabled={processingId === withdrawal.id}
+                        className="bg-green-600 hover:bg-green-700 text-white gap-1.5"
+                      >
+                        {processingId === withdrawal.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <ThumbsUp className="w-4 h-4" />
+                        )}
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => onReject(withdrawal.id)}
+                        disabled={processingId === withdrawal.id}
+                        className="gap-1.5"
+                      >
+                        <ThumbsDown className="w-4 h-4" />
+                        Reject
+                      </Button>
+                    </div>
+                  </TableCell>
+                )}
+                {showActions && withdrawal.status !== 'pending' && (
+                  <TableCell className="text-right text-muted-foreground text-xs">
+                    —
                   </TableCell>
                 )}
               </TableRow>
