@@ -76,6 +76,12 @@ const Dashboard = () => {
   const [tickets, setTickets] = useState<TicketData[]>([]);
   const [wins, setWins] = useState<WinnerData[]>([]);
   const [withdrawalAccount, setWithdrawalAccount] = useState<WithdrawalAccount | null>(null);
+  const [globalStats, setGlobalStats] = useState({
+    totalPrizePool: 0,
+    totalWinners: 0,
+    activeJackpots: 0,
+    totalPlayers: 0
+  });
   useDrawNotifications();
   const {
     winData,
@@ -134,9 +140,12 @@ const Dashboard = () => {
         return;
       }
       setUser(session.user);
-      await fetchUserData(session.user.id);
-      await fetchActiveJackpots();
-      await fetchWithdrawalAccount(session.user.id);
+      await Promise.all([
+        fetchUserData(session.user.id),
+        fetchActiveJackpots(),
+        fetchWithdrawalAccount(session.user.id),
+        fetchGlobalStats()
+      ]);
       setLoading(false);
     };
     checkUser();
@@ -320,6 +329,45 @@ const Dashboard = () => {
       setIsLoadingStats(false);
     }
   };
+  
+  const fetchGlobalStats = async () => {
+    try {
+      // Get total prize pool from active jackpots
+      const { data: jackpots } = await supabase
+        .from('jackpots')
+        .select('prize_pool')
+        .eq('status', 'active');
+      
+      const totalPrizePool = jackpots?.reduce((sum, j) => sum + Number(j.prize_pool), 0) || 0;
+      
+      // Get total winners count
+      const { count: totalWinners } = await supabase
+        .from('winners')
+        .select('*', { count: 'exact', head: true });
+      
+      // Get active jackpots count
+      const { count: activeJackpots } = await supabase
+        .from('jackpots')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active');
+      
+      // Get unique players count
+      const { data: uniquePlayers } = await supabase
+        .from('tickets')
+        .select('user_id');
+      
+      const totalPlayers = uniquePlayers ? new Set(uniquePlayers.map(t => t.user_id)).size : 0;
+      
+      setGlobalStats({
+        totalPrizePool,
+        totalWinners: totalWinners || 0,
+        activeJackpots: activeJackpots || 0,
+        totalPlayers
+      });
+    } catch (error) {
+      console.error("Error fetching global stats:", error);
+    }
+  };
   const handleBuyTicket = (jackpot: any) => {
     setSelectedJackpot(jackpot);
     setTicketDialogOpen(true);
@@ -421,7 +469,7 @@ const Dashboard = () => {
       </div>;
   }
   const xpProgress = getXPProgress();
-  return <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background scroll-smooth">
       <SEOHead
         title={`Dashboard - ${profile?.full_name || user?.email} | LuckyWin`}
         description="Manage your LuckyWin account, buy lottery tickets, check your wallet balance, track your wins, and participate in exciting jackpot draws."
@@ -514,7 +562,66 @@ const Dashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 md:py-8 space-y-6 md:space-y-8">
-        <div className="grid grid-cols-1 gap-4 md:gap-6">
+        {/* Global Platform Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 opacity-0 animate-fade-in">
+          <Card className="p-4 hover:shadow-lg transition-all duration-300 hover:scale-105 border-2 hover:border-primary/30">
+            <div className="flex flex-col space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Trophy className="w-5 h-5 text-primary" />
+                </div>
+              </div>
+              <div className="text-2xl md:text-3xl font-bold text-primary">
+                ₦{(globalStats.totalPrizePool / 1000).toFixed(0)}K
+              </div>
+              <div className="text-xs text-muted-foreground">Total Prize Pool</div>
+            </div>
+          </Card>
+
+          <Card className="p-4 hover:shadow-lg transition-all duration-300 hover:scale-105 border-2 hover:border-secondary/30">
+            <div className="flex flex-col space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-secondary" />
+                </div>
+              </div>
+              <div className="text-2xl md:text-3xl font-bold text-secondary">
+                {globalStats.totalWinners}
+              </div>
+              <div className="text-xs text-muted-foreground">Total Winners</div>
+            </div>
+          </Card>
+
+          <Card className="p-4 hover:shadow-lg transition-all duration-300 hover:scale-105 border-2 hover:border-accent/30">
+            <div className="flex flex-col space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+                  <Zap className="w-5 h-5 text-accent" />
+                </div>
+              </div>
+              <div className="text-2xl md:text-3xl font-bold text-accent">
+                {globalStats.activeJackpots}
+              </div>
+              <div className="text-xs text-muted-foreground">Active Jackpots</div>
+            </div>
+          </Card>
+
+          <Card className="p-4 hover:shadow-lg transition-all duration-300 hover:scale-105 border-2 hover:border-primary/30">
+            <div className="flex flex-col space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <UserIcon className="w-5 h-5 text-primary" />
+                </div>
+              </div>
+              <div className="text-2xl md:text-3xl font-bold text-primary">
+                {globalStats.totalPlayers}
+              </div>
+              <div className="text-xs text-muted-foreground">Active Players</div>
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:gap-6 opacity-0 animate-fade-in" style={{ animationDelay: '0.1s' }}>
           <Card className="rounded-2xl shadow-xl transition-transform hover:scale-[1.005] duration-300 w-full">
             <CardHeader className="p-6 pb-4">
               <CardTitle className="text-2xl font-extrabold flex items-center gap-2"><Wallet className="w-5 h-5 text-primary" />Dashboard
@@ -594,7 +701,7 @@ const Dashboard = () => {
         </div>
 
         {/* Referral Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 opacity-0 animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <ReferralCard userId={user.id} />
           <PublicProfileCard profile={profile} avatarUrl={realtimeAvatarUrl || profile?.avatar_url} stats={{
           xp: xp,
@@ -603,7 +710,7 @@ const Dashboard = () => {
         }} />
         </div>
 
-        <section id="jackpots-section" className="space-y-4 scroll-mt-20">
+        <section id="jackpots-section" className="space-y-4 scroll-mt-20 opacity-0 animate-fade-in" style={{ animationDelay: '0.3s' }}>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <Zap className="w-6 h-6 text-primary" />
@@ -662,7 +769,7 @@ const Dashboard = () => {
         {/* Withdrawal Status Tracker */}
         {user && <WithdrawalStatusTracker userId={user.id} />}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 opacity-0 animate-fade-in" style={{ animationDelay: '0.4s' }}>
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
