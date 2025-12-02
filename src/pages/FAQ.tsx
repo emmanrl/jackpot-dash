@@ -1,12 +1,10 @@
-import TopNav from "@/components/TopNav";
-import Footer from "@/components/Footer";
+import MainLayout from "@/components/MainLayout";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const FAQ = () => {
   return (
-    <div className="min-h-screen animated-bg flex flex-col">
-      <TopNav />
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
+    <MainLayout>
+      <div className="space-y-6 max-w-4xl">
         <h1 className="text-4xl font-bold mb-8">Frequently Asked Questions</h1>
         <Accordion type="single" collapsible className="w-full space-y-4">
           <AccordionItem value="item-1">
@@ -28,9 +26,8 @@ const FAQ = () => {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
-      </main>
-      <Footer />
-    </div>
+      </div>
+    </MainLayout>
   );
 };
 

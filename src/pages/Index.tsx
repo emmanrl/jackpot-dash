@@ -23,6 +23,8 @@ import FeaturesSection from "@/components/FeaturesSection";
 import CTASection from "@/components/CTASection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import TrustBadgesSection from "@/components/TrustBadgesSection";
+import SideNav from "@/components/SideNav";
+import LiveWinsTicker from "@/components/LiveWinsTicker";
 
 const Index = () => {
   const location = useLocation();
@@ -33,11 +35,11 @@ const Index = () => {
   const [ticketDialogOpen, setTicketDialogOpen] = useState(false);
   const [selectedJackpot, setSelectedJackpot] = useState<any>(null);
   const [walletBalance, setWalletBalance] = useState(0);
-  const [stats, setStats] = useState({ 
-    totalPrizePool: 0, 
-    totalWinners: 0, 
-    activeJackpots: 0, 
-    todayDraws: 0 
+  const [stats, setStats] = useState({
+    totalPrizePool: 0,
+    totalWinners: 0,
+    activeJackpots: 0,
+    todayDraws: 0
   });
   const { winData, showWinModal, setShowWinModal } = useWinNotification();
 
@@ -45,7 +47,7 @@ const Index = () => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsLoggedIn(!!session);
-      
+
       if (session) {
         // Fetch wallet balance
         const { data: wallet } = await supabase
@@ -53,7 +55,7 @@ const Index = () => {
           .select("balance")
           .eq("user_id", session.user.id)
           .single();
-        
+
         if (wallet) setWalletBalance(Number(wallet.balance));
 
         // Set up real-time subscription for jackpots
@@ -79,22 +81,22 @@ const Index = () => {
         };
       }
     };
-    
+
     const fetchStats = async () => {
       // Get active jackpots
       const { data: jackpots } = await supabase
         .from("jackpots")
         .select("prize_pool, created_at")
         .eq("status", "active");
-      
+
       const totalPrizePool = jackpots?.reduce((sum, j) => sum + Number(j.prize_pool), 0) || 0;
       const activeJackpots = jackpots?.length || 0;
-      
+
       // Get total winners count
       const { count: totalWinners } = await supabase
         .from("winners")
         .select("*", { count: "exact", head: true });
-      
+
       // Get today's draws count
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -102,15 +104,15 @@ const Index = () => {
         .from("draws")
         .select("*", { count: "exact", head: true })
         .gte("drawn_at", today.toISOString());
-      
-      setStats({ 
-        totalPrizePool, 
+
+      setStats({
+        totalPrizePool,
         totalWinners: totalWinners || 0,
         activeJackpots,
         todayDraws: todayDraws || 0
       });
     };
-    
+
     checkAuth();
     fetchStats();
 
@@ -126,7 +128,7 @@ const Index = () => {
         type: "deposit",
       });
       setReceiptOpen(true);
-      
+
       // Clean up URL params
       setSearchParams({});
     }
@@ -145,13 +147,13 @@ const Index = () => {
         .select("balance")
         .eq("user_id", session.user.id)
         .single();
-      
+
       if (wallet) setWalletBalance(Number(wallet.balance));
     }
   };
 
   return (
-    <div className="min-h-screen animated-bg scroll-smooth">
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground overflow-x-hidden font-sans">
       <SEOHead
         title="LuckyWin - Win Big with Hourly, Daily & Weekly Jackpots"
         description="Play Nigeria's most exciting online lottery! Win instant prizes with hourly draws, daily jackpots up to ₦1M, and weekly mega prizes. Join thousands of winners today!"
@@ -160,27 +162,40 @@ const Index = () => {
       />
       <BreadcrumbSchema items={generateBreadcrumbs(location.pathname)} />
       <StructuredData />
+
+      <SideNav />
       <TopNav />
-      <ImageSlider />
-      <Hero />
-      <StatsSection stats={stats} />
-      <JackpotCarouselSection onBuyTicket={isLoggedIn ? handleBuyTicket : undefined} />
-      <TrustBadgesSection />
-      <HowItWorks />
-      <TestimonialsSection />
-      <Leaderboard />
-      <RecentWinners />
-      <FeaturesSection />
-      <CTASection />
-      <Footer />
-      <FloatingActionButton />
-      
+
+      <main className="relative z-10 lg:pl-64 pb-20">
+        <Hero />
+
+        <div className="relative z-20 -mt-20 pb-20 px-4">
+          <JackpotCarouselSection onBuyTicket={isLoggedIn ? handleBuyTicket : undefined} />
+        </div>
+
+        <div className="space-y-20 pb-20">
+          <StatsSection stats={stats} />
+          <RecentWinners />
+          <HowItWorks />
+          <Leaderboard />
+          <FeaturesSection />
+          <TestimonialsSection />
+          <TrustBadgesSection />
+          <CTASection />
+        </div>
+      </main>
+
+      <div className="lg:pl-64">
+        <Footer />
+      </div>
+
+
       <ReceiptModal
         open={receiptOpen}
         onOpenChange={setReceiptOpen}
         transaction={receiptData}
       />
-      
+
       {selectedJackpot && (
         <TicketPurchaseDialog
           open={ticketDialogOpen}
@@ -190,7 +205,7 @@ const Index = () => {
           onSuccess={handleTicketPurchaseSuccess}
         />
       )}
-      
+
       {winData && (
         <WinCelebrationModal
           open={showWinModal}

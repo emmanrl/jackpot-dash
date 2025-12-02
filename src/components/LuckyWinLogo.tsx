@@ -11,8 +11,9 @@ export const LuckyWinLogo = ({ className = "", size = "md" }: LuckyWinLogoProps)
   };
 
   return (
-    <span className={`font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent ${sizeClasses[size]} ${className}`}>
-      LuckyWin
-    </span>
+    <div className={`font-display font-bold tracking-wide flex items-center gap-0.5 ${sizeClasses[size]} ${className}`}>
+      <span className="text-foreground">LUCKY</span>
+      <span className="text-primary drop-shadow-[0_0_10px_rgba(250,204,21,0.3)]">WIN</span>
+    </div>
   );
 };

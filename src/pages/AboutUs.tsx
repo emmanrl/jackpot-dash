@@ -1,5 +1,4 @@
-import TopNav from "@/components/TopNav";
-import Footer from "@/components/Footer";
+import MainLayout from "@/components/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
@@ -7,9 +6,8 @@ const AboutUs = () => {
   const { settings } = useSiteSettings();
 
   return (
-    <div className="min-h-screen animated-bg flex flex-col">
-      <TopNav />
-      <main className="flex-1 container mx-auto px-4 py-8">
+    <MainLayout>
+      <div className="space-y-6">
         <h1 className="text-4xl font-bold mb-8">About {settings.site_name}</h1>
         <Card>
           <CardHeader>
@@ -21,9 +19,8 @@ const AboutUs = () => {
             <p>Our platform features multiple draw frequencies - from 5-minute rapid draws to monthly mega jackpots, ensuring there's always an opportunity to win.</p>
           </CardContent>
         </Card>
-      </main>
-      <Footer />
-    </div>
+      </div>
+    </MainLayout>
   );
 };
 

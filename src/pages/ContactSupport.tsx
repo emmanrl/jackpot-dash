@@ -1,5 +1,4 @@
-import TopNav from "@/components/TopNav";
-import Footer from "@/components/Footer";
+import MainLayout from "@/components/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Phone } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -8,9 +7,8 @@ const ContactSupport = () => {
   const { settings } = useSiteSettings();
 
   return (
-    <div className="min-h-screen animated-bg flex flex-col">
-      <TopNav />
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-2xl">
+    <MainLayout>
+      <div className="space-y-6 max-w-2xl">
         <h1 className="text-4xl font-bold mb-8">Contact Support</h1>
         <Card>
           <CardHeader>
@@ -35,9 +33,8 @@ const ContactSupport = () => {
             )}
           </CardContent>
         </Card>
-      </main>
-      <Footer />
-    </div>
+      </div>
+    </MainLayout>
   );
 };
 

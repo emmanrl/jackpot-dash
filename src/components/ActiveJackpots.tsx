@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import JackpotCard from "./JackpotCard";
+import heroImage from "@/assets/hero-jackpot.jpg";
 
 interface Jackpot {
   id: string;
@@ -49,14 +50,25 @@ const ActiveJackpots = ({ onBuyTicket }: ActiveJackpotsProps = {}) => {
 
   return (
     <section className="py-20 px-4">
+      <div className="absolute inset-0 bg-[#0f1923]">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-20 mix-blend-overlay"
+          style={{ backgroundImage: `url(${heroImage})` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0f1923] via-[#0f1923]/95 to-[#0f1923]/40" />
+
+        {/* Animated Orbs */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-yellow-500/10 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] animate-pulse delay-1000" />
+      </div>
+
       <div className="container mx-auto">
         <div className="text-center mb-12">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-              Active Jackpots
-            </span>
+          <h2 className="text-4xl md:text-5xl font-black mb-4 text-white">
+            Active
+            <span className="text-yellow-500 ml-2">Jackpots</span>
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-gray-400 max-w-2xl mx-auto">
             Choose your jackpot and start winning. New draws every hour!
           </p>
         </div>

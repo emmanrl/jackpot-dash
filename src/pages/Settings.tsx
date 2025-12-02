@@ -10,14 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Sparkles, Moon, Sun, Plus, Trash2, CheckCircle2, Award, Mail, Phone } from "lucide-react";
 import { toast } from "sonner";
-import TopNav from "@/components/TopNav";
-import Footer from "@/components/Footer";
+import MainLayout from "@/components/MainLayout";
 import NotificationSettings from "@/components/NotificationSettings";
 import { ThemeSelector } from "@/components/ThemeSelector";
 import { AchievementBadge } from "@/components/AchievementBadge";
 import { PhoneVerification } from "@/components/PhoneVerification";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ProfileCompletionProgress } from "@/components/ProfileCompletionProgress";
+import { useDarkMode } from "@/hooks/useDarkMode";
 
 interface WithdrawalAccount {
   id: string;
@@ -37,7 +37,6 @@ interface Bank {
 const Settings = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [accounts, setAccounts] = useState<WithdrawalAccount[]>([]);
   const [addAccountOpen, setAddAccountOpen] = useState(false);
   const [bankName, setBankName] = useState("");
@@ -55,6 +54,7 @@ const Settings = () => {
   const [userEmail, setUserEmail] = useState("");
   const [sendingVerification, setSendingVerification] = useState(false);
   const [phoneVerificationEnabled, setPhoneVerificationEnabled] = useState(false);
+  const { theme, toggleTheme } = useDarkMode();
 
   useEffect(() => {
     const checkUser = async () => {
@@ -65,40 +65,21 @@ const Settings = () => {
       }
       setUserId(session.user.id);
       setUserEmail(session.user.email || "");
-      
+
       // Check actual verification status from auth metadata
       setEmailVerified(!!session.user.email_confirmed_at);
       setPhoneVerified(!!session.user.phone_confirmed_at);
-      
+
       // Fetch auth settings to check if phone verification is enabled
       const { data: authSettings } = await supabase
         .from('auth_settings')
         .select('phone_verification_enabled')
         .single();
-      
+
       if (authSettings) {
         setPhoneVerificationEnabled(authSettings.phone_verification_enabled || false);
       }
-      
-      // Fetch user's dark mode preference from database
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('dark_mode')
-        .eq('id', session.user.id)
-        .single();
-      
-      if (profile) {
-        const userTheme = (profile as any).dark_mode ? 'dark' : 'light';
-        setTheme(userTheme);
-        
-        // Apply theme
-        if (userTheme === 'dark') {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-      }
-      
+
       await fetchWithdrawalAccounts(session.user.id);
       await fetchBanks();
       await fetchAchievements(session.user.id);
@@ -111,12 +92,12 @@ const Settings = () => {
     setLoadingBanks(true);
     try {
       const { data, error } = await supabase.functions.invoke('get-banks');
-      
+
       if (error) throw error;
-      
+
       if (data?.banks && data.banks.length > 0) {
         // Sort banks alphabetically by name
-        const sortedBanks = [...data.banks].sort((a, b) => 
+        const sortedBanks = [...data.banks].sort((a, b) =>
           a.name.localeCompare(b.name)
         );
         setBanks(sortedBanks);
@@ -194,7 +175,7 @@ const Settings = () => {
   const handleAccountNumberChange = (value: string) => {
     setAccountNumber(value);
     setVerifiedAccountName("");
-    
+
     if (value.length === 10 && selectedBankCode) {
       verifyAccountNumber(value, selectedBankCode);
     }
@@ -202,7 +183,7 @@ const Settings = () => {
 
   const handleAddAccount = async () => {
     if (!userId) return;
-    
+
     try {
       // Validate inputs
       if (!selectedBankCode || !accountNumber) {
@@ -283,7 +264,7 @@ const Settings = () => {
 
   const handleDeleteAccount = async (accountId: string) => {
     if (!userId) return;
-    
+
     try {
       const { error } = await supabase
         .from("withdrawal_accounts")
@@ -301,7 +282,7 @@ const Settings = () => {
 
   const handleSetDefault = async (accountId: string) => {
     if (!userId) return;
-    
+
     try {
       // Unset all defaults
       await supabase
@@ -324,36 +305,7 @@ const Settings = () => {
     }
   };
 
-  const handleThemeToggle = async () => {
-    if (!userId) return;
-    
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    
-    if (newTheme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-    
-    // Save to localStorage for immediate persistence
-    localStorage.setItem("theme", newTheme);
-    
-    // Save to database for cross-device persistence
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ dark_mode: newTheme === 'dark' } as any)
-        .eq('id', userId);
-      
-      if (error) throw error;
-      
-      toast.success(`Switched to ${newTheme} mode`);
-    } catch (error: any) {
-      console.error('Failed to save theme preference:', error);
-      toast.error('Theme changed but failed to save preference');
-    }
-  };
+
 
   const sendEmailVerification = async () => {
     setSendingVerification(true);
@@ -381,17 +333,17 @@ const Settings = () => {
   }
 
   return (
-    <div className="min-h-screen animated-bg">
-      <TopNav />
-      <main className="container mx-auto px-4 py-8 space-y-6">
+    <MainLayout>
+      {/* Masonry Layout - 2 columns on desktop */}
+      <div className="columns-1 md:columns-2 gap-6 space-y-6">
         {/* Profile Completion Progress */}
         {userId && <ProfileCompletionProgress userId={userId} />}
-        
+
         {/* Theme Selector */}
         <ThemeSelector userId={userId || undefined} />
 
         {/* Achievements */}
-        <Card>
+        <Card className="break-inside-avoid mb-6">
           <CardHeader>
             <div className="flex items-center gap-2">
               <Award className="w-5 h-5 text-primary" />
@@ -420,8 +372,8 @@ const Settings = () => {
         </Card>
 
         <NotificationSettings />
-        
-        <Card className="max-w-2xl mx-auto">
+
+        <Card className="break-inside-avoid mb-6">
           <CardHeader>
             <CardTitle className="text-2xl">Settings</CardTitle>
             <CardDescription>Manage your account preferences</CardDescription>
@@ -443,7 +395,7 @@ const Settings = () => {
                 <Switch
                   id="theme-toggle"
                   checked={theme === "light"}
-                  onCheckedChange={handleThemeToggle}
+                  onCheckedChange={toggleTheme}
                 />
               </div>
             </div>
@@ -468,7 +420,7 @@ const Settings = () => {
                       Email not verified. Please verify your email to withdraw winnings.
                     </AlertDescription>
                   </Alert>
-                  <Button 
+                  <Button
                     onClick={sendEmailVerification}
                     disabled={sendingVerification}
                     variant="outline"
@@ -530,8 +482,8 @@ const Settings = () => {
                     <div className="space-y-4">
                       <div>
                         <Label>Bank</Label>
-                        <Select 
-                          value={selectedBankCode} 
+                        <Select
+                          value={selectedBankCode}
                           onValueChange={(value) => {
                             setSelectedBankCode(value);
                             const bank = banks.find(b => b.code === value);
@@ -663,9 +615,8 @@ const Settings = () => {
             </div>
           </CardContent>
         </Card>
-      </main>
-      <Footer />
-    </div>
+      </div>
+    </MainLayout>
   );
 };
 

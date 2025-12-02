@@ -1,23 +1,15 @@
 import { Button } from "@/components/ui/button";
-import { Sparkles, Trophy, LayoutDashboard, TrendingUp, Users, Clock } from "lucide-react";
+import { Sparkles, Trophy, ArrowRight, Clock, Ticket } from "lucide-react";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
 import heroImage from "@/assets/hero-jackpot.jpg";
-import { Card } from "@/components/ui/card";
 
 const Hero = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
-  const { settings } = useSiteSettings();
-  const [stats, setStats] = useState({
-    totalPrizeToday: 0,
-    winnersThisWeek: 0,
-    activeJackpots: 0,
-    nextDrawIn: "Loading...",
-  });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -28,194 +20,169 @@ const Hero = () => {
       setUser(session?.user ?? null);
     });
 
-    fetchStats();
-
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchStats = async () => {
-    // Fetch total prize pool today
-    const { data: jackpots } = await supabase
-      .from("jackpots")
-      .select("prize_pool")
-      .eq("status", "active");
-    
-    const totalPrize = jackpots?.reduce((sum, j) => sum + Number(j.prize_pool), 0) || 0;
-
-    // Fetch winners this week
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const { count: winnersCount } = await supabase
-      .from("winners")
-      .select("*", { count: "exact", head: true })
-      .gte("claimed_at", weekAgo.toISOString());
-
-    // Fetch active jackpots count
-    const { count: jackpotsCount } = await supabase
-      .from("jackpots")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "active");
-
-    // Get next draw time
-    const { data: nextJackpot } = await supabase
-      .from("jackpots")
-      .select("next_draw")
-      .eq("status", "active")
-      .order("next_draw", { ascending: true })
-      .limit(1)
-      .single();
-
-    let nextDrawText = "Soon";
-    if (nextJackpot?.next_draw) {
-      const timeDiff = new Date(nextJackpot.next_draw).getTime() - Date.now();
-      const minutes = Math.floor(timeDiff / 60000);
-      if (minutes < 60) {
-        nextDrawText = `${minutes}m`;
-      } else {
-        const hours = Math.floor(minutes / 60);
-        nextDrawText = `${hours}h`;
-      }
-    }
-
-    setStats({
-      totalPrizeToday: totalPrize,
-      winnersThisWeek: winnersCount || 0,
-      activeJackpots: jackpotsCount || 0,
-      nextDrawIn: nextDrawText,
-    });
-  };
-  
   return (
-    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
-      {/* Background image with overlay */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center opacity-20"
-        style={{ backgroundImage: `url(${heroImage})` }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background" />
-      
-      {/* Floating particles effect */}
-      <div className="absolute inset-0 overflow-hidden">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full bg-primary/20"
-            style={{
-              width: Math.random() * 4 + 2 + "px",
-              height: Math.random() * 4 + 2 + "px",
-              left: Math.random() * 100 + "%",
-              top: Math.random() * 100 + "%",
-              animation: `float ${Math.random() * 3 + 2}s ease-in-out infinite`,
-              animationDelay: Math.random() * 2 + "s",
-            }}
-          />
-        ))}
+    <section className="relative min-h-[600px] flex items-center overflow-hidden py-12 lg:py-20 px-4 lg:px-12">
+      {/* Dynamic Background */}
+      <div className="absolute inset-0 bg-background">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-20 mix-blend-overlay"
+          style={{ backgroundImage: `url(${heroImage})` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/95 to-background/40" />
+
+        {/* Animated Orbs */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-yellow-500/10 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[120px] animate-pulse delay-1000" />
       </div>
 
-      {/* Content */}
-      <div className="container relative z-10 mx-auto px-4 text-center">
-        <div className="flex justify-center mb-6">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20">
-            <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-            <span className="text-sm font-medium text-primary">Trusted by 100,000+ Winners</span>
+      <div className="container relative z-10 mx-auto">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+
+          {/* Left Content */}
+          <div className="text-left max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 mb-6">
+              <Sparkles className="w-3 h-3 text-yellow-500" />
+              <span className="text-xs font-bold text-yellow-500 tracking-wider uppercase">Trusted by 100,000+ Winners</span>
+            </div>
+
+            <h1 className="animate-float text-5xl md:text-6xl lg:text-7xl font-black mb-6 leading-[1.1] text-foreground">
+              Win Life-Changing
+              <span className="block text-yellow-500">Jackpots</span>
+              Every Hour
+            </h1>
+
+            <p className="text-lg text-muted-foreground mb-8 max-w-xl leading-relaxed">
+              Join thousands of winners in our transparent, fair lottery system.
+              Hourly, daily, and weekly draws with prizes up to
+              <span className="text-yellow-500 font-bold ml-1">₦1,000,000</span>.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 animate-float">
+              <Button
+                size="lg"
+                className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-lg px-8 py-6 h-auto rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.3)] hover:shadow-[0_0_30px_rgba(234,179,8,0.5)] transition-all duration-300 transform hover:-translate-y-1"
+                onClick={() => navigate(user ? "/dashboard" : "/auth")}
+              >
+                Buy Ticket Now
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="bg-card border-border text-foreground hover:bg-muted hover:text-foreground text-lg px-8 py-6 h-auto rounded-xl"
+                onClick={() => navigate("/winners")}
+              >
+                <Trophy className="w-5 h-5 mr-2 text-muted-foreground" />
+                View Winners
+              </Button>
+            </div>
           </div>
-        </div>
 
-        <h1 className="text-5xl md:text-7xl font-bold mb-6 gold-glow">
-          Win Life-Changing
-          <span className="block bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-shimmer bg-[length:200%_100%]">
-            Jackpots Every Hour
-          </span>
-        </h1>
+          {/* Right Content - Floating Cards */}
+          <div className="relative hidden lg:block h-[500px]">
 
-        <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-          Join thousands of winners in our transparent, fair lottery system.
-          Hourly, daily, weekly draws with prizes up to <span className="text-primary font-bold">₦1,000,000</span>
-        </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-          {user ? (
-            <Button 
-              variant="hero" 
-              size="lg" 
-              className="text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 h-auto w-full sm:w-auto"
-              onClick={() => navigate("/dashboard")}
+
+            {/* Next Draw Card */}
+            <motion.div
+              animate={{ y: [0, -15, 0] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute top-0 right-0 w-80 bg-card/90 backdrop-blur-md border border-border rounded-2xl p-6 shadow-2xl z-10"
             >
-              <LayoutDashboard className="w-4 h-4 sm:w-5 sm:h-5" />
-              Go to Dashboard
-            </Button>
-          ) : (
-            <>
-              <Button 
-                variant="hero" 
-                size="lg" 
-                className="text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 h-auto w-full sm:w-auto"
-                onClick={() => navigate("/auth")}
-              >
-                <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
-                Get Started
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="text-base sm:text-lg px-6 sm:px-8 py-4 sm:py-6 h-auto border-primary/30 hover:border-primary w-full sm:w-auto"
-                onClick={() => navigate("/auth")}
-              >
-                Sign In
-              </Button>
-            </>
-          )}
-        </div>
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Next Draw</div>
+                  <div className="text-xl font-bold text-foreground">Daily Grand</div>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                  <Clock className="w-4 h-4 text-yellow-500" />
+                </div>
+              </div>
 
-        {/* Enhanced Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto">
-          <Card className="bg-card/50 backdrop-blur-sm p-3 sm:p-4 border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:scale-105 group">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+              <div className="flex gap-2 mb-6">
+                {["02", ":", "45", ":", "12"].map((item, i) => (
+                  <div key={i} className={`font-mono font-bold ${item === ":" ? "text-muted-foreground pt-1" : "bg-muted/30 px-3 py-2 rounded text-yellow-500"}`}>
+                    {item}
+                  </div>
+                ))}
               </div>
-            </div>
-            <p className="text-2xl sm:text-3xl font-bold text-primary mb-1 animate-count-up">
-              ₦{(stats.totalPrizeToday / 1000000).toFixed(1)}M
-            </p>
-            <p className="text-xs sm:text-sm text-muted-foreground">Prize Pool Today</p>
-          </Card>
-          
-          <Card className="bg-card/50 backdrop-blur-sm p-3 sm:p-4 border-2 border-accent/20 hover:border-accent/40 transition-all duration-300 hover:scale-105 group">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="p-2 rounded-lg bg-accent/10 group-hover:bg-accent/20 transition-colors">
-                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
+
+              <div className="flex justify-between items-end">
+                <div className="text-sm text-muted-foreground">Prize Pool</div>
+                <div className="text-2xl font-bold text-foreground">$150,000</div>
               </div>
-            </div>
-            <p className="text-2xl sm:text-3xl font-bold text-accent mb-1 animate-count-up">
-              {stats.winnersThisWeek}+
-            </p>
-            <p className="text-xs sm:text-sm text-muted-foreground">Winners This Week</p>
-          </Card>
-          
-          <Card className="bg-card/50 backdrop-blur-sm p-3 sm:p-4 border-2 border-secondary/20 hover:border-secondary/40 transition-all duration-300 hover:scale-105 group">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="p-2 rounded-lg bg-secondary/10 group-hover:bg-secondary/20 transition-colors">
-                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-secondary" />
+            </motion.div>
+
+            {/* Total Paid Out Card */}
+            <motion.div
+              animate={{ y: [0, 15, 0] }}
+              transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+              className="absolute top-32 left-0 w-72 bg-card/80 backdrop-blur-md border border-border rounded-2xl p-5 shadow-2xl z-0"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className="p-2 bg-green-500/20 rounded-lg">
+                  <Trophy className="w-5 h-5 text-green-500" />
+                </div>
+                <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Paid Out</div>
               </div>
-            </div>
-            <p className="text-2xl sm:text-3xl font-bold text-secondary mb-1 animate-count-up">
-              {stats.activeJackpots}
-            </p>
-            <p className="text-xs sm:text-sm text-muted-foreground">Active Jackpots</p>
-          </Card>
-          
-          <Card className="bg-card/50 backdrop-blur-sm p-3 sm:p-4 border-2 border-primary/20 hover:border-primary/40 transition-all duration-300 hover:scale-105 group">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-primary animate-pulse" />
+              <div className="text-3xl font-black text-foreground mb-1">$12.5M+</div>
+              <div className="text-xs text-green-400 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                Live updates
               </div>
-            </div>
-            <p className="text-2xl sm:text-3xl font-bold text-primary mb-1">
-              {stats.nextDrawIn}
-            </p>
-            <p className="text-xs sm:text-sm text-muted-foreground">Next Draw In</p>
-          </Card>
+            </motion.div>
+
+            {/* Live Winners Card */}
+            <motion.div
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+              className="absolute bottom-0 left-10 w-64 bg-card/90 backdrop-blur-md border border-border rounded-2xl p-4 shadow-2xl z-10"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold text-foreground uppercase tracking-wider">Live Winners</span>
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { name: "Alex M.", amount: "$5,000", time: "2m ago" },
+                  { name: "Sarah K.", amount: "$2,500", time: "5m ago" },
+                ].map((winner, i) => (
+                  <div key={i} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-yellow-500 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white">
+                        {winner.name[0]}
+                      </div>
+                      <span className="text-muted-foreground">{winner.name}</span>
+                    </div>
+                    <span className="text-yellow-500 font-bold">{winner.amount}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Winning Ticket Card */}
+            <motion.div
+              animate={{ y: [0, 10, 0] }}
+              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+              className="absolute bottom-10 right-20 w-80 bg-yellow-500 rounded-2xl p-6 shadow-[0_0_50px_rgba(234,179,8,0.2)] z-20"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-black/10 rounded-lg">
+                  <Ticket className="w-5 h-5 text-black" />
+                </div>
+                <div className="text-xs font-bold text-black/60 uppercase tracking-wider">Winning Ticket</div>
+              </div>
+
+              <div className="text-4xl font-black text-black mb-2">$42,900</div>
+              <div className="text-sm font-medium text-black/70">Paid to @LuckyUser88</div>
+            </motion.div>
+
+            {/* Background Blur Element */}
+            <div className="absolute top-1/2 right-1/4 w-64 h-64 bg-purple-500/30 rounded-full blur-[80px] -z-10" />
+          </div>
         </div>
       </div>
     </section>

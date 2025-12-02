@@ -10,6 +10,7 @@ import { useDailyLogin } from "@/hooks/useDailyLogin";
 import { useAchievementNotifications } from "@/hooks/useAchievementNotifications";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import Index from "./pages/Index";
+import Lobby from "./pages/Lobby";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Admin from "./pages/Admin";
@@ -45,6 +46,16 @@ import VerifyEmail from "./pages/VerifyEmail";
 import CompleteProfile from "./pages/CompleteProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import HourlyDraw from "./pages/HourlyDraw";
+import DailyJackpot from "./pages/DailyJackpot";
+import InstantWin from "./pages/InstantWin";
+import Scratchcards from "./pages/Scratchcards";
+import Rewards from "./pages/Rewards";
+import Promotions from "./pages/Promotions";
+import VIPClub from "./pages/VIPClub";
+import Referral from "./pages/Referral";
+import Support from "./pages/Support";
+import Fairness from "./pages/Fairness";
 
 const queryClient = new QueryClient();
 
@@ -108,7 +119,7 @@ const AppContent = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<Index />} />
+      <Route path="/" element={<Lobby />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/complete-profile" element={<CompleteProfile />} />
@@ -145,6 +156,16 @@ const AppContent = () => {
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/fair-play" element={<FairPlayPolicy />} />
       <Route path="/contact" element={<ContactSupport />} />
+      <Route path="/hourly" element={<HourlyDraw />} />
+      <Route path="/daily" element={<DailyJackpot />} />
+      <Route path="/instant" element={<InstantWin />} />
+      <Route path="/scratchcards" element={<Scratchcards />} />
+      <Route path="/rewards" element={<Rewards />} />
+      <Route path="/promotions" element={<Promotions />} />
+      <Route path="/vip" element={<VIPClub />} />
+      <Route path="/referral" element={<Referral />} />
+      <Route path="/support" element={<Support />} />
+      <Route path="/fairness" element={<Fairness />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

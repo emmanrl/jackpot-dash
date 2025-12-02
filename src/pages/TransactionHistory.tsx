@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import TopNav from "@/components/TopNav";
+import MainLayout from "@/components/MainLayout";
 import { Download, Filter, Search } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -65,7 +65,7 @@ export default function TransactionHistory() {
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(t => 
+      filtered = filtered.filter(t =>
         t.reference?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         t.id.toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -136,10 +136,8 @@ export default function TransactionHistory() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
-      <TopNav />
-      
-      <main className="container mx-auto px-4 py-8">
+    <MainLayout>
+      <div className="space-y-6">
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -299,7 +297,7 @@ export default function TransactionHistory() {
             )}
           </CardContent>
         </Card>
-      </main>
-    </div>
+      </div>
+    </MainLayout>
   );
 }

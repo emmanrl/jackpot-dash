@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import TopNav from "@/components/TopNav";
+import MainLayout from "@/components/MainLayout";
 import { Loader2, ArrowDown, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -77,7 +77,7 @@ export default function Withdrawal() {
 
       if (error) throw error;
       setAccounts(data || []);
-      
+
       const defaultAccount = data?.find(a => a.is_default);
       if (defaultAccount) {
         setSelectedAccount(defaultAccount.id);
@@ -112,7 +112,7 @@ export default function Withdrawal() {
     try {
       // Check email and phone verification
       const { data: { user: currentUser } } = await supabase.auth.getUser();
-      
+
       if (!currentUser?.email_confirmed_at) {
         toast.error("Please verify your email before withdrawing. Go to Settings to verify.");
         return;
@@ -237,10 +237,10 @@ export default function Withdrawal() {
   };
 
   return (
-    <div className="min-h-screen animated-bg-alt">
-      <TopNav />
-      
-      <main className="container mx-auto px-4 py-8">
+    <MainLayout>
+
+
+      <div className="space-y-6">
         <div className="grid gap-6 md:grid-cols-2">
           {/* Withdrawal Form */}
           <Card>
@@ -295,7 +295,7 @@ export default function Withdrawal() {
                     Add Account
                   </Button>
                 </div>
-                
+
                 {loadingAccounts ? (
                   <div className="flex items-center justify-center py-4">
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -394,7 +394,7 @@ export default function Withdrawal() {
             </CardContent>
           </Card>
         </div>
-      </main>
-    </div>
+      </div>
+    </MainLayout>
   );
 }

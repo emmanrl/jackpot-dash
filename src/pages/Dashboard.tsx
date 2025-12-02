@@ -4,15 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Wallet, Ticket, Trophy, LogOut, Star, TrendingUp, Zap, Settings, User as UserIcon } from "lucide-react";
+import { Sparkles, Wallet, Ticket, Trophy, Star, TrendingUp, Zap, ArrowDown, ArrowUpRight, Clock } from "lucide-react";
 import { toast } from "sonner";
-import Footer from "@/components/Footer";
 import DepositDialog from "@/components/DepositDialog";
 import TicketPurchaseDialog from "@/components/TicketPurchaseDialog";
 import DrawDetailsModal from "@/components/DrawDetailsModal";
@@ -23,15 +17,15 @@ import { JackpotCardSkeleton } from "@/components/JackpotCardSkeleton";
 import { useDrawNotifications } from "@/hooks/useDrawNotifications";
 import { useWinNotification } from "@/hooks/useWinNotification";
 import { useTheme } from "@/hooks/useTheme";
-import NotificationBell from "@/components/NotificationBell";
 import { useRealtimeAvatar } from "@/hooks/useRealtimeAvatar";
-import { ArrowDown } from "lucide-react";
 import { PublicProfileCard } from "@/components/PublicProfileCard";
 import { ReferralCard } from "@/components/ReferralCard";
-import { FloatingActionButton } from "@/components/FloatingActionButton";
 import { WithdrawalStatusTracker } from "@/components/WithdrawalStatusTracker";
 import { SEOHead } from "@/components/SEOHead";
-import { BreadcrumbSchema, generateBreadcrumbs } from "@/components/BreadcrumbSchema";
+import MainLayout from "@/components/MainLayout";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface WalletData {
   balance: number;
@@ -76,12 +70,7 @@ const Dashboard = () => {
   const [tickets, setTickets] = useState<TicketData[]>([]);
   const [wins, setWins] = useState<WinnerData[]>([]);
   const [withdrawalAccount, setWithdrawalAccount] = useState<WithdrawalAccount | null>(null);
-  const [globalStats, setGlobalStats] = useState({
-    totalPrizePool: 0,
-    totalWinners: 0,
-    activeJackpots: 0,
-    totalPlayers: 0
-  });
+
   useDrawNotifications();
   const {
     winData,
@@ -92,8 +81,6 @@ const Dashboard = () => {
   const {
     currentTheme,
     xp,
-    updateTheme,
-    unlockedThemes,
     themes
   } = useTheme(user?.id);
   useEffect(() => {
@@ -143,8 +130,7 @@ const Dashboard = () => {
       await Promise.all([
         fetchUserData(session.user.id),
         fetchActiveJackpots(),
-        fetchWithdrawalAccount(session.user.id),
-        fetchGlobalStats()
+        fetchWithdrawalAccount(session.user.id)
       ]);
       setLoading(false);
     };
@@ -329,45 +315,7 @@ const Dashboard = () => {
       setIsLoadingStats(false);
     }
   };
-  
-  const fetchGlobalStats = async () => {
-    try {
-      // Get total prize pool from active jackpots
-      const { data: jackpots } = await supabase
-        .from('jackpots')
-        .select('prize_pool')
-        .eq('status', 'active');
-      
-      const totalPrizePool = jackpots?.reduce((sum, j) => sum + Number(j.prize_pool), 0) || 0;
-      
-      // Get total winners count
-      const { count: totalWinners } = await supabase
-        .from('winners')
-        .select('*', { count: 'exact', head: true });
-      
-      // Get active jackpots count
-      const { count: activeJackpots } = await supabase
-        .from('jackpots')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active');
-      
-      // Get unique players count
-      const { data: uniquePlayers } = await supabase
-        .from('tickets')
-        .select('user_id');
-      
-      const totalPlayers = uniquePlayers ? new Set(uniquePlayers.map(t => t.user_id)).size : 0;
-      
-      setGlobalStats({
-        totalPrizePool,
-        totalWinners: totalWinners || 0,
-        activeJackpots: activeJackpots || 0,
-        totalPlayers
-      });
-    } catch (error) {
-      console.error("Error fetching global stats:", error);
-    }
-  };
+
   const handleBuyTicket = (jackpot: any) => {
     setSelectedJackpot(jackpot);
     setTicketDialogOpen(true);
@@ -420,19 +368,7 @@ const Dashboard = () => {
       toast.error(`Failed to submit withdrawal: ${error.message}`);
     }
   };
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
-  };
-  const getInitials = () => {
-    if (profile?.full_name) {
-      return profile.full_name.charAt(0).toUpperCase();
-    }
-    if (profile?.email) {
-      return profile.email.charAt(0).toUpperCase();
-    }
-    return "U";
-  };
+
   const getXPProgress = () => {
     const themeKeys = Object.keys(themes);
     const currentIndex = themeKeys.findIndex(key => themes[key as keyof typeof themes].minXP <= xp && (themeKeys[themeKeys.indexOf(key) + 1] ? themes[themeKeys[themeKeys.indexOf(key) + 1] as keyof typeof themes].minXP > xp : true));
@@ -451,25 +387,18 @@ const Dashboard = () => {
       percentage: Math.min(progress, 100)
     };
   };
-  const scrollToJackpots = () => {
-    const element = document.getElementById('jackpots-section');
-    if (element) {
-      element.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      });
-    }
-  };
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <Sparkles className="w-12 h-12 text-primary animate-pulse mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading your dashboard...</p>
-        </div>
-      </div>;
+      <div className="text-center">
+        <Sparkles className="w-12 h-12 text-primary animate-pulse mx-auto mb-4" />
+        <p className="text-muted-foreground">Loading your dashboard...</p>
+      </div>
+    </div>;
   }
   const xpProgress = getXPProgress();
-  return <div className="min-h-screen animated-bg-alt scroll-smooth">
+  return (
+    <MainLayout>
       <SEOHead
         title={`Dashboard - ${profile?.full_name || user?.email} | LuckyWin`}
         description="Manage your LuckyWin account, buy lottery tickets, check your wallet balance, track your wins, and participate in exciting jackpot draws."
@@ -477,397 +406,336 @@ const Dashboard = () => {
         type="profile"
         noIndex={true}
       />
-      <BreadcrumbSchema items={generateBreadcrumbs(location.pathname)} />
-      <header className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Sparkles className="w-5 h-5 text-primary" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                LuckyWin
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <NotificationBell />
-              
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="gap-2 h-auto p-2">
-                    <Avatar className="h-10 w-10 border-2 border-primary/20">
-                      {realtimeAvatarUrl || profile?.avatar_url ? <AvatarImage src={realtimeAvatarUrl || profile.avatar_url} alt={profile?.full_name || user?.email || "User"} /> : null}
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                        {getInitials()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="hidden md:flex flex-col items-start">
-                      <span className="text-sm font-semibold">{profile?.full_name || user?.email}</span>
-                      <div className="flex items-center gap-1">
-                        <Star className="w-3 h-3 text-primary" />
-                        <span className="text-xs text-muted-foreground">{xp} XP</span>
-                      </div>
+
+      <div className="space-y-6 md:space-y-8 animate-fade-in">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Left Main Column */}
+          <div className="xl:col-span-2 space-y-6">
+            {/* Wallet Card */}
+            <Card className="bg-card border-border relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <CardContent className="p-8 relative z-10">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Wallet className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-bold text-muted-foreground tracking-wider uppercase">Current Balance</span>
                     </div>
+                    <div className="text-5xl md:text-6xl font-bold text-foreground mb-1 tracking-tight">
+                      ₦{wallet?.balance?.toFixed(2) || "0.00"}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="text-right">
+                      <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Total Winnings</span>
+                      <span className="text-xl font-bold text-green-500 flex items-center gap-1">
+                        + ₦{wins.reduce((acc, win) => acc + Number(win.prize_amount), 0).toFixed(2)}
+                        <ArrowUpRight className="w-4 h-4" />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 mt-8">
+                  <Button
+                    size="lg"
+                    className="bg-primary text-black font-bold hover:bg-primary/90 px-8 rounded-xl shadow-[0_0_20px_rgba(250,204,21,0.2)]"
+                    onClick={() => setDepositDialogOpen(true)}
+                  >
+                    <ArrowDown className="w-4 h-4 mr-2" />
+                    Deposit
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{profile?.full_name || "User"}</p>
-                      <p className="text-xs leading-none text-muted-foreground">{user?.email}</p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <div className="px-2 py-2">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium">Experience</span>
-                      <Badge variant="secondary" className="text-xs">
-                        <Star className="w-3 h-3 mr-1" />
-                        {xp} XP
-                      </Badge>
-                    </div>
-                    <div className="h-3 bg-secondary rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all duration-500" style={{
-                      width: `${xpProgress.percentage}%`
-                    }} />
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {xpProgress.max - xp} XP to next theme
-                    </p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate("/dashboard")}>
-                    <Trophy className="w-4 h-4 mr-2" />
-                    Dashboard
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/profile")}>
-                    <UserIcon className="w-4 h-4 mr-2" />
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/settings")}>
-                    <Settings className="w-4 h-4 mr-2" />
-                    Settings
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-6 md:py-8 space-y-6 md:space-y-8">
-        {/* Global Platform Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 opacity-0 animate-fade-in">
-          <Card className="p-4 hover:shadow-lg transition-all duration-300 hover:scale-105 border-2 hover:border-primary/30">
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Trophy className="w-5 h-5 text-primary" />
-                </div>
-              </div>
-              <div className="text-2xl md:text-3xl font-bold text-primary">
-                ₦{(globalStats.totalPrizePool / 1000).toFixed(0)}K
-              </div>
-              <div className="text-xs text-muted-foreground">Total Prize Pool</div>
-            </div>
-          </Card>
-
-          <Card className="p-4 hover:shadow-lg transition-all duration-300 hover:scale-105 border-2 hover:border-secondary/30">
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-secondary" />
-                </div>
-              </div>
-              <div className="text-2xl md:text-3xl font-bold text-secondary">
-                {globalStats.totalWinners}
-              </div>
-              <div className="text-xs text-muted-foreground">Total Winners</div>
-            </div>
-          </Card>
-
-          <Card className="p-4 hover:shadow-lg transition-all duration-300 hover:scale-105 border-2 hover:border-accent/30">
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-accent" />
-                </div>
-              </div>
-              <div className="text-2xl md:text-3xl font-bold text-accent">
-                {globalStats.activeJackpots}
-              </div>
-              <div className="text-xs text-muted-foreground">Active Jackpots</div>
-            </div>
-          </Card>
-
-          <Card className="p-4 hover:shadow-lg transition-all duration-300 hover:scale-105 border-2 hover:border-primary/30">
-            <div className="flex flex-col space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <UserIcon className="w-5 h-5 text-primary" />
-                </div>
-              </div>
-              <div className="text-2xl md:text-3xl font-bold text-primary">
-                {globalStats.totalPlayers}
-              </div>
-              <div className="text-xs text-muted-foreground">Active Players</div>
-            </div>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 md:gap-6 opacity-0 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <Card className="rounded-2xl shadow-xl transition-transform hover:scale-[1.005] duration-300 w-full">
-            <CardHeader className="p-6 pb-4">
-              <CardTitle className="text-2xl font-extrabold flex items-center gap-2"><Wallet className="w-5 h-5 text-primary" />Dashboard
-              </CardTitle>
-            </CardHeader>
-            
-            <CardContent className="p-6 pt-0">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* 1. Wallet Section (Span 2 columns on large screens) */}
-                <div className="lg:col-span-2 flex flex-col space-y-6 p-4 md:p-6 rounded-xl border border-secondary/20 bg-card">
-                  <h3 className="text-base font-medium text-muted-foreground">Current Balance</h3>
-                  
-                  {/* Balance Display */}
-                  <div className="text-4xl md:text-5xl font-extrabold text-primary tracking-tight">
-                    ₦{wallet?.balance?.toFixed(2) || "0.00"}
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-col sm:flex-row gap-4 pt-2 px-4 sm:px-0">
-                    <Button variant="default" size="lg" className="flex-1 min-w-0 flex items-center justify-center gap-2 h-12 font-semibold px-6 py-3" onClick={() => setDepositDialogOpen(true)}>
-                      <Wallet className="w-4 h-4" /> Deposit Funds
-                    </Button>
-                    <Button variant="outline" size="lg" className="flex-1 min-w-0 flex items-center justify-center gap-2 h-12 border-2 border-primary text-primary hover:bg-primary/10 font-semibold px-6 py-3" onClick={() => setWithdrawDialogOpen(true)}>
-                      <TrendingUp className="w-4 h-4" /> Withdraw
-                    </Button>
-                  </div>
-                  
-                  <Button onClick={scrollToJackpots} className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-semibold py-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 mt-4">
-                    <ArrowDown className="mr-2 h-5 w-5 animate-bounce" />
-                    Go to Jackpots
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="bg-muted/50 border-border text-foreground hover:bg-muted px-8 rounded-xl"
+                    onClick={() => setWithdrawDialogOpen(true)}
+                  >
+                    <ArrowUpRight className="w-4 h-4 mr-2" />
+                    Withdraw
                   </Button>
                 </div>
+              </CardContent>
 
-                {/* 2. XP Progress Section (1 column) */}
-                <div className="lg:col-span-1 flex flex-col space-y-4">
-                  {/* XP Stat Box */}
-                  <div className="flex flex-col space-y-3 p-4 bg-secondary/10 rounded-lg border border-secondary/20">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-primary/20 rounded-full">
-                        <Star className="w-4 h-4 text-primary" />
-                      </div>
-                      <span className="text-sm font-semibold text-muted-foreground">Total Experience (XP)</span>
-                    </div>
-                    <div className="text-2xl font-bold text-foreground">
-                      {xp} XP
-                    </div>
-                    <p className="text-xs text-muted-foreground pt-1 border-t border-secondary/30">
-                      Theme: {currentTheme?.toUpperCase() || 'DEFAULT'}
-                    </p>
-                  </div>
-                  
-                  {/* Progress Bar & Detail */}
-                  <div className="space-y-3 p-4 bg-card rounded-lg border border-secondary/20">
-                    <div className="flex justify-between text-sm font-medium text-foreground">
-                      <span>XP Progress to Next Theme</span>
-                      <span className="text-primary">{xpProgress.percentage}%</span>
-                    </div>
+              {/* Background decoration */}
+              <Wallet className="absolute -bottom-8 -right-8 w-64 h-64 text-muted/10 rotate-[-15deg]" />
+            </Card>
 
-                    <div className="h-2 bg-secondary rounded-full">
-                      <div className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full transition-all duration-700 ease-out" style={{
-                      width: `${xpProgress.percentage}%`
-                    }} />
-                    </div>
+            {/* Active Jackpots */}
+            <section id="jackpots-section" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-6 h-6 text-primary" />
+                  <h2 className="text-2xl font-bold text-foreground">Active Jackpots</h2>
+                </div>
 
-                    <p className="text-xs text-muted-foreground">
-                      <strong>{xpProgress.max - xp} XP</strong> remaining to unlock the next theme tier.
-                    </p>
-                  </div>
+                <div className="flex gap-2">
+                  <select
+                    value={categoryFilter}
+                    onChange={e => setCategoryFilter(e.target.value)}
+                    className="bg-card border border-border text-sm rounded-lg px-3 py-2 text-foreground focus:ring-1 focus:ring-primary outline-none"
+                  >
+                    <option value="all">All Categories</option>
+                    <option value="hourly">Hourly</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                  </select>
                 </div>
               </div>
-            </CardContent>
-            
-            <CardHeader className="p-6 pt-0 text-xs text-muted-foreground border-t border-secondary/20 mt-4">
-              <p>*Data refreshed in real-time. Contact support for transaction issues.</p>
-            </CardHeader>
-          </Card>
-        </div>
 
-        {/* Referral Stats */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 opacity-0 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          <ReferralCard userId={user.id} />
-          <PublicProfileCard profile={profile} avatarUrl={realtimeAvatarUrl || profile?.avatar_url} stats={{
-          xp: xp,
-          totalWins: wins.length,
-          totalTickets: tickets.length
-        }} />
-        </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {isLoadingStats ? (
+                  [1, 2, 3, 4].map(i => <JackpotCardSkeleton key={i} />)
+                ) : (
+                  <>
+                    {filteredJackpots.slice((currentPage - 1) * jackpotsPerPage, currentPage * jackpotsPerPage).map((jackpot, index) => {
+                      const isFeatured = index === 0 || index === 1;
+                      const getCategoryStyles = (cat: string) => {
+                        switch (cat?.toLowerCase()) {
+                          case 'hourly': return { icon: <Clock className="w-5 h-5 text-blue-400" />, color: "text-blue-400", bgIcon: "bg-blue-400/10", glow: "hover:shadow-blue-500/20", border: "hover:border-blue-500/50" };
+                          case 'daily': return { icon: <Zap className="w-5 h-5 text-yellow-500" />, color: "text-yellow-500", bgIcon: "bg-yellow-500/10", glow: "hover:shadow-yellow-500/20", border: "hover:border-yellow-500/50" };
+                          case 'weekly': return { icon: <Trophy className="w-5 h-5 text-purple-500" />, color: "text-purple-500", bgIcon: "bg-purple-500/10", glow: "hover:shadow-purple-500/20", border: "hover:border-purple-500/50" };
+                          default: return { icon: <Star className="w-5 h-5 text-green-500" />, color: "text-green-500", bgIcon: "bg-green-500/10", glow: "hover:shadow-green-500/20", border: "hover:border-green-500/50" };
+                        }
+                      };
+                      const styles = getCategoryStyles(jackpot.category);
 
-        <section id="jackpots-section" className="space-y-4 scroll-mt-20 opacity-0 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <Zap className="w-6 h-6 text-primary" />
-              <h2 className="text-2xl md:text-3xl font-bold">Active Jackpots</h2>
-            </div>
-            <Badge variant="secondary" className="hidden md:inline-flex">
-              <TrendingUp className="w-3 h-3 mr-1" />
-              {filteredJackpots.length} Live
-            </Badge>
-          </div>
-          
-          {/* Filters and Sorting */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="flex-1">
-              <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground">
-                <option value="all">All Categories</option>
-                <option value="hourly">Hourly</option>
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-              </select>
-            </div>
-            <div className="flex-1">
-              <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground">
-                <option value="prize">Sort by Prize</option>
-                <option value="endTime">Sort by End Time</option>
-                <option value="popularity">Sort by Popularity</option>
-              </select>
-            </div>
-          </div>
-          
-          <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
-            {isLoadingStats ? <>
-                {[1, 2, 3, 4, 5, 6].map(i => <JackpotCardSkeleton key={i} />)}
-              </> : filteredJackpots.slice((currentPage - 1) * jackpotsPerPage, currentPage * jackpotsPerPage).map((jackpot, index) => <DashboardJackpotCard key={jackpot.id} index={index} jackpotId={jackpot.id} title={jackpot.name} prize={jackpot.prize_pool} ticketPrice={jackpot.ticket_price} endTime={jackpot.next_draw} category={jackpot.category || 'daily'} ticketsSold={jackpotStats[jackpot.id]?.ticketsSold || 0} participants={jackpotStats[jackpot.id]?.participants || 0} poolGrowth={jackpotStats[jackpot.id]?.poolGrowth || 0} onBuyClick={() => handleBuyTicket(jackpot)} />)}
-          </div>
-          
-          {/* Pagination */}
-          {filteredJackpots.length > jackpotsPerPage && <div className="flex justify-center gap-2 mt-6">
-              <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
-                Previous
-              </Button>
-              <div className="flex items-center gap-2">
-                {Array.from({
-              length: Math.ceil(filteredJackpots.length / jackpotsPerPage)
-            }, (_, i) => i + 1).map(page => <Button key={page} variant={currentPage === page ? "default" : "outline"} size="sm" onClick={() => setCurrentPage(page)}>
-                    {page}
-                  </Button>)}
-              </div>
-              <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredJackpots.length / jackpotsPerPage), p + 1))} disabled={currentPage === Math.ceil(filteredJackpots.length / jackpotsPerPage)}>
-                Next
-              </Button>
-            </div>}
-        </section>
+                      return (
+                        <DashboardJackpotCard
+                          key={jackpot.id}
+                          index={index}
+                          jackpotId={jackpot.id}
+                          title={jackpot.name}
+                          prize={jackpot.prize_pool}
+                          ticketPrice={jackpot.ticket_price}
+                          endTime={jackpot.next_draw}
+                          category={jackpot.category || 'daily'}
+                          subtitle={jackpot.category ? `${jackpot.category} Draw` : 'Daily Draw'}
+                          icon={styles.icon}
+                          color={styles.color}
+                          bgIcon={styles.bgIcon}
+                          featured={isFeatured}
+                          glowColor={styles.glow}
+                          borderColor={styles.border}
+                          ticketsSold={jackpotStats[jackpot.id]?.ticketsSold || 0}
+                          participants={jackpotStats[jackpot.id]?.participants || 0}
+                          poolGrowth={jackpotStats[jackpot.id]?.poolGrowth || 0}
+                          onBuyClick={() => handleBuyTicket(jackpot)}
+                        />
+                      );
+                    })}
 
-        {/* Withdrawal Status Tracker */}
-        {user && <WithdrawalStatusTracker userId={user.id} />}
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 opacity-0 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Ticket className="w-5 h-5 text-primary" />
-                <CardTitle>Recent Tickets</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {tickets.length > 0 ? <div className="space-y-2">
-                  {tickets.slice(0, 5).map(ticket => <TicketCard key={ticket.id} ticketId={ticket.id} ticketNumber={ticket.ticket_number} purchasePrice={ticket.purchase_price} purchasedAt={ticket.purchased_at} jackpotName={ticket.jackpots.name} isWinner={ticket.isWinner} />)}
-                </div> : <p className="text-muted-foreground text-sm">No tickets yet. Buy your first ticket above!</p>}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-primary" />
-                <CardTitle>Recent Wins</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {wins.length > 0 ? <div className="space-y-3">
-                  {wins.slice(0, 5).map(win => <div key={win.id} className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/10 hover:bg-primary/10 transition-colors cursor-pointer" onClick={() => {
-                setSelectedWin(win);
-                setDrawDetailsOpen(true);
-              }}>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">{win.jackpots.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(win.claimed_at).toLocaleDateString()}
-                        </p>
+                    {/* Add placeholder card if odd number of jackpots */}
+                    {filteredJackpots.slice((currentPage - 1) * jackpotsPerPage, currentPage * jackpotsPerPage).length % 2 !== 0 && (
+                      <div className="bg-muted/30 rounded-2xl border-2 border-dashed border-border flex flex-col items-center justify-center p-8 hover:bg-muted/50 hover:border-primary/50 transition-all cursor-pointer group h-full min-h-[220px]">
+                        <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center text-muted-foreground group-hover:text-yellow-500 group-hover:bg-muted/80 group-hover:scale-110 transition-all mb-4">
+                          <ArrowUpRight size={28} />
+                        </div>
+                        <span className="text-muted-foreground font-medium group-hover:text-foreground transition-colors">View All Available Draws</span>
                       </div>
-                      <div className="text-right ml-2">
-                        <p className="font-bold text-primary">+₦{win.prize_amount.toFixed(2)}</p>
-                        <p className="text-xs text-muted-foreground">+10 XP</p>
-                      </div>
-                    </div>)}
-                </div> : <p className="text-muted-foreground text-sm">No wins yet. Keep playing!</p>}
-            </CardContent>
-          </Card>
+                    )}
+                  </>
+                )}
+              </div>
+            </section>
+
+            {/* Recent Activity */}
+            <div className="columns-1 lg:columns-2 gap-6 space-y-6">
+              <Card className="bg-card border-border break-inside-avoid mb-6">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Ticket className="w-5 h-5 text-primary" />
+                    <CardTitle className="text-foreground">Recent Tickets</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {tickets.length > 0 ? (
+                    <div className="space-y-2">
+                      {tickets.slice(0, 5).map(ticket => (
+                        <TicketCard
+                          key={ticket.id}
+                          ticketId={ticket.id}
+                          ticketNumber={ticket.ticket_number}
+                          purchasePrice={ticket.purchase_price}
+                          purchasedAt={ticket.purchased_at}
+                          jackpotName={ticket.jackpots.name}
+                          isWinner={ticket.isWinner}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">No tickets yet. Buy your first ticket above!</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="bg-card border-border">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-primary" />
+                    <CardTitle className="text-foreground">Recent Wins</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {wins.length > 0 ? (
+                    <div className="space-y-3">
+                      {wins.slice(0, 5).map(win => (
+                        <div
+                          key={win.id}
+                          className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/10 hover:bg-primary/10 transition-colors cursor-pointer"
+                          onClick={() => {
+                            setSelectedWin(win);
+                            setDrawDetailsOpen(true);
+                          }}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-foreground truncate">{win.jackpots.name}</p>
+                            <p className="text-xs text-muted-foreground">{new Date(win.claimed_at).toLocaleDateString()}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-primary">₦{win.prize_amount.toLocaleString()}</p>
+                            <p className="text-[10px] text-green-500 uppercase font-bold">Paid</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">No wins yet. Keep playing!</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Right Sidebar Column */}
+          <div className="space-y-6">
+            {/* XP / VIP Card */}
+            <Card className="bg-card border-border relative overflow-hidden">
+              <CardContent className="p-8 flex flex-col justify-center h-full relative z-10">
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-purple-500/20 rounded-xl">
+                      <Trophy className="w-6 h-6 text-purple-500" />
+                    </div>
+                    <div>
+                      <div className="text-lg font-bold text-foreground">VIP Level</div>
+                      <div className="text-xs text-purple-400 font-medium uppercase tracking-wider">Bronze Member</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-black text-foreground">{xp.toLocaleString()}</div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Total XP</div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    <span>Progress to Silver</span>
+                    <span>{Math.round(xpProgress.percentage)}%</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-purple-600 to-purple-400 transition-all duration-1000 ease-out"
+                      style={{ width: `${xpProgress.percentage}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-yellow-500 mt-2">
+                    <Star className="w-3 h-3 fill-yellow-500" />
+                    <span>{xpProgress.max - xp} XP remaining to unlock next tier.</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <PublicProfileCard
+              profile={profile}
+              avatarUrl={realtimeAvatarUrl || profile?.avatar_url}
+              stats={{
+                xp: xp,
+                totalWins: wins.length,
+                totalTickets: tickets.length
+              }}
+            />
+
+            <ReferralCard userId={user?.id || ''} />
+          </div>
         </div>
-      </main>
 
-      <Footer />
-      <FloatingActionButton />
 
-      <DepositDialog open={depositDialogOpen} onOpenChange={setDepositDialogOpen} userEmail={user?.email || ""} />
+      </div>
+
+      {/* Dialogs */}
+      <DepositDialog open={depositDialogOpen} onOpenChange={setDepositDialogOpen} userEmail={user?.email || ''} />
+      <TicketPurchaseDialog
+        open={ticketDialogOpen}
+        onOpenChange={setTicketDialogOpen}
+        jackpot={selectedJackpot}
+        walletBalance={wallet?.balance || 0}
+        onSuccess={handleTicketPurchaseSuccess}
+      />
 
       <Dialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-card border-border text-card-foreground">
           <DialogHeader>
             <DialogTitle>Withdraw Funds</DialogTitle>
-            <DialogDescription>
-              Submit a withdrawal request. Admin approval required.
+            <DialogDescription className="text-muted-foreground">
+              Enter the amount you wish to withdraw to your default account.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            {withdrawalAccount ? <div className="p-4 rounded-lg bg-muted/50 border border-border">
-                <p className="text-sm font-semibold mb-2">Withdrawal Account</p>
-                <div className="space-y-1 text-sm">
-                  <p className="text-muted-foreground">Bank: <span className="text-foreground font-medium">{withdrawalAccount.bank_name}</span></p>
-                  <p className="text-muted-foreground">Account: <span className="text-foreground font-medium">{withdrawalAccount.account_number}</span></p>
-                  <p className="text-muted-foreground">Name: <span className="text-foreground font-medium">{withdrawalAccount.account_name}</span></p>
-                </div>
-              </div> : <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
-                <p className="text-sm text-destructive">
-                  No withdrawal account found. Please add one in Settings first.
-                </p>
-                <Button variant="outline" size="sm" className="mt-2" onClick={() => {
-              setWithdrawDialogOpen(false);
-              navigate("/settings");
-            }}>
-                  Go to Settings
-                </Button>
-              </div>}
-            
             <div className="space-y-2">
-              <Label htmlFor="withdraw-amount">Amount</Label>
-              <Input id="withdraw-amount" type="number" step="0.01" placeholder="0.00" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} disabled={!withdrawalAccount} />
-              <p className="text-sm text-muted-foreground">
-                Available: ₦{wallet?.balance?.toFixed(2) || "0.00"}
+              <Label htmlFor="amount" className="text-foreground">Amount (₦)</Label>
+              <Input
+                id="amount"
+                type="number"
+                placeholder="0.00"
+                value={withdrawAmount}
+                onChange={(e) => setWithdrawAmount(e.target.value)}
+                className="bg-muted/20 border-border text-foreground placeholder:text-muted-foreground"
+              />
+              <p className="text-xs text-muted-foreground">
+                Available Balance: <span className="text-primary font-bold">₦{wallet?.balance?.toFixed(2) || "0.00"}</span>
               </p>
             </div>
+            {withdrawalAccount ? (
+              <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                <p className="text-xs font-bold text-primary mb-1">Receiving Account</p>
+                <p className="text-sm font-medium text-foreground">{withdrawalAccount.bank_name}</p>
+                <p className="text-xs text-muted-foreground">{withdrawalAccount.account_number} • {withdrawalAccount.account_name}</p>
+              </div>
+            ) : (
+              <div className="p-3 bg-red-500/10 rounded-lg border border-red-500/20 text-red-400 text-sm">
+                No default withdrawal account found. Please add one in Settings.
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button onClick={handleWithdraw} disabled={!withdrawalAccount}>
-              Submit Request
-            </Button>
+            <Button variant="outline" onClick={() => setWithdrawDialogOpen(false)} className="border-border text-muted-foreground hover:bg-muted hover:text-foreground">Cancel</Button>
+            <Button onClick={handleWithdraw} className="bg-primary text-black hover:bg-primary/90 font-bold">Confirm Withdrawal</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <TicketPurchaseDialog open={ticketDialogOpen} onOpenChange={setTicketDialogOpen} jackpot={selectedJackpot} walletBalance={wallet?.balance || 0} onSuccess={handleTicketPurchaseSuccess} />
+      {selectedWin && (
+        <DrawDetailsModal
+          open={drawDetailsOpen}
+          onOpenChange={setDrawDetailsOpen}
+          win={selectedWin}
+          userTickets={tickets.filter(t => t.jackpot_id === selectedWin.jackpot_id)}
+        />
+      )}
 
-      {selectedWin && <DrawDetailsModal open={drawDetailsOpen} onOpenChange={setDrawDetailsOpen} win={selectedWin} />}
-
-      {celebrationWin && <WinCelebrationModal open={!!celebrationWin} onOpenChange={open => !open && setCelebrationWin(null)} prizeAmount={celebrationWin.prizeAmount} jackpotName={celebrationWin.jackpotName} />}
-    </div>;
+      {celebrationWin && (
+        <WinCelebrationModal
+          open={!!celebrationWin}
+          onOpenChange={() => setCelebrationWin(null)}
+          prizeAmount={celebrationWin.prizeAmount}
+          jackpotName={celebrationWin.jackpotName}
+        />
+      )}
+    </MainLayout>
+  );
 };
+
 export default Dashboard;

@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import TopNav from "@/components/TopNav";
-import Footer from "@/components/Footer";
+import MainLayout from "@/components/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -234,10 +233,8 @@ const Leaderboard = () => {
   );
 
   return (
-    <div className="min-h-screen animated-bg">
-      <TopNav />
-
-      <main className="container mx-auto px-4 py-8">
+    <MainLayout>
+      <div className="space-y-8">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4">
             <Trophy className="w-4 h-4 text-primary" />
@@ -351,10 +348,8 @@ const Leaderboard = () => {
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
-
-      <Footer />
-    </div>
+      </div>
+    </MainLayout>
   );
 };
 

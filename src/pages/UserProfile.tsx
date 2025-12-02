@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import TopNav from "@/components/TopNav";
+import MainLayout from "@/components/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -93,31 +93,27 @@ export default function UserProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <TopNav />
+      <MainLayout>
         <div className="flex items-center justify-center min-h-[60vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-background">
-        <TopNav />
+      <MainLayout>
         <div className="container mx-auto px-4 py-8">
           <p className="text-center text-muted-foreground">User not found</p>
         </div>
-      </div>
+      </MainLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <TopNav />
-      
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <MainLayout>
+      <div className="space-y-6 max-w-6xl">
         {/* Profile Header */}
         <Card className="mb-8">
           <CardContent className="pt-6">
@@ -128,17 +124,17 @@ export default function UserProfile() {
                   {profile.full_name?.charAt(0) || profile.email.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              
+
               <div className="flex-1 text-center md:text-left">
                 <div className="flex items-center justify-between mb-2">
                   <h1 className="text-3xl font-bold">{profile.full_name || 'Anonymous User'}</h1>
-                  <UserFollowButton 
-                    userId={userId!} 
+                  <UserFollowButton
+                    userId={userId!}
                     currentUserId={currentUser?.id}
                   />
                 </div>
                 <p className="text-muted-foreground mb-4">{profile.email}</p>
-                
+
                 <div className="flex flex-wrap gap-2 justify-center md:justify-start">
                   <Badge variant="secondary" className="text-sm">
                     <Star className="w-4 h-4 mr-1" />
@@ -232,6 +228,6 @@ export default function UserProfile() {
           <UserActivityFeed userId={userId!} />
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }

@@ -5,8 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Mail, User as UserIcon } from "lucide-react";
-import TopNav from "@/components/TopNav";
-import Footer from "@/components/Footer";
+import MainLayout from "@/components/MainLayout";
 import { useRealtimeAvatar } from "@/hooks/useRealtimeAvatar";
 
 const Profile = () => {
@@ -50,9 +49,8 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen animated-bg-alt">
-      <TopNav />
-      <main className="container mx-auto px-4 py-8">
+    <MainLayout>
+      <div className="space-y-6">
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
             <CardTitle className="text-2xl">Profile Details</CardTitle>
@@ -116,9 +114,8 @@ const Profile = () => {
             </div>
           </CardContent>
         </Card>
-      </main>
-      <Footer />
-    </div>
+      </div>
+    </MainLayout>
   );
 };
 

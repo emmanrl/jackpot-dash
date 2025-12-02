@@ -12,111 +12,92 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Vibrant light mode colors */
-    --background: 45 100% 98%;
-    --foreground: 225 50% 15%;
+    /* Light Mode Colors */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
-    /* Colorful card backgrounds */
-    --card: 45 100% 100%;
-    --card-foreground: 225 50% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
 
-    --popover: 45 100% 100%;
-    --popover-foreground: 225 50% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-    /* Bright primary gold */
-    --primary: 45 93% 45%;
-    --primary-foreground: 45 100% 98%;
+    /* Gold #FACC15 - Keep gold but maybe adjust for light mode if needed */
+    --primary: 45 96% 45%;
+    /* Slightly darker gold for better contrast on white */
+    --primary-foreground: 210 40% 98%;
 
-    /* Vibrant purple secondary */
-    --secondary: 270 60% 55%;
-    --secondary-foreground: 45 100% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
-    /* Light muted tones with color */
-    --muted: 45 50% 92%;
-    --muted-foreground: 225 30% 40%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    /* Bright orange accent */
-    --accent: 25 95% 55%;
-    --accent-foreground: 45 100% 98%;
+    --accent: 45 100% 50%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 45 30% 85%;
-    --input: 45 40% 95%;
-    --ring: 45 93% 45%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 45 96% 45%;
 
     --radius: 0.75rem;
-    
-    /* Custom tokens for colorful jackpot theme */
-    --gold-glow: 45 100% 50%;
-    --prize-shimmer: linear-gradient(135deg, hsl(45 93% 45%), hsl(25 95% 55%), hsl(270 60% 55%));
-    --card-gradient: linear-gradient(135deg, hsl(45 100% 98%), hsl(45 80% 95%));
-    --hero-gradient: linear-gradient(180deg, hsl(45 100% 96%), hsl(45 80% 92%));
-    
-    /* Animation speeds */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
-    --sidebar-background: 45 100% 100%;
-    --sidebar-foreground: 225 50% 15%;
-    --sidebar-primary: 45 93% 45%;
-    --sidebar-primary-foreground: 45 100% 98%;
-    --sidebar-accent: 45 50% 92%;
-    --sidebar-accent-foreground: 225 50% 15%;
-    --sidebar-border: 45 30% 85%;
-    --sidebar-ring: 45 93% 45%;
+    /* Custom tokens */
+    --gold-glow: 45 100% 50%;
+    --prize-shimmer: linear-gradient(135deg, hsl(45 96% 53%), hsl(45 100% 70%), hsl(45 96% 53%));
+    --card-gradient: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 40% 98%));
+    --hero-gradient: linear-gradient(180deg, hsl(210 40% 98%), hsl(0 0% 100%));
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 215.4 16.3% 46.9%;
+    --sidebar-primary: 45 96% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96.1%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 45 96% 45%;
   }
 
   .dark {
-    /* Dark luxury background */
     --background: 225 25% 8%;
     --foreground: 45 100% 96%;
 
-    /* Card with subtle gradient */
     --card: 225 20% 12%;
     --card-foreground: 45 100% 96%;
 
     --popover: 225 20% 12%;
     --popover-foreground: 45 100% 96%;
 
-    /* Gold primary color for luxury feel */
-    --primary: 45 93% 58%;
+    --primary: 45 96% 53%;
     --primary-foreground: 225 25% 8%;
 
-    /* Deep blue secondary */
     --secondary: 220 70% 35%;
     --secondary-foreground: 45 100% 96%;
 
-    /* Muted tones */
     --muted: 225 15% 20%;
-    --muted-foreground: 45 20% 70%;
+    --muted-foreground: 225 20% 65%;
 
-    /* Bright accent gold */
     --accent: 45 100% 65%;
     --accent-foreground: 225 25% 8%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 225 15% 25%;
-    --input: 225 15% 18%;
-    --ring: 45 93% 58%;
-    
-    /* Custom tokens for jackpot theme */
-    --gold-glow: 45 100% 70%;
-    --prize-shimmer: linear-gradient(135deg, hsl(45 93% 58%), hsl(45 100% 70%), hsl(45 93% 58%));
-    --card-gradient: linear-gradient(135deg, hsl(225 20% 12%), hsl(225 20% 16%));
-    --hero-gradient: linear-gradient(180deg, hsl(225 25% 8%), hsl(225 20% 12%));
+    --border: 225 15% 20%;
+    --input: 225 15% 16%;
+    --ring: 45 96% 53%;
 
-    --sidebar-background: 225 20% 12%;
-    --sidebar-foreground: 45 100% 96%;
-    --sidebar-primary: 45 93% 58%;
+    --sidebar-background: 225 25% 6%;
+    --sidebar-foreground: 225 10% 70%;
+    --sidebar-primary: 45 96% 53%;
     --sidebar-primary-foreground: 225 25% 8%;
-    --sidebar-accent: 225 15% 20%;
+    --sidebar-accent: 225 15% 16%;
     --sidebar-accent-foreground: 45 100% 96%;
-    --sidebar-border: 225 15% 25%;
-    --sidebar-ring: 45 93% 58%;
+    --sidebar-border: 225 15% 16%;
+    --sidebar-ring: 45 96% 53%;
   }
 }
 
@@ -128,74 +109,113 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground antialiased;
   }
-  
+
   /* Custom animations */
   @keyframes shimmer {
-    0% { background-position: -200% center; }
-    100% { background-position: 200% center; }
+    0% {
+      background-position: -200% center;
+    }
+
+    100% {
+      background-position: 200% center;
+    }
   }
-  
+
   @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 20px hsl(var(--primary) / 0.5); }
-    50% { box-shadow: 0 0 40px hsl(var(--primary) / 0.8); }
+
+    0%,
+    100% {
+      box-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+    }
+
+    50% {
+      box-shadow: 0 0 40px hsl(var(--primary) / 0.8);
+    }
   }
-  
+
   @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
+
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+
+    50% {
+      transform: translateY(-10px);
+    }
   }
-  
+
   @keyframes gradient-shift {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
+
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
   }
-  
+
   @keyframes gradient-rotate {
-    0% { background-position: 0% 0%; }
-    25% { background-position: 100% 0%; }
-    50% { background-position: 100% 100%; }
-    75% { background-position: 0% 100%; }
-    100% { background-position: 0% 0%; }
+    0% {
+      background-position: 0% 0%;
+    }
+
+    25% {
+      background-position: 100% 0%;
+    }
+
+    50% {
+      background-position: 100% 100%;
+    }
+
+    75% {
+      background-position: 0% 100%;
+    }
+
+    100% {
+      background-position: 0% 0%;
+    }
   }
-  
+
   .shimmer {
     background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.3), transparent);
     background-size: 200% 100%;
     animation: shimmer 2s infinite;
   }
-  
+
   .gold-glow {
     text-shadow: 0 0 20px hsl(var(--primary) / 0.6);
   }
-  
+
   .animated-bg {
-    background: linear-gradient(135deg, 
-      hsl(var(--background)), 
-      hsl(var(--muted)),
-      hsl(var(--background)),
-      hsl(var(--accent) / 0.05)
-    );
+    background: linear-gradient(135deg,
+        hsl(var(--background)),
+        hsl(var(--muted)),
+        hsl(var(--background)),
+        hsl(var(--accent) / 0.05));
     background-size: 400% 400%;
     animation: gradient-shift 15s ease infinite;
   }
-  
+
   .animated-bg-alt {
-    background: linear-gradient(45deg, 
-      hsl(var(--background)), 
-      hsl(var(--primary) / 0.03),
-      hsl(var(--secondary) / 0.03),
-      hsl(var(--background))
-    );
+    background: linear-gradient(45deg,
+        hsl(var(--background)),
+        hsl(var(--primary) / 0.03),
+        hsl(var(--secondary) / 0.03),
+        hsl(var(--background)));
     background-size: 400% 400%;
     animation: gradient-rotate 20s ease infinite;
   }
-  
+
   /* Scroll animations */
   @keyframes fade-in {
     from {
       opacity: 0;
       transform: translateY(30px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -203,10 +223,13 @@ All colors MUST be HSL.
   }
 
   @keyframes pulse-border {
-    0%, 100% {
+
+    0%,
+    100% {
       border-color: hsl(var(--primary) / 0.3);
       box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4);
     }
+
     50% {
       border-color: hsl(var(--primary) / 0.6);
       box-shadow: 0 0 20px 5px hsl(var(--primary) / 0.6);
@@ -218,12 +241,13 @@ All colors MUST be HSL.
       opacity: 0;
       transform: translateY(10px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
     }
   }
-  
+
   .animate-fade-in {
     animation: fade-in 0.8s ease-out forwards;
   }
@@ -235,16 +259,52 @@ All colors MUST be HSL.
   .animate-count-up {
     animation: count-up 0.8s ease-out forwards;
   }
-  
+
   /* Apply scroll animations to sections */
   section {
     opacity: 0;
     animation: fade-in 0.8s ease-out forwards;
   }
-  
-  section:nth-child(1) { animation-delay: 0s; }
-  section:nth-child(2) { animation-delay: 0.1s; }
-  section:nth-child(3) { animation-delay: 0.2s; }
-  section:nth-child(4) { animation-delay: 0.3s; }
-  section:nth-child(5) { animation-delay: 0.4s; }
+
+  section:nth-child(1) {
+    animation-delay: 0s;
+  }
+
+  section:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+
+  section:nth-child(3) {
+    animation-delay: 0.2s;
+  }
+
+  section:nth-child(4) {
+    animation-delay: 0.3s;
+  }
+
+  section:nth-child(5) {
+    animation-delay: 0.4s;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-black/40 backdrop-blur-md border border-white/10 shadow-xl;
+  }
+
+  .glass-button {
+    @apply bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/10 transition-all duration-300;
+  }
+
+  .neon-text {
+    text-shadow: 0 0 10px currentColor;
+  }
+
+  .neon-box {
+    box-shadow: 0 0 15px currentColor;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 20px currentColor;
+  }
 }

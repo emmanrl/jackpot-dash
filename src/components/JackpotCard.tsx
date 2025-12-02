@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Ticket, Users } from "lucide-react";
+import { TrendingUp, Ticket, Users, Play } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CountdownTimer } from "./CountdownTimer";
@@ -42,7 +42,7 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
           const growthPercentage = Math.min(Math.floor(tickets.length * 2.5), 50);
           setPoolGrowth(growthPercentage);
           setTicketCount(tickets.length);
-          
+
           // Count unique participants
           const uniqueUsers = new Set(tickets.map(t => t.user_id));
           setParticipantCount(uniqueUsers.size);
@@ -74,18 +74,18 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
           .select('jackpot_id, user_id');
 
         // Find jackpot with highest prize pool
-        const maxPrizeJackpot = allJackpots?.reduce((max, j) => 
+        const maxPrizeJackpot = allJackpots?.reduce((max, j) =>
           Number(j.prize_pool) > Number(max.prize_pool) ? j : max
-        , allJackpots[0]);
+          , allJackpots[0]);
 
         // Find most bought jackpot (most tickets)
         const ticketCounts = allTickets?.reduce((acc, t) => {
           acc[t.jackpot_id] = (acc[t.jackpot_id] || 0) + 1;
           return acc;
         }, {} as Record<string, number>);
-        const mostBoughtId = Object.keys(ticketCounts || {}).reduce((a, b) => 
+        const mostBoughtId = Object.keys(ticketCounts || {}).reduce((a, b) =>
           (ticketCounts?.[a] || 0) > (ticketCounts?.[b] || 0) ? a : b
-        , '');
+          , '');
 
         // Find jackpot where one user bought most tickets
         const userTicketCounts: Record<string, Record<string, number>> = {};
@@ -167,95 +167,102 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
   };
 
   return (
-    <Card className={`relative overflow-hidden border-2 border-border hover:border-primary/50 transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 group ${specialBadge === 'HOT' ? 'animate-pulse' : ''} md:h-auto h-[260px]`}>
+    <Card className={`relative overflow-hidden border border-white/10 bg-[#1a2c38]/90 backdrop-blur-md hover:border-white/20 transition-all duration-500 hover:shadow-2xl group ${specialBadge === 'HOT' ? 'animate-pulse' : ''} md:h-auto h-[280px] hover:-translate-y-2 rounded-2xl`}>
       {/* Background image */}
       {backgroundImageUrl && (
-        <div 
-          className="absolute inset-0 bg-cover bg-center opacity-20"
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-20 transition-transform duration-700 group-hover:scale-110"
           style={{ backgroundImage: `url(${backgroundImageUrl})` }}
         />
       )}
-      
+
       {/* Gradient overlay */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${categoryColors[category] || categoryColors.hourly} opacity-70 group-hover:opacity-90 transition-opacity`} />
-      
+      <div className={`absolute inset-0 bg-gradient-to-br ${categoryColors[category] || categoryColors.hourly} opacity-40 group-hover:opacity-60 transition-opacity duration-500`} />
+
+      {/* Hover Overlay with Quick Play Button */}
+      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 flex items-center justify-center backdrop-blur-[2px]">
+        <Button
+          size="lg"
+          className="transform scale-90 group-hover:scale-100 transition-transform duration-300 bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-lg px-8 py-6 rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.3)]"
+          onClick={() => {
+            if (isEnded && status === 'completed') {
+              // Logic for ended draw
+            } else if (onBuyClick) {
+              onBuyClick();
+            }
+          }}
+        >
+          <Play className="w-6 h-6 mr-2 fill-current" />
+          Quick Play
+        </Button>
+      </div>
+
       {/* Shimmer effect */}
       <div className="absolute inset-0 shimmer opacity-0 group-hover:opacity-100 transition-opacity" />
 
-      <CardHeader className="relative p-2 md:p-6">
+      <CardHeader className="relative p-3 md:p-6 z-10 group-hover:blur-[2px] transition-all duration-300">
         <div className="flex items-center justify-between mb-1 md:mb-2">
-          <span className="text-[9px] md:text-xs font-semibold uppercase tracking-wider text-primary px-1.5 md:px-2 py-0.5 md:py-1 rounded-full bg-primary/10 border border-primary/20">
+          <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-primary px-2 py-1 rounded-full bg-black/40 border border-primary/20 backdrop-blur-md">
             {category}
           </span>
-          <div className="flex items-center gap-0.5 md:gap-1 text-[9px] md:text-xs text-muted-foreground">
-            <TrendingUp className="w-2.5 h-2.5 md:w-3 md:h-3" />
+          <div className="flex items-center gap-1 text-[10px] md:text-xs text-gray-300 font-medium bg-black/20 px-2 py-1 rounded-full">
+            <TrendingUp className="w-3 h-3 text-green-400" />
             <span className="hidden md:inline">{poolGrowth > 0 ? `+${poolGrowth}% pool` : 'New'}</span>
             <span className="md:hidden">+{poolGrowth}%</span>
           </div>
         </div>
         {specialBadge && (
           <div className={`mb-1 md:mb-2 text-center ${specialBadge === 'HOT' ? 'animate-pulse' : ''}`}>
-            <span className={`text-[9px] md:text-xs font-bold px-2 md:px-3 py-0.5 md:py-1 rounded-full ${
-              specialBadge === 'HOT' ? 'bg-red-500 text-white shadow-lg shadow-red-500/50' :
-              specialBadge === 'BIG WIN!!!' ? 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/50' :
-              'bg-purple-500 text-white shadow-lg shadow-purple-500/50'
-            }`}>
+            <span className={`text-[9px] md:text-xs font-bold px-3 py-1 rounded-full shadow-lg ${specialBadge === 'HOT' ? 'bg-gradient-to-r from-red-500 to-orange-500 text-white' :
+              specialBadge === 'BIG WIN!!!' ? 'bg-gradient-to-r from-yellow-400 to-amber-600 text-black' :
+                'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+              }`}>
               {specialBadge}
             </span>
           </div>
         )}
-        <CardTitle className="text-sm md:text-2xl font-bold truncate">{title}</CardTitle>
-        <CardDescription className="text-[10px] md:text-sm truncate">{getDrawEndsSoonStatus()}</CardDescription>
+        <CardTitle className="text-base md:text-2xl font-bold truncate text-white drop-shadow-md">{title}</CardTitle>
+        <CardDescription className="text-[10px] md:text-sm truncate text-gray-300">{getDrawEndsSoonStatus()}</CardDescription>
       </CardHeader>
 
-      <CardContent className="relative space-y-1.5 md:space-y-4 p-2 md:p-6">
-        <div className="text-center p-2 md:p-4 rounded-lg bg-primary/5 border border-primary/10">
-          <div className="text-[9px] md:text-sm text-muted-foreground mb-0.5 md:mb-1">Prize Pool</div>
-          <div className="text-base md:text-4xl font-bold text-primary gold-glow">{currentPrize}</div>
+      <CardContent className="relative space-y-2 md:space-y-4 p-3 md:p-6 z-10 group-hover:blur-[2px] transition-all duration-300">
+        <div className="text-center p-3 md:p-4 rounded-xl bg-black/20 border border-white/5 backdrop-blur-md">
+          <div className="text-[10px] md:text-xs text-gray-400 mb-1 uppercase tracking-wider font-medium">Prize Pool</div>
+          <div className="text-xl md:text-3xl font-black text-white">{currentPrize}</div>
         </div>
 
-        <div className="flex items-center justify-between p-1.5 md:p-3 rounded-lg bg-muted/50 text-[10px] md:text-sm">
-          <span className="font-medium">Time</span>
-          <CountdownTimer 
-            targetDate={endTime} 
+        <div className="flex items-center justify-between p-2 md:p-3 rounded-lg bg-black/20 text-[10px] md:text-sm border border-white/5">
+          <span className="font-medium text-gray-300">Time Left</span>
+          <CountdownTimer
+            targetDate={endTime}
             onExpire={() => setIsEnded(true)}
             showIcon={false}
-            className="text-xs md:text-lg"
+            className="text-xs md:text-lg font-mono text-white"
           />
         </div>
 
         <div className="space-y-1 md:space-y-2">
-          <div className="flex items-center justify-between text-[10px] md:text-sm">
-            <span className="text-muted-foreground">Ticket</span>
-            <span className="font-bold text-foreground">{ticketPrice}</span>
+          <div className="flex items-center justify-between text-[10px] md:text-sm px-1">
+            <span className="text-gray-400">Ticket Price</span>
+            <span className="font-bold text-yellow-400">{ticketPrice}</span>
           </div>
-          
+
           {(participantCount > 0 || ticketCount > 0) && (
-            <div className="flex items-center justify-between text-[9px] md:text-xs p-1 md:p-2 rounded-md bg-muted/30">
-              <div className="flex items-center gap-0.5 md:gap-1">
-                <Users className="w-2 h-2 md:w-3 md:h-3 text-primary" />
-                <span className="text-muted-foreground">Players</span>
+            <div className="flex items-center justify-between text-[9px] md:text-xs p-1.5 md:p-2 rounded-md bg-white/5 border border-white/5">
+              <div className="flex items-center gap-1">
+                <Users className="w-3 h-3 text-blue-400" />
+                <span className="text-gray-400">Players</span>
               </div>
-              <span className="font-semibold text-foreground">{participantCount}</span>
-            </div>
-          )}
-          
-          {ticketCount > 0 && (
-            <div className="flex items-center justify-between text-[9px] md:text-xs p-1 md:p-2 rounded-md bg-muted/30">
-              <div className="flex items-center gap-0.5 md:gap-1">
-                <Ticket className="w-2 h-2 md:w-3 md:h-3 text-primary" />
-                <span className="text-muted-foreground">Sold</span>
-              </div>
-              <span className="font-semibold text-foreground">{ticketCount}</span>
+              <span className="font-semibold text-white">{participantCount}</span>
             </div>
           )}
         </div>
       </CardContent>
 
-      <CardFooter className="relative p-2 md:p-6">
-        <Button 
-          variant="prize" 
-          className="w-full text-xs md:text-base h-7 md:h-10" 
+      <CardFooter className="relative p-3 md:p-6 z-10 group-hover:blur-[2px] transition-all duration-300">
+        <Button
+          variant="prize"
+          className="w-full text-xs md:text-base h-8 md:h-12 font-bold shadow-lg"
           size="sm"
           onClick={async () => {
             if (isEnded && status === 'completed') {
@@ -280,7 +287,7 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
           }}
           disabled={isEnded && status !== 'completed'}
         >
-          <Ticket className="w-4 h-4" />
+          <Ticket className="w-4 h-4 mr-2" />
           {isEnded ? (status === 'completed' ? "View Winners" : "Draw Ended") : "Buy Tickets"}
         </Button>
       </CardFooter>

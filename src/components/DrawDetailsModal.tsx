@@ -17,6 +17,7 @@ interface DrawDetailsModalProps {
     total_participants: number;
     total_pool_amount: number;
     ticket_id?: string;
+    jackpot_id: string;
     jackpots: {
       name: string;
       id?: string;
@@ -30,12 +31,15 @@ export default function DrawDetailsModal({ open, onOpenChange, win, userTickets 
   const [allWinners, setAllWinners] = useState<any[]>([]);
 
   useEffect(() => {
-    if (open && win.jackpots.id) {
+    if (open && (win.jackpot_id || win.jackpots.id)) {
       fetchAllWinners();
     }
-  }, [open, win.jackpots.id]);
+  }, [open, win.jackpot_id, win.jackpots.id]);
 
   const fetchAllWinners = async () => {
+    const jackpotId = win.jackpot_id || win.jackpots.id;
+    if (!jackpotId) return;
+
     const { data } = await supabase
       .from('winners')
       .select(`
@@ -43,7 +47,7 @@ export default function DrawDetailsModal({ open, onOpenChange, win, userTickets 
         prize_amount,
         profiles (full_name, email)
       `)
-      .eq('jackpot_id', win.jackpots.id)
+      .eq('jackpot_id', jackpotId)
       .order('winner_rank', { ascending: true });
 
     if (data) {
@@ -150,7 +154,7 @@ export default function DrawDetailsModal({ open, onOpenChange, win, userTickets 
 
             {/* Actions */}
             <div className="flex gap-3">
-              <Button 
+              <Button
                 onClick={handleShare}
                 className="flex-1"
                 variant="hero"

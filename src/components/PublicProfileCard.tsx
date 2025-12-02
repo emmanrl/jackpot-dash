@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Share2, Star, Trophy, Ticket, Check } from "lucide-react";
+import { Share2, Check } from "lucide-react";
 import { toast } from "sonner";
 
 interface PublicProfileCardProps {
@@ -16,18 +15,25 @@ interface PublicProfileCardProps {
   };
 }
 
+const StatBadge = ({ value, label, highlight }: { value: string, label: string, highlight?: boolean }) => (
+  <div className={`flex flex-col items-center justify-center p-2.5 rounded-xl border transition-colors ${highlight ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' : 'bg-slate-800/50 border-slate-700/50 text-slate-200 hover:bg-slate-800'}`}>
+    <span className="text-sm font-bold mb-0.5">{value}</span>
+    <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">{label}</span>
+  </div>
+);
+
 export const PublicProfileCard = ({ profile, avatarUrl, stats }: PublicProfileCardProps) => {
   const [copied, setCopied] = useState(false);
 
   const handleShareProfile = async () => {
     const username = profile.username || profile.id;
     const profileUrl = `https://luckywin.name.ng/profile/${username}`;
-    
+
     try {
       await navigator.clipboard.writeText(profileUrl);
       setCopied(true);
       toast.success("Profile link copied to clipboard!");
-      
+
       setTimeout(() => {
         setCopied(false);
       }, 2000);
@@ -37,15 +43,15 @@ export const PublicProfileCard = ({ profile, avatarUrl, stats }: PublicProfileCa
   };
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center justify-between">
+    <Card className="overflow-hidden bg-[#0f1923] border-white/5">
+      <CardHeader className="pb-4 border-b border-white/5">
+        <CardTitle className="flex items-center justify-between text-white">
           <span>Public Profile</span>
           <Button
             variant="outline"
             size="sm"
             onClick={handleShareProfile}
-            className="gap-2"
+            className="gap-2 border-white/10 text-muted-foreground hover:text-white hover:bg-white/5"
           >
             {copied ? (
               <>
@@ -61,17 +67,17 @@ export const PublicProfileCard = ({ profile, avatarUrl, stats }: PublicProfileCa
           </Button>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 pt-6">
         {/* Profile Header */}
         <div className="flex items-center gap-4">
-          <Avatar className="w-16 h-16 border-2 border-primary">
+          <Avatar className="w-16 h-16 border-2 border-primary ring-4 ring-primary/10">
             <AvatarImage src={avatarUrl} />
-            <AvatarFallback className="bg-primary text-primary-foreground text-xl">
+            <AvatarFallback className="bg-primary text-black font-bold text-xl">
               {profile.full_name?.charAt(0) || profile.email.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <h3 className="text-xl font-bold">{profile.full_name || 'Anonymous User'}</h3>
+            <h3 className="text-xl font-bold text-white">{profile.full_name || 'Anonymous User'}</h3>
             {profile.username && (
               <p className="text-sm text-primary font-medium">@{profile.username}</p>
             )}
@@ -80,25 +86,16 @@ export const PublicProfileCard = ({ profile, avatarUrl, stats }: PublicProfileCa
         </div>
 
         {/* Stats Badges */}
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="secondary" className="text-sm px-3 py-1">
-            <Star className="w-4 h-4 mr-1" />
-            {stats.xp} XP
-          </Badge>
-          <Badge variant="outline" className="text-sm px-3 py-1">
-            <Trophy className="w-4 h-4 mr-1" />
-            {stats.totalWins} Wins
-          </Badge>
-          <Badge variant="outline" className="text-sm px-3 py-1">
-            <Ticket className="w-4 h-4 mr-1" />
-            {stats.totalTickets} Tickets
-          </Badge>
+        <div className="grid grid-cols-3 gap-2">
+          <StatBadge value={stats.xp.toLocaleString()} label="XP" highlight />
+          <StatBadge value={stats.totalWins.toString()} label="Wins" />
+          <StatBadge value={stats.totalTickets.toString()} label="Tickets" />
         </div>
 
         {/* Profile Link */}
-        <div className="p-3 bg-muted/50 rounded-lg">
+        <div className="p-3 bg-black/20 rounded-lg border border-white/5">
           <p className="text-xs text-muted-foreground mb-1">Your Public Profile URL</p>
-          <code className="text-xs break-all text-primary">
+          <code className="text-xs break-all text-secondary font-mono">
             https://luckywin.name.ng/profile/{profile.username || profile.id}
           </code>
         </div>

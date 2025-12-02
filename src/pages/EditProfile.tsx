@@ -8,8 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Sparkles, User } from "lucide-react";
 import { toast } from "sonner";
-import TopNav from "@/components/TopNav";
-import Footer from "@/components/Footer";
+import MainLayout from "@/components/MainLayout";
 
 const EditProfile = () => {
   const navigate = useNavigate();
@@ -51,7 +50,7 @@ const EditProfile = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!userId) {
       toast.error("User not found");
       return;
@@ -150,9 +149,8 @@ const EditProfile = () => {
   }
 
   return (
-    <div className="min-h-screen animated-bg-alt">
-      <TopNav />
-      <main className="container mx-auto px-4 py-8">
+    <MainLayout>
+      <div className="space-y-6">
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
             <CardTitle className="text-2xl">Edit Profile</CardTitle>
@@ -242,9 +240,8 @@ const EditProfile = () => {
             </form>
           </CardContent>
         </Card>
-      </main>
-      <Footer />
-    </div>
+      </div>
+    </MainLayout>
   );
 };
 

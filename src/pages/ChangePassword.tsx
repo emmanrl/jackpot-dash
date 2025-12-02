@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import TopNav from "@/components/TopNav";
-import Footer from "@/components/Footer";
+import MainLayout from "@/components/MainLayout";
 
 const ChangePassword = () => {
   const navigate = useNavigate();
@@ -98,9 +97,8 @@ const ChangePassword = () => {
   }
 
   return (
-    <div className="min-h-screen animated-bg">
-      <TopNav />
-      <main className="container mx-auto px-4 py-8">
+    <MainLayout>
+      <div className="space-y-6">
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
             <CardTitle className="text-2xl">Change Password</CardTitle>
@@ -160,9 +158,8 @@ const ChangePassword = () => {
             </form>
           </CardContent>
         </Card>
-      </main>
-      <Footer />
-    </div>
+      </div>
+    </MainLayout>
   );
 };
 

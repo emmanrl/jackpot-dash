@@ -14,7 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Poppins', 'system-ui', 'sans-serif'],
+        sans: ['Poppins', 'sans-serif'],
+        display: ['Rajdhani', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -68,20 +69,12 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
         shimmer: {
           "0%": { backgroundPosition: "-200% center" },
@@ -92,8 +85,16 @@ export default {
           "50%": { boxShadow: "0 0 40px hsl(var(--primary) / 0.8)" },
         },
         float: {
-          "0%, 100%": { transform: "translateY(0px)" },
+          "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-10px)" },
+        },
+        scroll: {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
+        "scale-up": {
+          "0%": { transform: "scale(1)" },
+          "100%": { transform: "scale(1.05)" },
         },
       },
       animation: {
@@ -102,6 +103,8 @@ export default {
         shimmer: "shimmer 2s infinite",
         "pulse-glow": "pulse-glow 2s infinite",
         float: "float 3s ease-in-out infinite",
+        scroll: "scroll 20s linear infinite",
+        "scale-up": "scale-up 0.3s ease-out forwards",
       },
     },
   },

@@ -55,7 +55,7 @@ export const CountdownTimer = ({
   }, [targetDate, onExpire, isExpired]);
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex items-center justify-center gap-2 ${className}`}>
       {showIcon && (
         <Clock className={`w-4 h-4 ${isExpired ? 'text-destructive' : 'text-primary animate-pulse'}`} />
       )}
