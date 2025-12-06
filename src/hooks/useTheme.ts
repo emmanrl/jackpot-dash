@@ -25,7 +25,7 @@ export const themes: Record<ThemeType, ThemeConfig> = {
   },
   wood: {
     name: 'Wood',
-    minXP: 10,
+    minXP: 1000,
     colors: {
       primary: '25 60% 45%',
       secondary: '30 40% 60%',
@@ -34,7 +34,7 @@ export const themes: Record<ThemeType, ThemeConfig> = {
   },
   bronze: {
     name: 'Bronze',
-    minXP: 50,
+    minXP: 2000,
     colors: {
       primary: '30 70% 50%',
       secondary: '25 60% 45%',
@@ -43,7 +43,7 @@ export const themes: Record<ThemeType, ThemeConfig> = {
   },
   silver: {
     name: 'Silver',
-    minXP: 150,
+    minXP: 5000,
     colors: {
       primary: '240 5% 65%',
       secondary: '240 5% 75%',
@@ -52,7 +52,7 @@ export const themes: Record<ThemeType, ThemeConfig> = {
   },
   gold: {
     name: 'Gold',
-    minXP: 300,
+    minXP: 10000,
     colors: {
       primary: '45 100% 51%',
       secondary: '48 95% 58%',
@@ -61,7 +61,7 @@ export const themes: Record<ThemeType, ThemeConfig> = {
   },
   neon: {
     name: 'Neon',
-    minXP: 500,
+    minXP: 50000,
     colors: {
       primary: '280 100% 50%',
       secondary: '320 100% 50%',
@@ -71,11 +71,11 @@ export const themes: Record<ThemeType, ThemeConfig> = {
 };
 
 export const getThemeFromXP = (xp: number): ThemeType => {
-  if (xp >= 500) return 'neon';
-  if (xp >= 300) return 'gold';
-  if (xp >= 150) return 'silver';
-  if (xp >= 50) return 'bronze';
-  if (xp >= 10) return 'wood';
+  if (xp >= 50000) return 'neon';
+  if (xp >= 10000) return 'gold';
+  if (xp >= 5000) return 'silver';
+  if (xp >= 2000) return 'bronze';
+  if (xp >= 1000) return 'wood';
   return 'default';
 };
 

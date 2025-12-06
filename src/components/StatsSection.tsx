@@ -1,5 +1,6 @@
 import { Trophy, Ticket, Timer, CreditCard } from "lucide-react";
 import { Card } from "./ui/card";
+import { Skeleton } from "./ui/skeleton";
 
 interface StatsSectionProps {
   stats: {
@@ -7,29 +8,43 @@ interface StatsSectionProps {
     totalWinners: number;
     activeJackpots: number;
     todayDraws: number;
+    activePlayers?: number;
+    totalPaidOut?: number;
   };
+  loading?: boolean;
 }
 
-const StatsSection = ({ stats }: StatsSectionProps) => {
+const StatsSection = ({ stats, loading = false }: StatsSectionProps) => {
+
+  const formatCurrency = (val: number) => {
+    if (val >= 1000000) return `$${(val / 1000000).toFixed(1)}M+`;
+    if (val >= 1000) return `$${(val / 1000).toFixed(1)}K+`;
+    return `$${val}`;
+  };
+
+  const formatNumber = (val: number) => {
+    return val.toLocaleString();
+  };
+
   const statCards = [
     {
       icon: Trophy,
-      value: "$42.8M+",
+      value: formatCurrency(stats.totalPaidOut || 0),
       label: "TOTAL PAID OUT",
     },
     {
       icon: Ticket,
-      value: "85,201",
+      value: formatNumber(stats.activePlayers || 0),
       label: "ACTIVE PLAYERS",
     },
     {
       icon: Timer,
-      value: "14",
+      value: formatNumber(stats.todayDraws || 0),
       label: "LIVE DRAWS",
     },
     {
       icon: CreditCard,
-      value: "$14.2M",
+      value: formatCurrency(stats.totalPrizePool || 0),
       label: "JACKPOT POOL",
     }
   ];
@@ -51,7 +66,11 @@ const StatsSection = ({ stats }: StatsSectionProps) => {
                   {stat.label}
                 </div>
                 <div className="text-2xl font-black text-white">
-                  {stat.value}
+                  {loading ? (
+                    <Skeleton className="h-8 w-24 bg-white/10" />
+                  ) : (
+                    stat.value
+                  )}
                 </div>
               </div>
             </Card>

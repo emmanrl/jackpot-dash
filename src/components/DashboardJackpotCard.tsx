@@ -70,7 +70,7 @@ export const DashboardJackpotCard = ({
             <div className={`${compact ? 'p-4' : 'p-6'} text-center bg-gradient-to-b from-card to-muted/10 flex-1 flex flex-col`}>
                 <h3 className={`text-muted-foreground font-bold ${compact ? 'text-xs' : 'text-sm'} mb-1`}>{title}</h3>
                 {!compact && <div className="text-muted-foreground text-[10px] uppercase font-bold tracking-widest mb-4">Prize Pool</div>}
-                <div className={`${compact ? 'text-2xl mb-3' : 'text-3xl mb-6'} font-black text-foreground tracking-tight`}>
+                <div className={`${compact ? 'text-2xl mb-3' : 'text-3xl mb-6'} font-bold text-foreground tracking-tight`}>
                     ₦{prize.toLocaleString()}
                 </div>
 

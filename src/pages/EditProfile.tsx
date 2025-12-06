@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Sparkles, User } from "lucide-react";
 import { toast } from "sonner";
@@ -19,6 +20,8 @@ const EditProfile = () => {
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [location, setLocation] = useState("");
+  const [bio, setBio] = useState("");
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -29,6 +32,11 @@ const EditProfile = () => {
       }
 
       setUserId(session.user.id);
+
+      // Load metadata from session for location/bio
+      const meta = session.user.user_metadata || {};
+      setLocation(meta.location || "");
+      setBio(meta.about || "");
 
       const { data } = await supabase
         .from("profiles")
@@ -66,7 +74,8 @@ const EditProfile = () => {
         return;
       }
 
-      const { error } = await supabase
+      // 1. Update Profile Table
+      const { error: profileError } = await supabase
         .from("profiles")
         .update({
           full_name: fullName,
@@ -75,14 +84,24 @@ const EditProfile = () => {
         })
         .eq("id", userId);
 
-      if (error) {
-        if (error.code === '23505') {
+      if (profileError) {
+        if (profileError.code === '23505') {
           toast.error("Username already taken. Please choose another.");
         } else {
-          throw error;
+          throw profileError;
         }
         return;
       }
+
+      // 2. Update Auth Metadata (for Location/Bio)
+      const { error: authError } = await supabase.auth.updateUser({
+        data: {
+          location: location,
+          about: bio
+        }
+      });
+
+      if (authError) throw authError;
 
       toast.success("Profile updated successfully!");
       navigate("/profile");
@@ -189,6 +208,28 @@ const EditProfile = () => {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="e.g. Lagos, Nigeria"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bio">About Me</Label>
+                <Textarea
+                  id="bio"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Tell us a bit about yourself..."
+                  className="min-h-[100px]"
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label>Current Avatar</Label>
                 <div className="flex items-center gap-4">
                   <Avatar className="h-16 w-16">
@@ -214,7 +255,7 @@ const EditProfile = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="avatarUrl">Avatar URL</Label>
+                <Label htmlFor="avatarUrl">Avatar URL (Optional)</Label>
                 <Input
                   id="avatarUrl"
                   type="url"

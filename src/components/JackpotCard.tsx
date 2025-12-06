@@ -228,7 +228,7 @@ const JackpotCard = ({ jackpotId, title, prize, ticketPrice, endTime, category, 
       <CardContent className="relative space-y-2 md:space-y-4 p-3 md:p-6 z-10 group-hover:blur-[2px] transition-all duration-300">
         <div className="text-center p-3 md:p-4 rounded-xl bg-black/20 border border-white/5 backdrop-blur-md">
           <div className="text-[10px] md:text-xs text-gray-400 mb-1 uppercase tracking-wider font-medium">Prize Pool</div>
-          <div className="text-xl md:text-3xl font-black text-white">{currentPrize}</div>
+          <div className="text-xl md:text-3xl font-bold text-white">{currentPrize}</div>
         </div>
 
         <div className="flex items-center justify-between p-2 md:p-3 rounded-lg bg-black/20 text-[10px] md:text-sm border border-white/5">

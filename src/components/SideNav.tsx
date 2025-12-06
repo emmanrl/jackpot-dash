@@ -128,7 +128,7 @@ const SideNav = ({ isMobile = false }: SideNavProps) => {
     const menuItems = [
         { icon: LayoutGrid, label: "Lobby", path: "/" },
         ...(user?.role === "admin" ? [{ icon: ShieldCheck, label: "Admin Panel", path: "/admin" }] : []),
-        { icon: Home, label: "Dashboard", path: "/dashboard" },
+        ...(user ? [{ icon: Home, label: "Dashboard", path: "/dashboard" }] : []), // Hide Dashboard for guests
         { icon: Clock, label: "Hourly Draw", path: "/hourly", badge: "LIVE", badgeColor: "bg-yellow-500 text-black" },
         { icon: Trophy, label: "Daily Jackpot", path: "/daily" },
         { icon: Zap, label: "Instant Win", path: "/instant" },
@@ -150,8 +150,10 @@ const SideNav = ({ isMobile = false }: SideNavProps) => {
 
     const rewardItems = [
         { icon: Gift, label: "Promotions", path: "/promotions" },
-        { icon: Crown, label: "VIP Club", path: "/vip", badge: "PRO", badgeColor: "bg-yellow-500 text-black" },
-        { icon: Users, label: "Referral", path: "/referral" },
+        ...(user ? [
+            { icon: Crown, label: "VIP Club", path: "/vip", badge: "PRO", badgeColor: "bg-yellow-500 text-black" },
+            { icon: Users, label: "Referral", path: "/referral" }
+        ] : []),
     ];
 
     const supportItems = [
@@ -195,31 +197,33 @@ const SideNav = ({ isMobile = false }: SideNavProps) => {
                     ))}
                 </div>
 
-                <div className="mb-6">
-                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-4">Account</h3>
-                    {accountItems.map((item, index) => (
-                        <NavItem key={index} item={item} />
-                    ))}
+                {user && (
+                    <div className="mb-6">
+                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-4">Account</h3>
+                        {accountItems.map((item, index) => (
+                            <NavItem key={index} item={item} />
+                        ))}
 
-                    {/* Collapsible Account Settings */}
-                    <Button
-                        variant="ghost"
-                        className="w-full justify-start gap-3 mb-1 font-medium text-muted-foreground hover:text-foreground hover:bg-accent/10"
-                        onClick={() => setAccountExpanded(!accountExpanded)}
-                    >
-                        <Settings className="w-5 h-5" />
-                        <span className="flex-1 text-left">Account Settings</span>
-                        <ChevronDown className={`w-4 h-4 transition-transform ${accountExpanded ? 'rotate-180' : ''}`} />
-                    </Button>
+                        {/* Collapsible Account Settings */}
+                        <Button
+                            variant="ghost"
+                            className="w-full justify-start gap-3 mb-1 font-medium text-muted-foreground hover:text-foreground hover:bg-accent/10"
+                            onClick={() => setAccountExpanded(!accountExpanded)}
+                        >
+                            <Settings className="w-5 h-5" />
+                            <span className="flex-1 text-left">Account Settings</span>
+                            <ChevronDown className={`w-4 h-4 transition-transform ${accountExpanded ? 'rotate-180' : ''}`} />
+                        </Button>
 
-                    {accountExpanded && (
-                        <div className="ml-4 border-l-2 border-white/5 pl-2 mt-1">
-                            {accountSubItems.map((item, index) => (
-                                <NavItem key={index} item={item} />
-                            ))}
-                        </div>
-                    )}
-                </div>
+                        {accountExpanded && (
+                            <div className="ml-4 border-l-2 border-white/5 pl-2 mt-1">
+                                {accountSubItems.map((item, index) => (
+                                    <NavItem key={index} item={item} />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Rewards */}
                 <div className="mb-6">
@@ -228,7 +232,7 @@ const SideNav = ({ isMobile = false }: SideNavProps) => {
                         <NavItem key={index} item={item} />
                     ))}
                 </div>
-                
+
 
                 <div className="mb-6">
                     <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 px-4">Support</h3>
