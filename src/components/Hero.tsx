@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import heroImage from "@/assets/hero-jackpot.jpg";
+import Mascot from "@/components/Mascot";
 
 interface HeroData {
   nextJackpot: {
@@ -340,6 +341,16 @@ const Hero = () => {
 
             {/* Background Blur Element */}
             <div className="absolute top-1/2 right-1/4 w-64 h-64 bg-purple-500/30 rounded-full blur-[80px] -z-10" />
+
+            {/* Mascot Integration */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8 }}
+              className="absolute top-10 left-10 w-[400px] h-[400px] z-5 pointer-events-none"
+            >
+              <Mascot variant="hero" size="100%" className="drop-shadow-2xl" />
+            </motion.div>
           </div>
         </div>
       </div>

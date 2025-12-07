@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { JackpotCardSkeleton } from "@/components/JackpotCardSkeleton";
 import StatsSection from "@/components/StatsSection";
+import Mascot from "@/components/Mascot";
 import {
     Carousel,
     CarouselContent,
@@ -101,8 +102,11 @@ const Lobby = () => {
         <MainLayout>
             <div className="space-y-8 animate-fade-in">
                 {/* Hero Section */}
-                <div className="rounded-3xl overflow-hidden border border-border shadow-2xl relative">
+                <div className="rounded-3xl overflow-hidden border border-border shadow-2xl relative group">
                     <Hero />
+                    <div className="absolute -bottom-10 left-10 w-32 h-32 z-20 pointer-events-none transition-transform duration-500 group-hover:-translate-y-4">
+                        <Mascot variant="peeking" size="100%" />
+                    </div>
                 </div>
 
                 {/* Stats Section */}

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import DepositDialog from "@/components/DepositDialog";
 import TicketPurchaseDialog from "@/components/TicketPurchaseDialog";
 import DrawDetailsModal from "@/components/DrawDetailsModal";
+import Mascot from "@/components/Mascot"
 import TicketCard from "@/components/TicketCard";
 import WinCelebrationModal from "@/components/WinCelebrationModal";
 import { DashboardJackpotCard } from "@/components/DashboardJackpotCard";
@@ -413,6 +414,11 @@ const Dashboard = () => {
           <div className="xl:col-span-2 space-y-6">
             {/* Wallet Card */}
             <Card className="bg-card border-border relative overflow-hidden group">
+
+              {/* Mascot Decoration */}
+              <div className="absolute -right-4 -bottom-10 lg:-right-8 lg:-bottom-12 transition-transform duration-700 group-hover:rotate-6 group-hover:scale-110">
+                <Mascot variant="peeking" size={240} className="opacity-40 lg:opacity-100 drop-shadow-xl" />
+              </div>
               <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <CardContent className="p-8 relative z-10">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -426,8 +432,8 @@ const Dashboard = () => {
                     </div>
                   </div>
 
-                  <div className="flex flex-col items-end gap-2">
-                    <div className="text-right">
+                  <div className="flex flex-col items-end gap-2 relative z-10">
+                    <div className="text-right p-3 rounded-xl bg-card/60 backdrop-blur-md border border-white/5 shadow-sm">
                       <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Total Winnings</span>
                       <span className="text-xl font-bold text-green-500 flex items-center gap-1">
                         + ₦{wins.reduce((acc, win) => acc + Number(win.prize_amount), 0).toFixed(2)}

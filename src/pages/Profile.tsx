@@ -19,6 +19,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import Mascot from "@/components/Mascot";
 
 interface ActivityItem {
   action: string;
@@ -238,6 +239,10 @@ const Profile = () => {
           <div className="h-48 md:h-64 w-full bg-gradient-to-r from-indigo-900 via-slate-900 to-slate-900 relative">
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
             <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-500/20 blur-[100px] rounded-full"></div>
+
+            <div className="absolute -bottom-4 right-20 w-32 h-32 md:w-48 md:h-48 z-0 opacity-80 pointer-events-none hidden sm:block">
+              <Mascot variant="hero" size="100%" />
+            </div>
 
             <div className="absolute top-6 right-6">
               <Button variant="ghost" className="text-white hover:bg-white/10" onClick={() => navigate('/edit-profile')}>

@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trophy, ArrowLeft, Loader2 } from "lucide-react";
+import Mascot from "@/components/Mascot";
 import MainLayout from "@/components/MainLayout";
 import { SEOHead } from "@/components/SEOHead";
 import { useEffect, useState } from "react";
@@ -53,12 +54,17 @@ const DailyJackpot = () => {
                     >
                         <ArrowLeft className="w-5 h-5" />
                     </Button>
-                    <div>
-                        <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-                            <Trophy className="w-8 h-8 text-yellow-500" />
-                            Daily Jackpots
-                        </h1>
-                        <p className="text-muted-foreground mt-1">Win big with our daily jackpot draws</p>
+                    <div className="flex items-center gap-4">
+                        <div className="hidden md:block w-16 h-16">
+                            <Mascot variant="peeking" size="100%" />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+                                <Trophy className="w-8 h-8 text-yellow-500" />
+                                Daily Jackpots
+                            </h1>
+                            <p className="text-muted-foreground mt-1">Win big with our daily jackpot draws</p>
+                        </div>
                     </div>
                 </div>
 
