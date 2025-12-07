@@ -199,33 +199,62 @@ const Hero = () => {
               Every Hour
             </h1>
 
-            <p className="text-lg text-muted-foreground mb-8 max-w-xl leading-relaxed">
-              Join thousands of winners in our transparent, fair lottery system.
-              Hourly, daily, and weekly draws with prizes up to
-              <span className="text-yellow-500 font-bold ml-1">
-                {/*data.nextJackpot ? formatCurrency(data.nextJackpot.prize_pool) : '₦1,000,000'*/}
-                ₦1,500,000
-              </span>.
-            </p>
+            {user ? (
+              <p className="text-lg text-muted-foreground mb-8 max-w-xl leading-relaxed">
+                Join thousands of winners in our transparent, fair lottery system.
+                Hourly, daily, and weekly draws with prizes up to
+                <span className="text-yellow-500 font-bold ml-1">
+                  {/*data.nextJackpot ? formatCurrency(data.nextJackpot.prize_pool) : '₦1,000,000'*/}
+                  ₦1,500,000
+                </span>.
+              </p>
+            ) : (
+              <p className="text-lg text-muted-foreground mb-8 max-w-xl leading-relaxed">
+                Experience the thrill of winning life-changing jackpots. Join our community today and start playing in our fair, transparent draws.
+              </p>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-4 animate-float">
-              <Button
-                size="lg"
-                className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-lg px-8 py-6 h-auto rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.3)] hover:shadow-[0_0_30px_rgba(234,179,8,0.5)] transition-all duration-300 transform hover:-translate-y-1"
-                onClick={() => navigate(user ? "/dashboard" : "/auth")}
-              >
-                Buy Ticket Now
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="bg-card border-border text-foreground hover:bg-muted hover:text-foreground text-lg px-8 py-6 h-auto rounded-xl"
-                onClick={() => navigate("/winners")}
-              >
-                <Trophy className="w-5 h-5 mr-2 text-muted-foreground" />
-                View Winners
-              </Button>
+              {user ? (
+                <>
+                  <Button
+                    size="lg"
+                    className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-lg px-8 py-6 h-auto rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.3)] hover:shadow-[0_0_30px_rgba(234,179,8,0.5)] transition-all duration-300 transform hover:-translate-y-1"
+                    onClick={() => navigate("/dashboard")}
+                  >
+                    Buy Ticket Now
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="bg-card border-border text-foreground hover:bg-muted hover:text-foreground text-lg px-8 py-6 h-auto rounded-xl"
+                    onClick={() => navigate("/winners")}
+                  >
+                    <Trophy className="w-5 h-5 mr-2 text-muted-foreground" />
+                    View Winners
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    size="lg"
+                    className="bg-yellow-500 hover:bg-yellow-400 text-black font-bold text-lg px-8 py-6 h-auto rounded-xl shadow-[0_0_20px_rgba(234,179,8,0.3)] hover:shadow-[0_0_30px_rgba(234,179,8,0.5)] transition-all duration-300 transform hover:-translate-y-1"
+                    onClick={() => navigate("/auth")}
+                  >
+                    Sign Up
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="bg-card border-border text-foreground hover:bg-muted hover:text-foreground text-lg px-8 py-6 h-auto rounded-xl"
+                    onClick={() => navigate("/auth")}
+                  >
+                    Login
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 

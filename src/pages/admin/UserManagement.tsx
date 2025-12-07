@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2, Trash2, Send, Eye } from "lucide-react";
-import { AdminNav } from "@/components/AdminNav";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface User {
@@ -180,7 +179,6 @@ const UserManagement = () => {
   if (loading) {
     return (
       <div className="min-h-screen">
-        <AdminNav />
         <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
@@ -190,7 +188,6 @@ const UserManagement = () => {
 
   return (
     <div className="min-h-screen">
-      <AdminNav />
       <div className="container mx-auto px-4 py-4 md:py-8">
         <div className="mb-4 md:mb-6">
           <h1 className="text-2xl md:text-3xl font-bold">User Management</h1>

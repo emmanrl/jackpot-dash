@@ -2,19 +2,18 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AdminNav } from "@/components/AdminNav";
-import AdminPayments from "./AdminPayments";
+import AdminLayout from "@/components/AdminLayout";
+import AdminSliderManagement from "./AdminSliderManagement";
 
-export default function AdminPaymentsPage() {
+export default function AdminSliderManagementPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [paymentSettings, setPaymentSettings] = useState<any[]>([]);
 
   useEffect(() => {
-    checkAdminAndFetchData();
+    checkAdmin();
   }, []);
 
-  const checkAdminAndFetchData = async () => {
+  const checkAdmin = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -35,8 +34,6 @@ export default function AdminPaymentsPage() {
         navigate('/dashboard');
         return;
       }
-
-      await fetchPaymentSettings();
     } catch (error) {
       console.error('Error checking admin status:', error);
       toast.error('Failed to verify admin status');
@@ -44,30 +41,6 @@ export default function AdminPaymentsPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const fetchPaymentSettings = async () => {
-    const { data, error } = await supabase
-      .from('payment_settings')
-      .select('*')
-      .order('provider');
-    
-    if (!error && data) {
-      setPaymentSettings(data);
-    }
-  };
-
-  const updatePaymentSetting = async (id: string, updates: any) => {
-    const { error } = await supabase
-      .from('payment_settings')
-      .update(updates)
-      .eq('id', id);
-
-    if (error) {
-      throw error;
-    }
-
-    await fetchPaymentSettings();
   };
 
   if (loading) {
@@ -80,13 +53,9 @@ export default function AdminPaymentsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AdminNav />
-      <main className="container mx-auto px-4 py-8">
-        <AdminPayments 
-          paymentSettings={paymentSettings}
-          onUpdate={updatePaymentSetting}
-        />
-      </main>
+      <AdminLayout>
+        <AdminSliderManagement />
+      </AdminLayout>
     </div>
   );
 }

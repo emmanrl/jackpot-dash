@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AdminNav } from "@/components/AdminNav";
-import AdminSliderManagement from "./AdminSliderManagement";
+import AdminLayout from "@/components/AdminLayout";
+import UserManagement from "./UserManagement";
 
-export default function AdminSliderManagementPage() {
+export default function UserManagementPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
 
@@ -53,10 +53,9 @@ export default function AdminSliderManagementPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AdminNav />
-      <main className="container mx-auto px-4 py-8">
-        <AdminSliderManagement />
-      </main>
+      <AdminLayout>
+        <UserManagement />
+      </AdminLayout>
     </div>
   );
 }

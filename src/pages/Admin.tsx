@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { AdminNav } from "@/components/AdminNav";
+import AdminLayout from "@/components/AdminLayout";
 
 import JackpotAutomationDialog from "@/components/JackpotAutomationDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,10 +17,10 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Sparkles, Settings, Users, Shield, Image, Mail, CreditCard, Wallet, ArrowDown, Activity } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import AdminPayments from "./AdminPayments";
-import AdminWithdrawals from "./AdminWithdrawals";
-import AdminSliderManagement from "./AdminSliderManagement";
-import AdminEmailSender from "./AdminEmailSender";
+import AdminPayments from "./admin/AdminPayments";
+import AdminWithdrawals from "./admin/AdminWithdrawals";
+import AdminSliderManagement from "./admin/AdminSliderManagement";
+import AdminEmailSender from "./admin/AdminEmailSender";
 import TransactionDetailDrawer from "@/components/TransactionDetailDrawer";
 import { BonusSettingsPanel } from "@/components/BonusSettingsPanel";
 import { AdminActivityLog } from "@/components/AdminActivityLog";
@@ -73,7 +73,7 @@ export default function Admin() {
   const checkAdminAndFetchData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         navigate('/auth');
         return;
@@ -94,18 +94,18 @@ export default function Admin() {
       }
 
       setIsAdmin(true);
-      
+
       // Fetch admin's profile settings
       const { data: profileData } = await supabase
         .from('profiles')
         .select('hide_from_leaderboard')
         .eq('id', user.id)
         .single();
-      
+
       if (profileData) {
         setHideFromLeaderboard(profileData.hide_from_leaderboard || false);
       }
-      
+
       await Promise.all([fetchJackpots(), fetchTransactions(), fetchUsers(), fetchPaymentSettings(), fetchAdminBalance()]);
     } catch (error) {
       console.error('Error checking admin status:', error);
@@ -182,7 +182,7 @@ export default function Admin() {
       ]);
       (wallets || []).forEach((w: any) => { walletMap[w.user_id] = Number(w.balance) || 0; });
       (roles || []).forEach((r: any) => { roleMap[r.user_id] = r.role; });
-      
+
       // Count tickets per user
       (tickets || []).forEach((t: any) => {
         ticketCountMap[t.user_id] = (ticketCountMap[t.user_id] || 0) + 1;
@@ -214,8 +214,8 @@ export default function Admin() {
     const combined = (profiles || []).map((p: any) => {
       const lastSignIn = authDataMap[p.id]?.last_sign_in_at;
       const hasRecentTransaction = recentTxUserIds.has(p.id);
-      
-      const isActive = lastSignIn 
+
+      const isActive = lastSignIn
         ? (new Date().getTime() - new Date(lastSignIn).getTime()) < (30 * 24 * 60 * 60 * 1000)
         : hasRecentTransaction;
 
@@ -269,7 +269,7 @@ export default function Admin() {
   const createJackpot = async () => {
     try {
       setProcessing('create-jackpot');
-      
+
       let backgroundImageUrl = null;
 
       // Upload background image if provided
@@ -361,18 +361,18 @@ export default function Admin() {
       }
 
       toast.success('Jackpot created successfully');
-      setJackpotForm({ 
-        name: "", 
-        description: "", 
-        ticket_price: "", 
-        frequency: "1hour", 
-        next_draw: "", 
-        expires_at: "", 
-        category: "hourly", 
-        winners_count: "1", 
+      setJackpotForm({
+        name: "",
+        description: "",
+        ticket_price: "",
+        frequency: "1hour",
+        next_draw: "",
+        expires_at: "",
+        category: "hourly",
+        winners_count: "1",
         admin_commission_percentage: "10",
         initial_prize_pool: "",
-        background_image: null 
+        background_image: null
       });
       setImagePreview(null);
       await fetchJackpots();
@@ -386,9 +386,9 @@ export default function Admin() {
   const deleteJackpot = async (jackpotId: string) => {
     try {
       setProcessing(`delete-${jackpotId}`);
-      
+
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       const response = await supabase.functions.invoke('delete-jackpot', {
         body: { jackpotId },
         headers: { Authorization: `Bearer ${session?.access_token}` }
@@ -397,7 +397,7 @@ export default function Admin() {
       if (response.error) throw response.error;
 
       const result = response.data;
-      
+
       // Log the jackpot deletion
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
@@ -413,7 +413,7 @@ export default function Admin() {
           }
         });
       }
-      
+
       toast.success(`Jackpot deleted. Refunded ${result.refundedUsers} users with total ₦${result.totalRefunded.toFixed(2)}`);
       await fetchJackpots();
     } catch (error: any) {
@@ -427,7 +427,7 @@ export default function Admin() {
     try {
       setProcessing(transactionId);
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       const response = await supabase.functions.invoke('approve-transaction', {
         body: { transaction_id: transactionId, action, admin_note: adminNote },
         headers: { Authorization: `Bearer ${session?.access_token}` }
@@ -483,7 +483,7 @@ export default function Admin() {
     try {
       setProcessing(jackpotId);
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       const response = await supabase.functions.invoke('process-draw', {
         body: { jackpot_id: jackpotId },
         headers: { Authorization: `Bearer ${session?.access_token}` }
@@ -503,7 +503,7 @@ export default function Admin() {
   const rerunJackpot = async (jackpot: any) => {
     try {
       setProcessing(`rerun-${jackpot.id}`);
-      
+
       // Get the max jackpot number
       const { data: maxJackpot } = await supabase
         .from('jackpots')
@@ -635,8 +635,10 @@ export default function Admin() {
 
   if (!isAdmin) return null;
 
+  if (!isAdmin) return null;
+
   return (
-    <div className="min-h-screen animated-bg-alt">
+    <AdminLayout>
       <SEOHead
         title="Admin Dashboard - LuckyWin"
         description="LuckyWin admin panel for managing jackpots, users, transactions, and platform settings."
@@ -645,7 +647,6 @@ export default function Admin() {
         noIndex={true}
         noFollow={true}
       />
-      <AdminNav />
 
       <div className="container mx-auto px-4 py-6 max-w-7xl">
         {/* Header */}
@@ -662,13 +663,13 @@ export default function Admin() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link to="/site-settings">
+            <Link to="/admin/site-settings">
               <Button variant="outline" size="sm" className="gap-2">
                 <Settings className="w-4 h-4" />
                 Settings
               </Button>
             </Link>
-            <Link to="/user-management">
+            <Link to="/admin/user-management">
               <Button variant="outline" size="sm" className="gap-2">
                 <Users className="w-4 h-4" />
                 Users
@@ -857,7 +858,7 @@ export default function Admin() {
                       Fast & Furious • ₦10/ticket • ₦5K pool
                     </div>
                   </Button>
-                  
+
                   <Button
                     variant="outline"
                     className="h-auto flex-col items-start p-4 border-2 hover:border-primary hover:bg-primary/5 transition-all"
@@ -881,7 +882,7 @@ export default function Admin() {
                       Popular Choice • ₦50/ticket • ₦10K pool
                     </div>
                   </Button>
-                  
+
                   <Button
                     variant="outline"
                     className="h-auto flex-col items-start p-4 border-2 hover:border-primary hover:bg-primary/5 transition-all"
@@ -1085,7 +1086,7 @@ export default function Admin() {
                       onChange={(e) => {
                         const file = e.target.files?.[0] || null;
                         setJackpotForm({ ...jackpotForm, background_image: file });
-                        
+
                         // Create preview
                         if (file) {
                           const reader = new FileReader();
@@ -1099,12 +1100,12 @@ export default function Admin() {
                       }}
                     />
                     <p className="text-xs text-muted-foreground">Upload an image to display as the jackpot card background</p>
-                    
+
                     {imagePreview && (
                       <div className="mt-4 relative">
-                        <img 
-                          src={imagePreview} 
-                          alt="Preview" 
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
                           className="w-full h-48 object-cover rounded-lg border-2 border-border"
                         />
                         <Button
@@ -1121,7 +1122,7 @@ export default function Admin() {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="expires_at">Expiration Date/Time (Optional)</Label>
                     <Input
@@ -1185,19 +1186,19 @@ export default function Admin() {
                             size="sm"
                             variant="outline"
                             onClick={() => {
-                            setJackpotForm({
-                              name: jackpot.name,
-                              description: jackpot.description || "",
-                              ticket_price: jackpot.ticket_price.toString(),
-                              frequency: jackpot.frequency,
-                              next_draw: jackpot.next_draw ? new Date(jackpot.next_draw).toISOString().slice(0, 16) : "",
-                              expires_at: jackpot.expires_at ? new Date(jackpot.expires_at).toISOString().slice(0, 16) : "",
-                              category: jackpot.category || "hourly",
-                              winners_count: (jackpot.winners_count || 1).toString(),
-                              admin_commission_percentage: (jackpot.admin_commission_percentage || 10).toString(),
-                              initial_prize_pool: (jackpot.initial_prize_pool || 0).toString(),
-                              background_image: null
-                            });
+                              setJackpotForm({
+                                name: jackpot.name,
+                                description: jackpot.description || "",
+                                ticket_price: jackpot.ticket_price.toString(),
+                                frequency: jackpot.frequency,
+                                next_draw: jackpot.next_draw ? new Date(jackpot.next_draw).toISOString().slice(0, 16) : "",
+                                expires_at: jackpot.expires_at ? new Date(jackpot.expires_at).toISOString().slice(0, 16) : "",
+                                category: jackpot.category || "hourly",
+                                winners_count: (jackpot.winners_count || 1).toString(),
+                                admin_commission_percentage: (jackpot.admin_commission_percentage || 10).toString(),
+                                initial_prize_pool: (jackpot.initial_prize_pool || 0).toString(),
+                                background_image: null
+                              });
                               setImagePreview(null);
                               window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}
@@ -1236,7 +1237,7 @@ export default function Admin() {
                                 }}>
                                   Cancel
                                 </Button>
-                                <Button 
+                                <Button
                                   variant="destructive"
                                   onClick={() => deleteJackpot(jackpot.id)}
                                   disabled={processing === `delete-${jackpot.id}`}
@@ -1275,8 +1276,8 @@ export default function Admin() {
                   </TableHeader>
                   <TableBody>
                     {transactions.filter(t => t.status === 'pending').map((tx) => (
-                      <TableRow 
-                        key={tx.id} 
+                      <TableRow
+                        key={tx.id}
                         className="cursor-pointer hover:bg-muted/50"
                         onClick={() => {
                           setSelectedTransaction(tx);
@@ -1391,7 +1392,7 @@ export default function Admin() {
           </TabsContent>
 
           <TabsContent value="payments">
-            <AdminPayments 
+            <AdminPayments
               paymentSettings={paymentSettings}
               onUpdate={updatePaymentSetting}
             />
@@ -1440,7 +1441,7 @@ export default function Admin() {
                         try {
                           setUpdatingLeaderboardVisibility(true);
                           const { data: { user } } = await supabase.auth.getUser();
-                          
+
                           if (!user) {
                             toast.error('Not authenticated');
                             return;
@@ -1463,8 +1464,8 @@ export default function Admin() {
 
                           setHideFromLeaderboard(checked);
                           toast.success(
-                            checked 
-                              ? 'You are now hidden from public leaderboards' 
+                            checked
+                              ? 'You are now hidden from public leaderboards'
                               : 'You are now visible on public leaderboards'
                           );
                         } catch (error: any) {
@@ -1517,12 +1518,12 @@ export default function Admin() {
         userEmail={selectedTransaction ? userEmailMap[selectedTransaction.user_id] : undefined}
         processing={processing === selectedTransaction?.id}
       />
-      
+
       <JackpotAutomationDialog
         open={automationDialogOpen}
         onOpenChange={setAutomationDialogOpen}
         onSuccess={fetchJackpots}
       />
-    </div>
+    </AdminLayout>
   );
 }

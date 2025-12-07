@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AdminNav } from "@/components/AdminNav";
+import AdminLayout from "@/components/AdminLayout";
 import SiteSettings from "./SiteSettings";
 
 export default function SiteSettingsPage() {
@@ -43,20 +43,11 @@ export default function SiteSettingsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
-      <AdminNav />
-      <main className="container mx-auto px-4 py-8">
+      <AdminLayout>
         <SiteSettings />
-      </main>
+      </AdminLayout>
     </div>
   );
 }

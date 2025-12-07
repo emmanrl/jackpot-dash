@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AdminNav } from "@/components/AdminNav";
+import AdminLayout from "@/components/AdminLayout";
 import AdminEmailSender from "./AdminEmailSender";
 
 export default function AdminEmailSenderPage() {
@@ -53,10 +53,9 @@ export default function AdminEmailSenderPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AdminNav />
-      <main className="container mx-auto px-4 py-8">
+      <AdminLayout>
         <AdminEmailSender />
-      </main>
+      </AdminLayout>
     </div>
   );
 }

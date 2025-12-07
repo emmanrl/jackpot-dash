@@ -34,13 +34,13 @@ import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import FairPlayPolicy from "./pages/FairPlayPolicy";
 import ContactSupport from "./pages/ContactSupport";
-import AdminSliderManagementPage from "./pages/AdminSliderManagementPage";
-import AdminEmailSenderPage from "./pages/AdminEmailSenderPage";
-import AdminPaymentsPage from "./pages/AdminPaymentsPage";
-import AdminWithdrawalsPage from "./pages/AdminWithdrawalsPage";
-import AdminWithdrawalSettingsPage from "./pages/AdminWithdrawalSettingsPage";
-import SiteSettingsPage from "./pages/SiteSettingsPage";
-import UserManagementPage from "./pages/UserManagementPage";
+import AdminSliderManagementPage from "./pages/admin/AdminSliderManagementPage";
+import AdminEmailSenderPage from "./pages/admin/AdminEmailSenderPage";
+import AdminPaymentsPage from "./pages/admin/AdminPaymentsPage";
+import AdminWithdrawalsPage from "./pages/admin/AdminWithdrawalsPage";
+import AdminWithdrawalSettingsPage from "./pages/admin/AdminWithdrawalSettingsPage";
+import SiteSettingsPage from "./pages/admin/SiteSettingsPage";
+import UserManagementPage from "./pages/admin/UserManagementPage";
 import Tutorial from "./pages/Tutorial";
 import VerifyEmail from "./pages/VerifyEmail";
 import CompleteProfile from "./pages/CompleteProfile";
@@ -55,6 +55,7 @@ import Promotions from "./pages/Promotions";
 import VIPClub from "./pages/VIPClub";
 import Referral from "./pages/Referral";
 import Support from "./pages/Support";
+import AdminScratchSettings from "./pages/admin/ScratchSettings";
 import Fairness from "./pages/Fairness";
 
 const queryClient = new QueryClient();
@@ -165,6 +166,7 @@ const AppContent = () => {
       <Route path="/vip" element={<VIPClub />} />
       <Route path="/referral" element={<Referral />} />
       <Route path="/support" element={<Support />} />
+      <Route path="/admin/scratch-settings" element={<AdminScratchSettings />} />
       <Route path="/fairness" element={<Fairness />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
